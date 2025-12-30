@@ -45,7 +45,8 @@
     "user": "ผู้ใช้",
     "users": "ผู้ใช้",
     "leaders": "หัวหน้า",
-    "submitting": "กำลังส่ง..."
+    "submitting": "กำลังส่ง...",
+    "email": "อีเมล"
   },
   "auth": {
     "login": "เข้าสู่ระบบ",
@@ -100,6 +101,7 @@
     "submitted": "ส่งแล้ว",
     "approved": "อนุมัติแล้ว",
     "rejected": "ถูกปฏิเสธ",
+    "pending": "รอดำเนินการ",
     "timesheetsInDraft": "ไทม์ชีทที่เป็นฉบับร่าง",
     "pendingApproval": "รอการอนุมัติ",
     "thisYear": "ปีนี้",
@@ -113,7 +115,21 @@
     "noTimesheets": "ยังไม่มีไทม์ชีท สร้างไทม์ชีทแรกของคุณเพื่อเริ่มต้น",
     "allMonths": "ทุกเดือน",
     "allTeams": "ทุกทีม",
-    "allVendors": "ทุก Vendor"
+    "allVendors": "ทุก Vendor",
+    "currentMonthTimesheet": "ไทม์ชีทเดือนนี้",
+    "notStarted": "ยังไม่ได้เริ่ม",
+    "progress": "ความคืบหน้า",
+    "logged": "บันทึกแล้ว",
+    "viewTimesheet": "ดูไทม์ชีท",
+    "startTimesheet": "เริ่มไทม์ชีท",
+    "teamSummary": "สรุปทีม",
+    "viewAll": "ดูทั้งหมด",
+    "membersSubmitted": "คนส่งแล้ว",
+    "orgOverview": "ภาพรวมองค์กร",
+    "totalUsers": "ผู้ใช้ทั้งหมด",
+    "totalTeams": "ทีมทั้งหมด",
+    "yearlyStats": "สถิติรายปี",
+    "recentActivity": "กิจกรรมล่าสุด"
   },
   "timesheet": {
     "title": "ไทม์ชีท",
@@ -177,6 +193,7 @@
     "title": "อนุมัติไทม์ชีท",
     "description": "ตรวจสอบและอนุมัติไทม์ชีทของสมาชิกในทีม",
     "reviewApprove": "ตรวจสอบและอนุมัติไทม์ชีทก่อนส่งให้ Admin",
+    "timesheets": "ไทม์ชีท",
     "pending": "รอดำเนินการ",
     "pendingApproval": "รอการอนุมัติ",
     "approved": "อนุมัติแล้ว",
@@ -199,7 +216,9 @@
     "submitToAdmin": "ส่งให้ Admin",
     "teamSubmittedToAdmin": "ส่งไทม์ชีททีมให้ Admin แล้ว",
     "confirmSubmitToAdmin": "ส่งไทม์ชีทที่อนุมัติแล้วทั้งหมดให้ Admin เพื่ออนุมัติขั้นสุดท้าย?",
-    "noTeams": "คุณยังไม่ได้ถูกกำหนดเป็นหัวหน้าทีมใด"
+    "noTeams": "คุณยังไม่ได้ถูกกำหนดเป็นหัวหน้าทีมใด",
+    "teamLeader": "หัวหน้าทีม",
+    "memberCount": "สมาชิก"
   },
   "admin": {
     "users": {
@@ -285,7 +304,8 @@
       "description": "จัดการวันหยุดนักขัตฤกษ์",
       "allHolidays": "วันหยุดทั้งหมด",
       "holidaysFor": "วันหยุดของปี {year}",
-      "holidaysForYear": "วันหยุดของปี",
+      "holidaysForYear": "วันหยุดของปี {year}",
+      "publicHolidaysDesc": "วันหยุดนักขัตฤกษ์ที่จะถูกเติมอัตโนมัติในไทม์ชีท",
       "autoFillTimesheets": "วันหยุดนักขัตฤกษ์ที่จะถูกเติมอัตโนมัติในไทม์ชีท",
       "noHolidays": "ไม่มีวันหยุดสำหรับปี {year} เพิ่มวันหยุดหรือนำเข้าวันหยุดไทย",
       "seedThaiHolidays": "นำเข้าวันหยุดไทย",
@@ -485,14 +505,36 @@
     "teamRequests": "คำขอลาของทีม",
     "reviewApprove": "ตรวจสอบและอนุมัติคำขอลาจากสมาชิกในทีม"
   },
+  "teamOverview": {
+    "selectTeam": "เลือกทีมเพื่อดูรายละเอียด",
+    "backToOverview": "กลับไปภาพรวม",
+    "viewDetails": "ดูรายละเอียด",
+    "leader": "หัวหน้า",
+    "members": "สมาชิก",
+    "pending": "รอดำเนินการ",
+    "approved": "อนุมัติแล้ว",
+    "rejected": "ถูกปฏิเสธ",
+    "totalHours": "ชั่วโมงรวม",
+    "pendingDays": "วันที่รอ",
+    "noTeams": "ไม่พบทีม"
+  },
+  "teamSubmission": {
+    "title": "สถานะการส่ง Timesheet ของทีม",
+    "submitted": "คนส่งแล้ว",
+    "notSubmitted": "ยังไม่ได้ส่ง",
+    "allSubmitted": "ส่งครบทุกคน"
+  },
   "teamMembers": {
     "title": "สมาชิกทีม",
     "description": "จัดการสมาชิกในทีมของคุณ",
     "members": "สมาชิก",
+    "member": "สมาชิก",
+    "allMembers": "สมาชิกทั้งหมด",
+    "manageMembers": "จัดการและดูสมาชิกทั้งหมดในทีม",
     "addMembers": "เพิ่มสมาชิก",
     "editMembers": "แก้ไขสมาชิก",
     "selectMembers": "เลือกสมาชิกในทีม",
-    "noMembers": "ยังไม่มีสมาชิกในทีมนี้",
+    "noMembers": "ไม่พบสมาชิก",
     "noUsersAvailable": "ไม่มีผู้ใช้ที่สามารถเพิ่มได้",
     "confirmRemove": "คุณแน่ใจหรือไม่ที่จะลบสมาชิกนี้ออกจากทีม?",
     "memberRemoved": "ลบสมาชิกออกจากทีมแล้ว"

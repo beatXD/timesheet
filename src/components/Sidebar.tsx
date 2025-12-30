@@ -9,7 +9,6 @@ import type { UserRole } from "@/types";
 import {
   LayoutDashboard,
   Clock,
-  Users,
   Building2,
   FolderKanban,
   Calendar,
@@ -19,7 +18,6 @@ import {
   CalendarPlus,
   CalendarCheck,
   ClipboardList,
-  Settings,
   UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -83,25 +81,13 @@ const navSections: NavSection[] = [
   },
   {
     titleKey: "nav.sections.myTeam",
-    roles: ["admin", "leader"],
+    roles: ["leader"],
     items: [
       {
         href: "/team/members",
         labelKey: "nav.teamMembers",
         icon: <UsersRound className="w-5 h-5" />,
-        roles: ["admin", "leader"],
-      },
-    ],
-  },
-  {
-    titleKey: "nav.sections.admin",
-    roles: ["admin"],
-    items: [
-      {
-        href: "/admin/timesheets",
-        labelKey: "nav.adminTimesheets",
-        icon: <ClipboardList className="w-5 h-5" />,
-        roles: ["admin"],
+        roles: ["leader"],
       },
     ],
   },
@@ -113,12 +99,6 @@ const navSections: NavSection[] = [
         href: "/admin/users",
         labelKey: "nav.users",
         icon: <UserCog className="w-5 h-5" />,
-        roles: ["admin"],
-      },
-      {
-        href: "/admin/teams",
-        labelKey: "nav.teams",
-        icon: <Users className="w-5 h-5" />,
         roles: ["admin"],
       },
       {
@@ -168,6 +148,9 @@ export function Sidebar({ userRole }: SidebarProps) {
     }))
     .filter((section) => section.items.length > 0);
 
+  // Collect all hrefs to check for more specific matches
+  const allHrefs = filteredSections.flatMap((s) => s.items.map((i) => i.href));
+
   return (
     <aside
       className={cn(
@@ -211,9 +194,18 @@ export function Sidebar({ userRole }: SidebarProps) {
             )}
             <div className="space-y-1">
               {section.items.map((item) => {
-                const isActive =
+                // Check if pathname matches this item
+                const isExactOrNested =
                   pathname === item.href ||
                   pathname.startsWith(item.href + "/");
+                // Check if there's a more specific menu item that matches
+                const hasMoreSpecificMatch = allHrefs.some(
+                  (h) =>
+                    h !== item.href &&
+                    h.startsWith(item.href + "/") &&
+                    (pathname === h || pathname.startsWith(h + "/"))
+                );
+                const isActive = isExactOrNested && !hasMoreSpecificMatch;
                 const label = t(item.labelKey);
                 return (
                   <Link

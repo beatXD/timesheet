@@ -19,7 +19,149 @@ export async function GET(request: NextRequest) {
     const teamIdParam = searchParams.get("teamId");
     const vendorIdParam = searchParams.get("vendorId");
 
-    const filterYear = yearParam ? parseInt(yearParam) : new Date().getFullYear();
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    const filterYear = yearParam ? parseInt(yearParam) : currentYear;
+
+    // ===== CURRENT MONTH TIMESHEET (for all roles) =====
+    const currentMonthTimesheet = await Timesheet.findOne({
+      userId: session.user.id,
+      year: currentYear,
+      month: currentMonth,
+    }).lean();
+
+    // Calculate progress for current month timesheet
+    let currentMonthProgress = 0;
+    if (currentMonthTimesheet) {
+      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+      const workDays = Math.ceil(daysInMonth * 5 / 7); // Rough estimate of work days
+      const filledDays = currentMonthTimesheet.entries?.length || 0;
+      currentMonthProgress = Math.min(Math.round((filledDays / workDays) * 100), 100);
+    }
+
+    // ===== TEAM SUMMARY (for leader) =====
+    let teamSummary = null;
+    let leaderTeams: typeof Team.prototype[] = [];
+
+    if (session.user.role === "leader") {
+      leaderTeams = await Team.find({ leaderId: session.user.id })
+        .populate("memberIds", "name email")
+        .lean();
+
+      if (leaderTeams.length > 0) {
+        const allMembers: { _id: string; name: string; email: string }[] = [];
+        const memberIdSet = new Set<string>();
+
+        // Include leader
+        memberIdSet.add(session.user.id);
+        allMembers.push({
+          _id: session.user.id,
+          name: session.user.name || "",
+          email: session.user.email || "",
+        });
+
+        // Include team members
+        leaderTeams.forEach((team) => {
+          team.memberIds.forEach((member: { _id: { toString: () => string }; name: string; email: string }) => {
+            const memberId = member._id.toString();
+            if (!memberIdSet.has(memberId)) {
+              memberIdSet.add(memberId);
+              allMembers.push({
+                _id: memberId,
+                name: member.name,
+                email: member.email,
+              });
+            }
+          });
+        });
+
+        // Get submitted timesheets for current month
+        const submittedTimesheets = await Timesheet.find({
+          userId: { $in: Array.from(memberIdSet) },
+          year: currentYear,
+          month: currentMonth,
+          status: { $in: ["submitted", "approved"] },
+        }).lean();
+
+        const submittedUserIds = new Set(
+          submittedTimesheets.map((ts) => ts.userId.toString())
+        );
+
+        const notSubmitted = allMembers.filter(
+          (m) => !submittedUserIds.has(m._id)
+        );
+
+        teamSummary = {
+          totalMembers: allMembers.length,
+          submitted: submittedUserIds.size,
+          pending: notSubmitted.length,
+          notSubmitted: notSubmitted.map((m) => ({ name: m.name, email: m.email })),
+        };
+      }
+    }
+
+    // ===== ORG OVERVIEW (for admin) =====
+    let orgOverview = null;
+
+    if (session.user.role === "admin") {
+      const [allTeams, totalUsers] = await Promise.all([
+        Team.find()
+          .populate("leaderId", "name email")
+          .populate("memberIds", "_id")
+          .lean(),
+        User.countDocuments(),
+      ]);
+
+      // Get all timesheets for current month
+      const allCurrentMonthTimesheets = await Timesheet.find({
+        year: currentYear,
+        month: currentMonth,
+      }).lean();
+
+      const submittedUserIds = new Set(
+        allCurrentMonthTimesheets
+          .filter((ts) => ts.status === "submitted" || ts.status === "approved")
+          .map((ts) => ts.userId.toString())
+      );
+
+      const pendingUserIds = new Set(
+        allCurrentMonthTimesheets
+          .filter((ts) => ts.status === "submitted")
+          .map((ts) => ts.userId.toString())
+      );
+
+      const teamStats = allTeams.map((team) => {
+        const memberIds = team.memberIds.map((m: { _id: { toString: () => string } }) =>
+          m._id.toString()
+        );
+        const teamSubmitted = memberIds.filter((id: string) => submittedUserIds.has(id)).length;
+        const teamPending = memberIds.filter((id: string) => pendingUserIds.has(id)).length;
+
+        // leaderId is populated with User document
+        const leader = team.leaderId as unknown as { name: string; email: string } | null;
+
+        return {
+          teamId: team._id.toString(),
+          teamName: team.name,
+          leader: leader ? {
+            name: leader.name,
+            email: leader.email,
+          } : null,
+          memberCount: memberIds.length,
+          submitted: teamSubmitted,
+          pending: teamPending,
+        };
+      });
+
+      orgOverview = {
+        totalUsers,
+        totalTeams: allTeams.length,
+        totalSubmitted: submittedUserIds.size,
+        totalPending: pendingUserIds.size,
+        teamStats,
+      };
+    }
 
     // For regular users, show their own stats
     // For leaders/admins, show team/all stats
@@ -28,10 +170,9 @@ export async function GET(request: NextRequest) {
     if (session.user.role === "admin") {
       userFilter = {}; // All timesheets
     } else if (session.user.role === "leader") {
-      const teams = await Team.find({ leaderId: session.user.id });
-      if (teams.length > 0) {
-        const allMemberIds = teams.flatMap((t) =>
-          t.memberIds.map((id: { toString: () => string }) => id.toString())
+      if (leaderTeams.length > 0) {
+        const allMemberIds = leaderTeams.flatMap((t) =>
+          t.memberIds.map((m: { _id: { toString: () => string } }) => m._id.toString())
         );
         userFilter = { userId: { $in: [session.user.id, ...allMemberIds] } };
       }
@@ -141,6 +282,23 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       data: {
+        // Current month timesheet info
+        currentMonth: {
+          year: currentYear,
+          month: currentMonth,
+          timesheet: currentMonthTimesheet ? {
+            id: currentMonthTimesheet._id,
+            status: currentMonthTimesheet.status,
+            totalHours: (currentMonthTimesheet.totalBaseHours || 0) + (currentMonthTimesheet.totalAdditionalHours || 0),
+            submittedAt: currentMonthTimesheet.submittedAt,
+            approvedAt: currentMonthTimesheet.approvedAt,
+          } : null,
+          progress: currentMonthProgress,
+        },
+        // Role-specific data
+        teamSummary,
+        orgOverview,
+        // Yearly stats (filtered)
         counts: {
           draft: draftCount,
           submitted: submittedCount,

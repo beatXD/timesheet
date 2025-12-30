@@ -49,17 +49,21 @@ export async function POST(
       );
     }
 
-    // If leader, check if timesheet belongs to their team(s)
+    // If leader, check if timesheet belongs to their team(s) or is their own
     if (session.user.role === "leader") {
-      const teams = await Team.find({ leaderId: session.user.id });
-      const allMemberIds = teams.flatMap((t) =>
-        t.memberIds.map((id: { toString: () => string }) => id.toString())
-      );
-      if (!allMemberIds.includes(timesheet.userId.toString())) {
-        return NextResponse.json(
-          { error: "Can only reject timesheets from your team" },
-          { status: 403 }
+      const isOwnTimesheet = timesheet.userId.toString() === session.user.id;
+
+      if (!isOwnTimesheet) {
+        const teams = await Team.find({ leaderId: session.user.id });
+        const allMemberIds = teams.flatMap((t) =>
+          t.memberIds.map((id: { toString: () => string }) => id.toString())
         );
+        if (!allMemberIds.includes(timesheet.userId.toString())) {
+          return NextResponse.json(
+            { error: "Can only reject timesheets from your team" },
+            { status: 403 }
+          );
+        }
       }
     }
 

@@ -3,24 +3,47 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Team, User } from "@/models";
 
-// GET /api/admin/teams - List all teams
+// GET /api/admin/teams - List teams (admin sees all, leader sees their teams)
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await connectDB();
 
-    const teams = await Team.find()
-      .populate("leaderId", "name email")
-      .populate("memberIds", "name email")
-      .populate("projectId", "name")
+    // Admin sees all teams, leader sees only teams they lead
+    const query = session.user.role === "admin"
+      ? {}
+      : { leaderId: session.user.id };
+
+    const teams = await Team.find(query)
+      .populate("leaderId", "_id name email")
+      .populate("memberIds", "_id name email")
+      .populate("projectId", "_id name")
       .sort({ createdAt: -1 })
       .lean();
 
-    return NextResponse.json({ data: teams });
+    // Convert ObjectIds to strings for consistent comparison
+    const serializedTeams = teams.map((team) => ({
+      ...team,
+      _id: team._id?.toString(),
+      leaderId: team.leaderId ? {
+        ...team.leaderId,
+        _id: (team.leaderId as { _id?: { toString(): string } })._id?.toString(),
+      } : null,
+      memberIds: (team.memberIds || []).map((m) => ({
+        ...m,
+        _id: (m as { _id?: { toString(): string } })._id?.toString(),
+      })),
+      projectId: team.projectId ? {
+        ...team.projectId,
+        _id: (team.projectId as { _id?: { toString(): string } })._id?.toString(),
+      } : null,
+    }));
+
+    return NextResponse.json({ data: serializedTeams });
   } catch (error) {
     console.error("Error fetching teams:", error);
     return NextResponse.json(

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { format, differenceInDays } from "date-fns";
 import { th, enUS } from "date-fns/locale";
 import { useTranslations, useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,18 +38,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X } from "lucide-react";
+import { Check, X, Search, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { TeamStatsGrid, TeamLeaveStats } from "@/components/team";
 
 interface LeaveRequestUser {
   _id: string;
   name: string;
   email: string;
   image?: string;
+}
+
+interface TeamLeader {
+  _id: string;
+  name: string;
+  email: string;
+}
+
+interface TeamMember {
+  _id: string;
+  name: string;
+  email: string;
+}
+
+interface Team {
+  _id: string;
+  name: string;
+  memberIds: TeamMember[];
+  leaderId: TeamLeader;
 }
 
 interface LeaveRequest {
@@ -63,6 +85,8 @@ interface LeaveRequest {
   reviewedAt?: string;
   rejectionReason?: string;
   createdAt: string;
+  teamId?: string;
+  teamName?: string;
 }
 
 const leaveTypeColors: Record<string, string> = {
@@ -85,10 +109,24 @@ export default function TeamLeavesPage() {
   const locale = useLocale();
   const dateLocale = locale === "th" ? th : enUS;
   const { data: session, status } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
+  const isAdmin = session?.user?.role === "admin";
+  const selectedTeamId = searchParams.get("team");
+  const showOverview = isAdmin && !selectedTeamId;
+
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamStats, setTeamStats] = useState<TeamLeaveStats[]>([]);
   const [teamRequests, setTeamRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Filter states
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [teamFilter, setTeamFilter] = useState<string>(selectedTeamId || "all");
+  const [leaveTypeFilter, setLeaveTypeFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Reject dialog
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
@@ -107,26 +145,80 @@ export default function TeamLeavesPage() {
     }
   }, [session, status]);
 
-  const fetchRequests = useCallback(async () => {
-    setLoading(true);
+  // Update teamFilter when selectedTeamId changes
+  useEffect(() => {
+    if (selectedTeamId) {
+      setTeamFilter(selectedTeamId);
+    }
+  }, [selectedTeamId]);
+
+  // Fetch team stats for admin overview
+  const fetchTeamStats = useCallback(async () => {
+    if (!isAdmin) return;
+
+    setStatsLoading(true);
     try {
-      const res = await fetch("/api/leave-requests?scope=team");
+      const res = await fetch("/api/team/stats?type=leaves");
       const data = await res.json();
       if (data.data) {
-        setTeamRequests(data.data);
+        setTeamStats(data.data);
+      }
+    } catch (error) {
+      toast.error(t("errors.fetchFailed"));
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [isAdmin, t]);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [teamsRes, requestsRes] = await Promise.all([
+        fetch("/api/admin/teams"),
+        fetch("/api/leave-requests?scope=team"),
+      ]);
+
+      const teamsData = await teamsRes.json();
+      const requestsData = await requestsRes.json();
+
+      if (teamsData.data) {
+        const myTeams = teamsData.data.filter(
+          (team: Team) =>
+            team.leaderId?._id === session?.user?.id || session?.user?.role === "admin"
+        );
+        setTeams(myTeams);
+
+        // Add team info to requests
+        if (requestsData.data) {
+          const requestsWithTeam = requestsData.data.map((req: LeaveRequest) => {
+            const team = myTeams.find((t: Team) =>
+              t.memberIds.some((m: TeamMember) => m._id === req.userId._id) ||
+              t.leaderId?._id === req.userId._id
+            );
+            return {
+              ...req,
+              teamId: team?._id,
+              teamName: team?.name,
+            };
+          });
+          setTeamRequests(requestsWithTeam);
+        }
       }
     } catch (error) {
       toast.error(t("errors.fetchFailed"));
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [session?.user?.id, session?.user?.role, t]);
 
   useEffect(() => {
     if (session?.user?.role === "leader" || session?.user?.role === "admin") {
-      fetchRequests();
+      fetchData();
+      if (isAdmin) {
+        fetchTeamStats();
+      }
     }
-  }, [session, fetchRequests]);
+  }, [session, fetchData, fetchTeamStats, isAdmin]);
 
   const handleApprove = async (request: LeaveRequest) => {
     try {
@@ -143,7 +235,8 @@ export default function TeamLeavesPage() {
       }
 
       toast.success(t("leaveRequest.success.approved"));
-      fetchRequests();
+      fetchData();
+      if (isAdmin) fetchTeamStats();
     } catch (error) {
       toast.error(t("errors.failedToApprove"));
     }
@@ -176,10 +269,20 @@ export default function TeamLeavesPage() {
 
       toast.success(t("leaveRequest.success.rejected"));
       setIsRejectDialogOpen(false);
-      fetchRequests();
+      fetchData();
+      if (isAdmin) fetchTeamStats();
     } catch (error) {
       toast.error(t("errors.failedToReject"));
     }
+  };
+
+  const handleTeamClick = (teamId: string) => {
+    router.push(`/team/leaves?team=${teamId}`);
+  };
+
+  const handleBackToOverview = () => {
+    router.push("/team/leaves");
+    setTeamFilter("all");
   };
 
   const formatDateRange = (start: string, end: string) => {
@@ -201,10 +304,34 @@ export default function TeamLeavesPage() {
     return differenceInDays(new Date(end), new Date(start)) + 1;
   };
 
-  const filteredRequests =
-    statusFilter === "all"
-      ? teamRequests
-      : teamRequests.filter((r) => r.status === statusFilter);
+  // Get selected team name
+  const selectedTeamName = useMemo(() => {
+    if (!selectedTeamId) return null;
+    const team = teams.find((t) => t._id === selectedTeamId);
+    return team?.name;
+  }, [selectedTeamId, teams]);
+
+  // Filter requests
+  const filteredRequests = useMemo(() => {
+    return teamRequests.filter((req) => {
+      // Team filter - for admin drill-down, filter by selected team
+      if (selectedTeamId && req.teamId !== selectedTeamId) return false;
+      // Team filter - for regular filter dropdown
+      if (!selectedTeamId && teamFilter !== "all" && req.teamId !== teamFilter) return false;
+      if (statusFilter !== "all" && req.status !== statusFilter) return false;
+      if (leaveTypeFilter !== "all" && req.leaveType !== leaveTypeFilter) return false;
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        if (
+          !req.userId.name.toLowerCase().includes(query) &&
+          !req.userId.email.toLowerCase().includes(query)
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [teamRequests, teamFilter, statusFilter, leaveTypeFilter, searchQuery, selectedTeamId]);
 
   const pendingCount = teamRequests.filter((r) => r.status === "pending").length;
 
@@ -216,12 +343,44 @@ export default function TeamLeavesPage() {
     );
   }
 
+  // Admin Overview Mode
+  if (showOverview) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">{t("teamLeave.title")}</h1>
+            <p className="text-muted-foreground">{t("teamOverview.selectTeam")}</p>
+          </div>
+        </div>
+
+        <TeamStatsGrid
+          teams={teamStats}
+          variant="leaves"
+          loading={statsLoading}
+          onTeamClick={handleTeamClick}
+        />
+      </div>
+    );
+  }
+
+  // Detail View (for both admin drill-down and leader)
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t("teamLeave.title")}</h1>
-          <p className="text-muted-foreground">{t("teamLeave.description")}</p>
+        <div className="flex items-center gap-4">
+          {isAdmin && selectedTeamId && (
+            <Button variant="ghost" size="sm" onClick={handleBackToOverview}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {t("teamOverview.backToOverview")}
+            </Button>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold">
+              {selectedTeamName ? selectedTeamName : t("teamLeave.title")}
+            </h1>
+            <p className="text-muted-foreground">{t("teamLeave.description")}</p>
+          </div>
         </div>
         {pendingCount > 0 && (
           <Badge variant="destructive" className="text-sm px-3 py-1">
@@ -232,22 +391,59 @@ export default function TeamLeavesPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>{t("teamLeave.teamRequests")}</CardTitle>
               <CardDescription>{t("teamLeave.reviewApprove")}</CardDescription>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("common.allStatus")}</SelectItem>
-                <SelectItem value="pending">{t("team.pending")}</SelectItem>
-                <SelectItem value="approved">{t("team.approved")}</SelectItem>
-                <SelectItem value="rejected">{t("team.rejected")}</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t("common.search")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 w-40"
+                />
+              </div>
+              {!selectedTeamId && (
+                <Select value={teamFilter} onValueChange={setTeamFilter}>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder={t("common.team")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("common.allTeams")}</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team._id} value={team._id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Select value={leaveTypeFilter} onValueChange={setLeaveTypeFilter}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder={t("leave.leaveType")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("common.all")}</SelectItem>
+                  <SelectItem value="annual">{t("leave.annual")}</SelectItem>
+                  <SelectItem value="sick">{t("leave.sick")}</SelectItem>
+                  <SelectItem value="personal">{t("leave.personal")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder={t("common.status")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("common.allStatus")}</SelectItem>
+                  <SelectItem value="pending">{t("team.pending")}</SelectItem>
+                  <SelectItem value="approved">{t("team.approved")}</SelectItem>
+                  <SelectItem value="rejected">{t("team.rejected")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -260,6 +456,7 @@ export default function TeamLeavesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("common.user")}</TableHead>
+                  {!selectedTeamId && <TableHead>{t("common.team")}</TableHead>}
                   <TableHead>{t("leaveRequest.dateRange")}</TableHead>
                   <TableHead>{t("leaveRequest.days")}</TableHead>
                   <TableHead>{t("leave.leaveType")}</TableHead>
@@ -296,6 +493,11 @@ export default function TeamLeavesPage() {
                         </div>
                       </div>
                     </TableCell>
+                    {!selectedTeamId && (
+                      <TableCell>
+                        <Badge variant="outline">{request.teamName || "-"}</Badge>
+                      </TableCell>
+                    )}
                     <TableCell>
                       {formatDateRange(request.startDate, request.endDate)}
                     </TableCell>
@@ -351,7 +553,7 @@ export default function TeamLeavesPage() {
                 {filteredRequests.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={selectedTeamId ? 7 : 8}
                       className="text-center py-8 text-muted-foreground"
                     >
                       {t("leaveRequest.noRequests")}

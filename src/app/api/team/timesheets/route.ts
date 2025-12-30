@@ -30,12 +30,14 @@ export async function GET(request: NextRequest) {
       const users = await User.find({}, "_id").lean();
       memberIds = users.map((u) => u._id.toString());
     } else {
-      // Leader can see their teams' members (leader can lead multiple teams)
+      // Leader can see their teams' members + their own timesheet
       const teams = await Team.find({ leaderId: session.user.id });
       if (teams.length > 0) {
         const allMemberIds = teams.flatMap((team) =>
           team.memberIds.map((id: { toString: () => string }) => id.toString())
         );
+        // Include leader's own ID for self-approval
+        allMemberIds.push(session.user.id);
         // Remove duplicates (if same user is in multiple teams)
         memberIds = [...new Set(allMemberIds)];
       }

@@ -2,35 +2,72 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { th, enUS } from "date-fns/locale";
 import { useTranslations, useLocale } from "next-intl";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Clock, FileCheck, FileX, Send, Calendar, TrendingUp, X, Briefcase } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import {
+  Clock,
+  FileCheck,
+  Send,
+  Calendar,
+  Users,
+  Building2,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { TimesheetStatus } from "@/types";
+import { cn } from "@/lib/utils";
 
-interface Team {
-  _id: string;
-  name: string;
+interface CurrentMonthData {
+  year: number;
+  month: number;
+  timesheet: {
+    id: string;
+    status: TimesheetStatus;
+    totalHours: number;
+    submittedAt?: string;
+    approvedAt?: string;
+  } | null;
+  progress: number;
 }
 
-interface Vendor {
-  _id: string;
-  name: string;
+interface TeamSummary {
+  totalMembers: number;
+  submitted: number;
+  pending: number;
+  notSubmitted: Array<{ name: string; email: string }>;
+}
+
+interface TeamStats {
+  teamId: string;
+  teamName: string;
+  leader: { name: string; email: string } | null;
+  memberCount: number;
+  submitted: number;
+  pending: number;
+}
+
+interface OrgOverview {
+  totalUsers: number;
+  totalTeams: number;
+  totalSubmitted: number;
+  totalPending: number;
+  teamStats: TeamStats[];
 }
 
 interface DashboardData {
+  currentMonth: CurrentMonthData;
+  teamSummary: TeamSummary | null;
+  orgOverview: OrgOverview | null;
   counts: {
     draft: number;
     submitted: number;
@@ -64,111 +101,80 @@ interface DashboardData {
   }>;
 }
 
-const statusColors: Record<TimesheetStatus, string> = {
-  draft: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",
-  submitted: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
-  approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-  rejected: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
-  team_submitted: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
-  final_approved: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
+const statusConfig: Record<
+  TimesheetStatus,
+  { color: string; bgColor: string; icon: React.ReactNode }
+> = {
+  draft: {
+    color: "text-slate-600 dark:text-slate-400",
+    bgColor: "bg-slate-100 dark:bg-slate-800",
+    icon: <Clock className="w-4 h-4" />,
+  },
+  submitted: {
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-100 dark:bg-blue-900/30",
+    icon: <Send className="w-4 h-4" />,
+  },
+  approved: {
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
+    icon: <CheckCircle2 className="w-4 h-4" />,
+  },
+  rejected: {
+    color: "text-rose-600 dark:text-rose-400",
+    bgColor: "bg-rose-100 dark:bg-rose-900/30",
+    icon: <AlertCircle className="w-4 h-4" />,
+  },
+  team_submitted: {
+    color: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-100 dark:bg-purple-900/30",
+    icon: <Send className="w-4 h-4" />,
+  },
+  final_approved: {
+    color: "text-green-600 dark:text-green-400",
+    bgColor: "bg-green-100 dark:bg-green-900/30",
+    icon: <CheckCircle2 className="w-4 h-4" />,
+  },
 };
 
 export default function DashboardPage() {
   const t = useTranslations();
   const locale = useLocale();
+  const router = useRouter();
   const dateLocale = locale === "th" ? th : enUS;
 
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [userRole, setUserRole] = useState<string>("user");
-
-  // Filter states
-  const currentYear = new Date().getFullYear();
-  const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
-  const [filterMonth, setFilterMonth] = useState<string>("all");
-  const [filterTeam, setFilterTeam] = useState<string>("all");
-  const [filterVendor, setFilterVendor] = useState<string>("all");
-
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
-  const months = [
-    { value: "1", labelKey: "months.january" },
-    { value: "2", labelKey: "months.february" },
-    { value: "3", labelKey: "months.march" },
-    { value: "4", labelKey: "months.april" },
-    { value: "5", labelKey: "months.may" },
-    { value: "6", labelKey: "months.june" },
-    { value: "7", labelKey: "months.july" },
-    { value: "8", labelKey: "months.august" },
-    { value: "9", labelKey: "months.september" },
-    { value: "10", labelKey: "months.october" },
-    { value: "11", labelKey: "months.november" },
-    { value: "12", labelKey: "months.december" },
-  ];
-
-  const fetchFiltersData = useCallback(async () => {
-    try {
-      const [teamsRes, vendorsRes, profileRes] = await Promise.all([
-        fetch("/api/admin/teams"),
-        fetch("/api/admin/vendors"),
-        fetch("/api/profile"),
-      ]);
-      const teamsData = await teamsRes.json();
-      const vendorsData = await vendorsRes.json();
-      const profileData = await profileRes.json();
-
-      if (teamsData.data) setTeams(teamsData.data);
-      if (vendorsData.data) setVendors(vendorsData.data);
-      if (profileData.data?.role) setUserRole(profileData.data.role);
-    } catch (error) {
-      // Silent fail for filters
-    }
-  }, []);
 
   const fetchDashboard = useCallback(async () => {
     try {
-      const params = new URLSearchParams();
-      params.set("year", filterYear);
-      if (filterMonth !== "all") params.set("month", filterMonth);
-      if (filterTeam !== "all") params.set("teamId", filterTeam);
-      if (filterVendor !== "all") params.set("vendorId", filterVendor);
+      const [dashRes, profileRes] = await Promise.all([
+        fetch("/api/dashboard"),
+        fetch("/api/profile"),
+      ]);
+      const dashData = await dashRes.json();
+      const profileData = await profileRes.json();
 
-      const res = await fetch(`/api/dashboard?${params.toString()}`);
-      const result = await res.json();
-      if (result.data) {
-        setData(result.data);
+      if (dashData.data) {
+        setData(dashData.data);
       }
-    } catch (error) {
+      if (profileData.data?.role) {
+        setUserRole(profileData.data.role);
+      }
+    } catch {
       toast.error(t("errors.fetchFailed"));
     } finally {
       setLoading(false);
     }
-  }, [filterYear, filterMonth, filterTeam, filterVendor, t]);
-
-  useEffect(() => {
-    fetchFiltersData();
-  }, [fetchFiltersData]);
+  }, [t]);
 
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
 
-  const clearFilters = () => {
-    setFilterYear(currentYear.toString());
-    setFilterMonth("all");
-    setFilterTeam("all");
-    setFilterVendor("all");
-  };
-
-  const hasActiveFilters =
-    filterYear !== currentYear.toString() ||
-    filterMonth !== "all" ||
-    filterTeam !== "all" ||
-    filterVendor !== "all";
-
-  const getMonthName = (month: number, year: number) => {
-    return format(new Date(year, month - 1), "MMM yyyy", { locale: dateLocale });
+  const getMonthName = (month: number, year: number, formatStr = "MMMM yyyy") => {
+    return format(new Date(year, month - 1), formatStr, { locale: dateLocale });
   };
 
   const getStatusLabel = (status: TimesheetStatus) => {
@@ -183,257 +189,426 @@ export default function DashboardPage() {
     );
   }
 
+  const currentMonth = data?.currentMonth;
+  const hasTimesheet = currentMonth?.timesheet !== null;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t("dashboard.title")}</h1>
-          <p className="text-muted-foreground">{t("dashboard.overview")}</p>
+    <div className="space-y-8 max-w-6xl mx-auto">
+      {/* Hero Section - Current Month */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {t("dashboard.title")}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {currentMonth && getMonthName(currentMonth.month, currentMonth.year)}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="w-24">
-              <SelectValue placeholder={t("common.year")} />
-            </SelectTrigger>
-            <SelectContent>
-              {years.map((year) => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterMonth} onValueChange={setFilterMonth}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder={t("common.month")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("common.allMonths")}</SelectItem>
-              {months.map((month) => (
-                <SelectItem key={month.value} value={month.value}>
-                  {t(month.labelKey)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {userRole !== "user" && (
-            <>
-              <Select value={filterTeam} onValueChange={setFilterTeam}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder={t("common.team")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("common.allTeams")}</SelectItem>
-                  {teams.map((team) => (
-                    <SelectItem key={team._id} value={team._id}>
-                      {team.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={filterVendor} onValueChange={setFilterVendor}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder={t("common.vendor")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("common.allVendors")}</SelectItem>
-                  {vendors.map((vendor) => (
-                    <SelectItem key={vendor._id} value={vendor._id}>
-                      {vendor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </>
-          )}
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
-              <X className="w-4 h-4" />
+
+        {/* Current Month Timesheet Card */}
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-muted/30">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      "p-2 rounded-lg",
+                      hasTimesheet
+                        ? statusConfig[currentMonth?.timesheet?.status || "draft"].bgColor
+                        : "bg-slate-100 dark:bg-slate-800"
+                    )}
+                  >
+                    {hasTimesheet ? (
+                      statusConfig[currentMonth?.timesheet?.status || "draft"].icon
+                    ) : (
+                      <Clock className="w-4 h-4 text-slate-500" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {t("dashboard.currentMonthTimesheet")}
+                    </p>
+                    <p
+                      className={cn(
+                        "font-semibold",
+                        hasTimesheet
+                          ? statusConfig[currentMonth?.timesheet?.status || "draft"].color
+                          : "text-slate-500"
+                      )}
+                    >
+                      {hasTimesheet
+                        ? getStatusLabel(currentMonth?.timesheet?.status || "draft")
+                        : t("dashboard.notStarted")}
+                    </p>
+                  </div>
+                </div>
+
+                {hasTimesheet && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {t("dashboard.progress")}
+                      </span>
+                      <span className="font-medium">{currentMonth?.progress}%</span>
+                    </div>
+                    <Progress value={currentMonth?.progress || 0} className="h-2" />
+                    <p className="text-sm text-muted-foreground">
+                      {currentMonth?.timesheet?.totalHours || 0} {t("common.hours")}{" "}
+                      {t("dashboard.logged")}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <Button
+                onClick={() =>
+                  hasTimesheet
+                    ? router.push(`/timesheet/${currentMonth?.timesheet?.id}`)
+                    : router.push("/timesheet")
+                }
+                className="gap-2"
+              >
+                {hasTimesheet ? t("dashboard.viewTimesheet") : t("dashboard.startTimesheet")}
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Team Summary - Leader Only */}
+      {userRole === "leader" && data?.teamSummary && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">{t("dashboard.teamSummary")}</h2>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/team")}>
+              {t("dashboard.viewAll")}
+              <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
-          )}
-        </div>
-      </div>
+          </div>
 
-      {/* Status Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t("timesheet.status.draft")}</CardTitle>
-            <Clock className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.counts.draft || 0}</div>
-            <p className="text-xs text-muted-foreground">{t("dashboard.timesheetsInDraft")}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t("timesheet.status.submitted")}</CardTitle>
-            <Send className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data?.counts.submitted || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">{t("dashboard.pendingApproval")}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t("timesheet.status.approved")}</CardTitle>
-            <FileCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data?.counts.approved || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">{t("dashboard.thisYear")}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t("timesheet.status.rejected")}</CardTitle>
-            <FileX className="w-4 h-4 text-rose-500 dark:text-rose-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data?.counts.rejected || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">{t("dashboard.needRevision")}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Hours Summary */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("dashboard.totalBaseHours")}
-            </CardTitle>
-            <Calendar className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.hours.base || 0}</div>
-            <p className="text-xs text-muted-foreground">{t("dashboard.approvedThisYear")}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("dashboard.additionalHours")}
-            </CardTitle>
-            <TrendingUp className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data?.hours.additional || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">{t("dashboard.approvedThisYear")}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t("dashboard.totalManDays")}</CardTitle>
-            <Calendar className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data?.hours.manDays.toFixed(1) || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">{t("dashboard.approvedThisYear")}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Leave Summary */}
-      {data?.leaveSummary && data.leaveSummary.total > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t("leave.yearlyTotal")}</CardTitle>
-            <Briefcase className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="flex items-center justify-between p-3 bg-rose-50 dark:bg-rose-500/10 rounded-lg">
-                <span className="text-sm text-muted-foreground">{t("leave.sick")}</span>
-                <span className="font-bold">{data.leaveSummary.sick} {t("leave.days")}</span>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                    <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {data.teamSummary.submitted}/{data.teamSummary.totalMembers}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("dashboard.membersSubmitted")}
+                    </p>
+                  </div>
+                </div>
+                <Progress
+                  value={
+                    (data.teamSummary.submitted / data.teamSummary.totalMembers) * 100
+                  }
+                  className="w-32 h-2"
+                />
               </div>
-              <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-500/10 rounded-lg">
-                <span className="text-sm text-muted-foreground">{t("leave.personal")}</span>
-                <span className="font-bold">{data.leaveSummary.personal} {t("leave.days")}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-sky-50 dark:bg-sky-500/10 rounded-lg">
-                <span className="text-sm text-muted-foreground">{t("leave.annual")}</span>
-                <span className="font-bold">{data.leaveSummary.annual} {t("leave.days")}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
-                <span className="text-sm font-medium">{t("leave.total")}</span>
-                <span className="font-bold text-primary">{data.leaveSummary.total} {t("leave.days")}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
+              {data.teamSummary.notSubmitted.length > 0 && (
+                <div className="pt-4 border-t">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
+                    {t("teamSubmission.notSubmitted")}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {data.teamSummary.notSubmitted.slice(0, 5).map((member) => (
+                      <Badge
+                        key={member.email}
+                        variant="outline"
+                        className="text-amber-600 border-amber-200 dark:text-amber-400 dark:border-amber-800"
+                      >
+                        {member.name}
+                      </Badge>
+                    ))}
+                    {data.teamSummary.notSubmitted.length > 5 && (
+                      <Badge variant="outline">
+                        +{data.teamSummary.notSubmitted.length - 5}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
       )}
 
-      {/* Recent Timesheets */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("dashboard.recentTimesheets")}</CardTitle>
-          <CardDescription>{t("dashboard.latestActivities")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {data?.recentTimesheets && data.recentTimesheets.length > 0 ? (
-            <div className="space-y-4">
-              {data.recentTimesheets.map((ts) => (
-                <Link
-                  key={ts._id}
-                  href={`/timesheet/${ts._id}`}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={ts.userId.image} />
-                      <AvatarFallback>
-                        {ts.userId.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()
-                          .slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{ts.userId.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {getMonthName(ts.month, ts.year)} - {ts.totalBaseHours}{" "}
-                        {t("common.hours")}
-                      </p>
-                    </div>
+      {/* Org Overview - Admin Only */}
+      {userRole === "admin" && data?.orgOverview && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">{t("dashboard.orgOverview")}</h2>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/team")}>
+              {t("dashboard.viewAll")}
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
+                    <Users className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge className={statusColors[ts.status]}>
-                      {getStatusLabel(ts.status)}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(ts.updatedAt), "dd/MM/yyyy")}
-                    </span>
+                  <div>
+                    <p className="text-2xl font-bold">{data.orgOverview.totalUsers}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("dashboard.totalUsers")}
+                    </p>
                   </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-8">
-              {t("dashboard.noTimesheets")}
-            </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
+                    <Building2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{data.orgOverview.totalTeams}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("dashboard.totalTeams")}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{data.orgOverview.totalSubmitted}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("dashboard.submitted")}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{data.orgOverview.totalPending}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("dashboard.pendingApproval")}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Team Stats Table */}
+          {data.orgOverview.teamStats.length > 0 && (
+            <Card className="border-0 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left p-4 font-medium">{t("common.team")}</th>
+                      <th className="text-left p-4 font-medium">{t("team.teamLeader")}</th>
+                      <th className="text-center p-4 font-medium">{t("team.memberCount")}</th>
+                      <th className="text-center p-4 font-medium">{t("dashboard.submitted")}</th>
+                      <th className="text-center p-4 font-medium">{t("dashboard.pending")}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {data.orgOverview.teamStats.map((team) => (
+                      <tr
+                        key={team.teamId}
+                        className="hover:bg-muted/30 cursor-pointer transition-colors"
+                        onClick={() => router.push(`/team?team=${team.teamId}`)}
+                      >
+                        <td className="p-4 font-medium">{team.teamName}</td>
+                        <td className="p-4 text-muted-foreground">
+                          {team.leader?.name || "-"}
+                        </td>
+                        <td className="p-4 text-center">{team.memberCount}</td>
+                        <td className="p-4 text-center">
+                          <Badge
+                            variant="outline"
+                            className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+                          >
+                            {team.submitted}
+                          </Badge>
+                        </td>
+                        <td className="p-4 text-center">
+                          {team.pending > 0 ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+                            >
+                              {team.pending}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+        </section>
+      )}
+
+      {/* Yearly Stats */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold">{t("dashboard.yearlyStats")}</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {t("timesheet.status.approved")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <FileCheck className="w-5 h-5 text-emerald-500" />
+                <span className="text-2xl font-bold">{data?.counts.approved || 0}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {t("dashboard.totalBaseHours")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-blue-500" />
+                <span className="text-2xl font-bold">{data?.hours.base || 0}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {t("dashboard.totalManDays")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-purple-500" />
+                <span className="text-2xl font-bold">
+                  {data?.hours.manDays?.toFixed(1) || 0}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {t("leave.total")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-rose-500" />
+                <span className="text-2xl font-bold">
+                  {data?.leaveSummary?.total || 0}{" "}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    {t("leave.days")}
+                  </span>
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Recent Activity */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">{t("dashboard.recentActivity")}</h2>
+          <Button variant="ghost" size="sm" onClick={() => router.push("/timesheet")}>
+            {t("dashboard.viewAll")}
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-0">
+            {data?.recentTimesheets && data.recentTimesheets.length > 0 ? (
+              <div className="divide-y divide-border">
+                {data.recentTimesheets.map((ts) => (
+                  <Link
+                    key={ts._id}
+                    href={`/timesheet/${ts._id}`}
+                    className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={ts.userId.image} />
+                        <AvatarFallback className="text-xs">
+                          {ts.userId.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{ts.userId.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {getMonthName(ts.month, ts.year, "MMM yyyy")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        className={cn(
+                          "border-0",
+                          statusConfig[ts.status].bgColor,
+                          statusConfig[ts.status].color
+                        )}
+                      >
+                        {getStatusLabel(ts.status)}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground hidden sm:block">
+                        {format(new Date(ts.updatedAt), "dd/MM/yyyy")}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center text-muted-foreground">
+                {t("dashboard.noTimesheets")}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }

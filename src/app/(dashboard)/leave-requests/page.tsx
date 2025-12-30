@@ -354,6 +354,7 @@ export default function LeaveRequestsPage() {
                       setDateRange({ from: range?.from, to: range?.to })
                     }
                     numberOfMonths={2}
+                    showOutsideDays={false}
                     disabled={(date) => date < new Date()}
                   />
                 </PopoverContent>

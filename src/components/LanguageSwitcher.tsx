@@ -37,7 +37,7 @@ export function LanguageSwitcher() {
           <DropdownMenuItem
             key={l}
             onClick={() => handleLocaleChange(l)}
-            className={locale === l ? "bg-gray-100" : ""}
+            className={locale === l ? "bg-accent" : ""}
           >
             {localeNames[l]}
           </DropdownMenuItem>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -18,10 +26,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, X } from "lucide-react";
+import { UserPlus, X, Search } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
@@ -39,12 +55,21 @@ interface Team {
   projectId?: { _id: string; name: string };
 }
 
+interface MemberWithTeam extends User {
+  teamId: string;
+  teamName: string;
+}
+
 export default function TeamMembersPage() {
   const t = useTranslations();
   const [teams, setTeams] = useState<Team[]>([]);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Filter states
+  const [filterTeam, setFilterTeam] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -72,7 +97,39 @@ export default function TeamMembersPage() {
     fetchData();
   }, [fetchData]);
 
-  const openEditDialog = (team: Team) => {
+  // Flatten members with team info
+  const allMembers = useMemo(() => {
+    const members: MemberWithTeam[] = [];
+    teams.forEach((team) => {
+      team.memberIds.forEach((member) => {
+        members.push({
+          ...member,
+          teamId: team._id,
+          teamName: team.name,
+        });
+      });
+    });
+    return members;
+  }, [teams]);
+
+  // Filter members
+  const filteredMembers = useMemo(() => {
+    return allMembers.filter((member) => {
+      if (filterTeam !== "all" && member.teamId !== filterTeam) return false;
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        if (
+          !member.name.toLowerCase().includes(query) &&
+          !member.email.toLowerCase().includes(query)
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [allMembers, filterTeam, searchQuery]);
+
+  const openAddDialog = (team: Team) => {
     setSelectedTeam(team);
     setSelectedMemberIds(team.memberIds.map((m) => m._id));
     setIsDialogOpen(true);
@@ -108,8 +165,11 @@ export default function TeamMembersPage() {
     }
   };
 
-  const removeMember = async (team: Team, userId: string) => {
+  const removeMember = async (teamId: string, userId: string) => {
     if (!confirm(t("teamMembers.confirmRemove"))) return;
+
+    const team = teams.find((t) => t._id === teamId);
+    if (!team) return;
 
     try {
       const newMemberIds = team.memberIds
@@ -180,79 +240,119 @@ export default function TeamMembersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{t("teamMembers.title")}</h1>
-        <p className="text-muted-foreground">{t("teamMembers.description")}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{t("teamMembers.title")}</h1>
+          <p className="text-muted-foreground">{t("teamMembers.description")}</p>
+        </div>
+        <Badge variant="secondary" className="text-sm px-3 py-1">
+          {allMembers.length} {t("teamMembers.members")}
+        </Badge>
       </div>
 
-      <div className="grid gap-6">
-        {teams.map((team) => (
-          <Card key={team._id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    {team.name}
-                  </CardTitle>
-                  <CardDescription>
-                    {team.projectId?.name && `${team.projectId.name} • `}
-                    {team.memberIds.length} {t("teamMembers.members")}
-                  </CardDescription>
-                </div>
-                <Button onClick={() => openEditDialog(team)} className="gap-2">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle>{t("teamMembers.allMembers")}</CardTitle>
+              <CardDescription>{t("teamMembers.manageMembers")}</CardDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t("common.search")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 w-40"
+                />
+              </div>
+              <Select value={filterTeam} onValueChange={setFilterTeam}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder={t("common.team")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("common.allTeams")}</SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team._id} value={team._id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {filterTeam !== "all" && (
+                <Button
+                  onClick={() => {
+                    const team = teams.find((t) => t._id === filterTeam);
+                    if (team) openAddDialog(team);
+                  }}
+                  className="gap-2"
+                >
                   <UserPlus className="w-4 h-4" />
                   {t("teamMembers.addMembers")}
                 </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {team.memberIds.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  {t("teamMembers.noMembers")}
-                </p>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {team.memberIds.map((member) => (
-                    <div
-                      key={member._id}
-                      className="flex items-center justify-between p-3 rounded-lg border bg-card"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={member.image} />
-                          <AvatarFallback>
-                            {member.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()
-                              .slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {member.email}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeMember(team, member._id)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
               )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("teamMembers.member")}</TableHead>
+                <TableHead>{t("common.team")}</TableHead>
+                <TableHead>{t("common.email")}</TableHead>
+                <TableHead className="text-right">{t("common.actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredMembers.map((member) => (
+                <TableRow key={`${member.teamId}-${member._id}`}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={member.image} />
+                        <AvatarFallback>
+                          {member.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <p className="font-medium">{member.name}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{member.teamName}</Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {member.email}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => removeMember(member.teamId, member._id)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {filteredMembers.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    {t("teamMembers.noMembers")}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {/* Edit Members Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
