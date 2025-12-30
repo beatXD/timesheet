@@ -611,7 +611,12 @@
     "filterByType": "Filter by Type",
     "allTypes": "All Types",
     "yearlyTotal": "Yearly Total",
-    "monthlyBreakdown": "Monthly Breakdown"
+    "monthlyBreakdown": "Monthly Breakdown",
+    "type": {
+      "sick": "Sick",
+      "personal": "Personal",
+      "annual": "Annual"
+    }
   },
   "leaveRequest": {
     "title": "Leave Requests",

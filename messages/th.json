@@ -611,7 +611,12 @@
     "filterByType": "กรองตามประเภท",
     "allTypes": "ทุกประเภท",
     "yearlyTotal": "รวมทั้งปี",
-    "monthlyBreakdown": "รายละเอียดรายเดือน"
+    "monthlyBreakdown": "รายละเอียดรายเดือน",
+    "type": {
+      "sick": "ป่วย",
+      "personal": "กิจ",
+      "annual": "พักร้อน"
+    }
   },
   "leaveRequest": {
     "title": "คำขอลางาน",
