@@ -28,7 +28,7 @@ export default async function DashboardLayout({
       <Sidebar userRole={user.role} />
       <div className="transition-all duration-300 ml-64 bg-background">
         <Header user={user} />
-        <main className="p-6">{children}</main>
+        <main className="p-6 mt-16">{children}</main>
       </div>
       <Toaster position="top-right" />
     </div>

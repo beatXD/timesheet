@@ -44,7 +44,7 @@ export function Header({ user }: HeaderProps) {
     .slice(0, 2);
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-background border-b flex items-center justify-end px-6 gap-4">
+    <header className="fixed top-0 left-64 right-0 z-30 h-16 bg-background border-b flex items-center justify-end px-6 gap-4">
       <ThemeToggle />
       <LanguageSwitcher />
       <DropdownMenu>

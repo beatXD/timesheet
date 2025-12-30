@@ -181,7 +181,7 @@ export interface ILeaveSettings {
 
 // Audit Log
 export type AuditEntityType = "timesheet" | "leave_request";
-export type AuditAction = "create" | "submit" | "approve" | "reject" | "cancel" | "team_submit" | "final_approve";
+export type AuditAction = "create" | "submit" | "approve" | "reject" | "cancel" | "team_submit" | "final_approve" | "auto_approve";
 
 export interface IAuditLog {
   _id: Types.ObjectId;

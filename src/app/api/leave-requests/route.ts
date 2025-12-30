@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { LeaveRequest, Team, User, LeaveBalance, LeaveSettings } from "@/models";
+import { LeaveRequest, Team, User, LeaveBalance, LeaveSettings, Timesheet, AuditLog } from "@/models";
+import type { LeaveType } from "@/types";
 import { parsePaginationParams, createPaginationMeta } from "@/lib/pagination";
 import { sendLeaveRequestEmail } from "@/lib/email";
 import { createLeaveRequestSchema, validateRequest } from "@/lib/validation/schemas";
@@ -167,48 +168,79 @@ export async function POST(request: NextRequest) {
     const remaining = balance.quotas[leaveTypeKey].total - balance.quotas[leaveTypeKey].used;
     const balanceWarning = requestedDays > remaining;
 
-    // Create leave request
+    const isLeader = session.user.role === "leader";
+
+    // Create leave request - auto-approved for leaders
     const leaveRequest = await LeaveRequest.create({
       userId: session.user.id,
       startDate: start,
       endDate: end,
       leaveType,
       reason,
-      status: "pending",
+      status: isLeader ? "approved" : "pending",
       daysRequested: requestedDays,
       exceedsBalance: balanceWarning,
+      ...(isLeader && {
+        reviewedBy: session.user.id,
+        reviewedAt: new Date(),
+        daysApproved: requestedDays,
+      }),
     });
 
-    // Find the user's team leader(s) to send notification
-    const teams = await Team.find({ memberIds: session.user.id }).populate(
-      "leaderId",
-      "name email"
-    );
+    // If leader, auto-approve: deduct balance and add to timesheet
+    if (isLeader) {
+      // Deduct from balance
+      balance.quotas[leaveTypeKey].used += requestedDays;
+      await balance.save();
 
-    // Get current user info for email
-    const currentUser = await User.findById(session.user.id).lean();
+      // Log the auto-approval
+      await AuditLog.logAction({
+        entityType: "leave_request",
+        entityId: leaveRequest._id,
+        action: "auto_approve",
+        fromStatus: "pending",
+        toStatus: "approved",
+        performedBy: session.user.id,
+        metadata: { daysApproved: requestedDays, leaveType },
+      });
 
-    // Send email to each team leader
-    for (const team of teams) {
-      const leader = team.leaderId as unknown as {
-        _id: string;
-        name: string;
-        email: string;
-      };
-      if (leader?.email) {
-        try {
-          await sendLeaveRequestEmail({
-            to: leader.email,
-            leaderName: leader.name,
-            userName: currentUser?.name || session.user.name,
-            startDate: start,
-            endDate: end,
-            leaveType,
-            reason,
-          });
-        } catch (emailError) {
-          console.error("Failed to send email to leader:", emailError);
-          // Don't fail the request if email fails
+      // Add leave entries to timesheet
+      await addLeaveToTimesheet({
+        userId: session.user.id,
+        startDate: start,
+        endDate: end,
+        leaveType,
+        reason,
+      });
+    } else {
+      // Regular user: notify team leader(s)
+      const teams = await Team.find({ memberIds: session.user.id }).populate(
+        "leaderId",
+        "name email"
+      );
+
+      const currentUser = await User.findById(session.user.id).lean();
+
+      for (const team of teams) {
+        const leader = team.leaderId as unknown as {
+          _id: string;
+          name: string;
+          email: string;
+        };
+        if (leader?.email) {
+          try {
+            await sendLeaveRequestEmail({
+              to: leader.email,
+              leaderName: leader.name,
+              userName: currentUser?.name || session.user.name,
+              startDate: start,
+              endDate: end,
+              leaveType,
+              reason,
+            });
+          } catch (emailError) {
+            console.error("Failed to send email to leader:", emailError);
+          }
         }
       }
     }
@@ -238,5 +270,86 @@ export async function POST(request: NextRequest) {
       { error: "Failed to create leave request" },
       { status: 500 }
     );
+  }
+}
+
+// Helper function to add leave entries to timesheet
+async function addLeaveToTimesheet(params: {
+  userId: string;
+  startDate: Date;
+  endDate: Date;
+  leaveType: string;
+  reason?: string;
+}) {
+  const { userId, startDate, endDate, leaveType, reason } = params;
+
+  const currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const month = currentDate.getMonth() + 1;
+    const year = currentDate.getFullYear();
+    const day = currentDate.getDate();
+
+    // Skip weekends
+    const dayOfWeek = currentDate.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      currentDate.setDate(currentDate.getDate() + 1);
+      continue;
+    }
+
+    // Find or create timesheet for this month
+    const timesheet = await Timesheet.findOneAndUpdate(
+      { userId, month, year },
+      {
+        $setOnInsert: {
+          status: "draft",
+          entries: [],
+          totalBaseHours: 0,
+          totalAdditionalHours: 0,
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    // Skip if timesheet already submitted/approved
+    if (["approved", "final_approved", "team_submitted"].includes(timesheet.status)) {
+      currentDate.setDate(currentDate.getDate() + 1);
+      continue;
+    }
+
+    // Check if entry for this day already exists
+    const existingEntryIndex = timesheet.entries.findIndex(
+      (e: { date: number }) => e.date === day
+    );
+
+    const leaveEntry = {
+      date: day,
+      type: "leave" as const,
+      leaveType: leaveType as LeaveType,
+      task: "",
+      timeIn: "",
+      timeOut: "",
+      baseHours: 8,
+      additionalHours: 0,
+      remark: reason || "",
+    };
+
+    if (existingEntryIndex >= 0) {
+      timesheet.entries[existingEntryIndex] = leaveEntry;
+    } else {
+      timesheet.entries.push(leaveEntry);
+    }
+
+    // Recalculate totals
+    timesheet.totalBaseHours = timesheet.entries.reduce(
+      (sum: number, e: { baseHours?: number }) => sum + (e.baseHours || 0),
+      0
+    );
+    timesheet.totalAdditionalHours = timesheet.entries.reduce(
+      (sum: number, e: { additionalHours?: number }) => sum + (e.additionalHours || 0),
+      0
+    );
+
+    await timesheet.save();
+    currentDate.setDate(currentDate.getDate() + 1);
   }
 }

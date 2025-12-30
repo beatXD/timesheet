@@ -130,24 +130,6 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    titleKey: "nav.sections.teamReports",
-    roles: ["admin"],
-    items: [
-      {
-        href: "/team/calendar",
-        labelKey: "nav.teamCalendar",
-        icon: <CalendarDays className="w-5 h-5" />,
-        roles: ["admin"],
-      },
-      {
-        href: "/admin/leave-requests",
-        labelKey: "nav.teamLeaves",
-        icon: <CalendarCheck className="w-5 h-5" />,
-        roles: ["admin"],
-      },
-    ],
-  },
-  {
     titleKey: "nav.sections.settings",
     roles: ["admin"],
     items: [

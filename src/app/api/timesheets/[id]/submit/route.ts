@@ -57,19 +57,29 @@ export async function POST(
     }
 
     const previousStatus = timesheet.status;
-    timesheet.status = "submitted";
-    timesheet.submittedAt = new Date();
+    const isLeader = session.user.role === "leader";
+
+    // Leader's own timesheet gets auto-approved
+    if (isLeader) {
+      timesheet.status = "approved";
+      timesheet.submittedAt = new Date();
+      timesheet.approvedAt = new Date();
+      timesheet.approvedBy = session.user.id as any;
+    } else {
+      timesheet.status = "submitted";
+      timesheet.submittedAt = new Date();
+    }
     timesheet.rejectedReason = undefined;
 
     await timesheet.save();
 
-    // Log the submission
+    // Log the submission/approval
     await AuditLog.logAction({
       entityType: "timesheet",
       entityId: timesheet._id,
-      action: "submit",
+      action: isLeader ? "auto_approve" : "submit",
       fromStatus: previousStatus,
-      toStatus: "submitted",
+      toStatus: timesheet.status,
       performedBy: session.user.id,
     });
 
