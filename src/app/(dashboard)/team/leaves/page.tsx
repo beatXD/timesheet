@@ -43,9 +43,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X, Search, ArrowLeft } from "lucide-react";
+import { Check, X, Search, ArrowLeft, CheckCheck, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { TeamStatsGrid, TeamLeaveStats } from "@/components/team";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface LeaveRequestUser {
   _id: string;
@@ -133,6 +134,12 @@ export default function TeamLeavesPage() {
   const [rejectingRequest, setRejectingRequest] =
     useState<LeaveRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [isBulkRejectDialogOpen, setIsBulkRejectDialogOpen] = useState(false);
+  const [bulkRejectionReason, setBulkRejectionReason] = useState("");
 
   // Check access
   useEffect(() => {
@@ -278,8 +285,104 @@ export default function TeamLeavesPage() {
       setIsRejectDialogOpen(false);
       fetchData();
       if (isAdmin) fetchTeamStats();
-    } catch (error) {
+    } catch {
       toast.error(t("errors.failedToReject"));
+    }
+  };
+
+  // Bulk selection handlers
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === pendingFilteredRequests.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(pendingFilteredRequests.map((r) => r._id)));
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedIds.size === 0) return;
+
+    setBulkProcessing(true);
+    try {
+      const results = await Promise.allSettled(
+        Array.from(selectedIds).map((id) =>
+          fetch(`/api/leave-requests/${id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "approve" }),
+          })
+        )
+      );
+
+      const successCount = results.filter((r) => r.status === "fulfilled").length;
+      const failCount = results.filter((r) => r.status === "rejected").length;
+
+      if (successCount > 0) {
+        toast.success(t("bulkAction.approvedCount", { count: successCount }));
+      }
+      if (failCount > 0) {
+        toast.error(t("bulkAction.failedCount", { count: failCount }));
+      }
+
+      setSelectedIds(new Set());
+      fetchData();
+      if (isAdmin) fetchTeamStats();
+    } catch {
+      toast.error(t("errors.failedToApprove"));
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (selectedIds.size === 0 || !bulkRejectionReason) {
+      toast.error(t("leaveRequest.validation.reasonRequired"));
+      return;
+    }
+
+    setBulkProcessing(true);
+    try {
+      const results = await Promise.allSettled(
+        Array.from(selectedIds).map((id) =>
+          fetch(`/api/leave-requests/${id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "reject", rejectionReason: bulkRejectionReason }),
+          })
+        )
+      );
+
+      const successCount = results.filter((r) => r.status === "fulfilled").length;
+      const failCount = results.filter((r) => r.status === "rejected").length;
+
+      if (successCount > 0) {
+        toast.success(t("bulkAction.rejectedCount", { count: successCount }));
+      }
+      if (failCount > 0) {
+        toast.error(t("bulkAction.failedCount", { count: failCount }));
+      }
+
+      setSelectedIds(new Set());
+      setIsBulkRejectDialogOpen(false);
+      setBulkRejectionReason("");
+      fetchData();
+      if (isAdmin) fetchTeamStats();
+    } catch {
+      toast.error(t("errors.failedToReject"));
+    } finally {
+      setBulkProcessing(false);
     }
   };
 
@@ -339,6 +442,11 @@ export default function TeamLeavesPage() {
       return true;
     });
   }, [teamRequests, teamFilter, statusFilter, leaveTypeFilter, searchQuery, selectedTeamId]);
+
+  // Pending filtered requests for bulk selection
+  const pendingFilteredRequests = useMemo(() => {
+    return filteredRequests.filter((r) => r.status === "pending");
+  }, [filteredRequests]);
 
   const pendingCount = teamRequests.filter((r) => r.status === "pending").length;
 
@@ -454,6 +562,47 @@ export default function TeamLeavesPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Bulk Action Bar */}
+          {pendingFilteredRequests.length > 0 && (
+            <div className="flex items-center gap-4 mb-4 p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={selectedIds.size === pendingFilteredRequests.length && pendingFilteredRequests.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+                <span className="text-sm text-muted-foreground">
+                  {selectedIds.size > 0
+                    ? t("bulkAction.selected", { count: selectedIds.size })
+                    : t("bulkAction.selectAll")}
+                </span>
+              </div>
+              {selectedIds.size > 0 && (
+                <div className="flex items-center gap-2 ml-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                    onClick={handleBulkApprove}
+                    disabled={bulkProcessing}
+                  >
+                    <CheckCheck className="w-4 h-4 mr-1" />
+                    {t("bulkAction.approveSelected")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => setIsBulkRejectDialogOpen(true)}
+                    disabled={bulkProcessing}
+                  >
+                    <XCircle className="w-4 h-4 mr-1" />
+                    {t("bulkAction.rejectSelected")}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
           {loading ? (
             <div className="flex items-center justify-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
@@ -462,6 +611,7 @@ export default function TeamLeavesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10"></TableHead>
                   <TableHead>{t("common.user")}</TableHead>
                   {!selectedTeamId && <TableHead>{t("common.team")}</TableHead>}
                   <TableHead>{t("leaveRequest.dateRange")}</TableHead>
@@ -477,6 +627,14 @@ export default function TeamLeavesPage() {
               <TableBody>
                 {filteredRequests.map((request) => (
                   <TableRow key={request._id}>
+                    <TableCell>
+                      {request.status === "pending" && (
+                        <Checkbox
+                          checked={selectedIds.has(request._id)}
+                          onCheckedChange={() => toggleSelect(request._id)}
+                        />
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
@@ -560,7 +718,7 @@ export default function TeamLeavesPage() {
                 {filteredRequests.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={selectedTeamId ? 7 : 8}
+                      colSpan={selectedTeamId ? 8 : 9}
                       className="text-center py-8 text-muted-foreground"
                     >
                       {t("leaveRequest.noRequests")}
@@ -602,6 +760,45 @@ export default function TeamLeavesPage() {
             </Button>
             <Button variant="destructive" onClick={handleReject}>
               {t("leaveRequest.reject")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Reject Dialog */}
+      <Dialog open={isBulkRejectDialogOpen} onOpenChange={setIsBulkRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("bulkAction.rejectTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("bulkAction.rejectDesc", { count: selectedIds.size })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>{t("leaveRequest.rejectionReason")} *</Label>
+              <Textarea
+                value={bulkRejectionReason}
+                onChange={(e) => setBulkRejectionReason(e.target.value)}
+                placeholder={t("leaveRequest.rejectionReasonPlaceholder")}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkRejectDialogOpen(false)}
+              disabled={bulkProcessing}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBulkReject}
+              disabled={bulkProcessing}
+            >
+              {bulkProcessing ? t("common.loading") : t("bulkAction.rejectAll")}
             </Button>
           </DialogFooter>
         </DialogContent>

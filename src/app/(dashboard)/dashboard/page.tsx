@@ -26,6 +26,16 @@ import {
 import { toast } from "sonner";
 import type { TimesheetStatus } from "@/types";
 import { cn } from "@/lib/utils";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
 interface CurrentMonthData {
   year: number;
@@ -64,6 +74,12 @@ interface OrgOverview {
   teamStats: TeamStats[];
 }
 
+interface ChartData {
+  monthlyHours: Array<{ month: number; hours: number; manDays: number }>;
+  monthlyLeave: Array<{ month: number; sick: number; personal: number; annual: number }>;
+  statusDistribution: Array<{ status: string; count: number }>;
+}
+
 interface DashboardData {
   currentMonth: CurrentMonthData;
   teamSummary: TeamSummary | null;
@@ -99,6 +115,7 @@ interface DashboardData {
     totalBaseHours: number;
     updatedAt: string;
   }>;
+  charts?: ChartData;
 }
 
 const statusConfig: Record<
@@ -543,6 +560,126 @@ export default function DashboardPage() {
           </Card>
         </div>
       </section>
+
+      {/* Charts Section */}
+      {data?.charts && (
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">{t("dashboard.charts.title")}</h2>
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Monthly Hours Chart */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base">{t("dashboard.charts.monthlyHours")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[280px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={data.charts.monthlyHours.map((d) => ({
+                        ...d,
+                        name: t(`dashboard.charts.${["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"][d.month - 1]}`),
+                      }))}
+                      margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={40}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                        }}
+                        labelStyle={{ color: "hsl(var(--foreground))" }}
+                      />
+                      <Bar
+                        dataKey="hours"
+                        name={t("dashboard.charts.hours")}
+                        fill="hsl(var(--primary))"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Monthly Leave Chart */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base">{t("dashboard.charts.monthlyLeave")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[280px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={data.charts.monthlyLeave.map((d) => ({
+                        ...d,
+                        name: t(`dashboard.charts.${["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"][d.month - 1]}`),
+                      }))}
+                      margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={40}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                        }}
+                        labelStyle={{ color: "hsl(var(--foreground))" }}
+                      />
+                      <Legend />
+                      <Bar
+                        dataKey="sick"
+                        name={t("leave.type.sick")}
+                        stackId="a"
+                        fill="#f97316"
+                        radius={[0, 0, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="personal"
+                        name={t("leave.type.personal")}
+                        stackId="a"
+                        fill="#8b5cf6"
+                        radius={[0, 0, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="annual"
+                        name={t("leave.type.annual")}
+                        stackId="a"
+                        fill="#06b6d4"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
 
       {/* Recent Activity */}
       <section className="space-y-4">

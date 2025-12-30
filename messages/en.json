@@ -100,6 +100,7 @@
     "auditLogs": "Audit Logs",
     "leaveRequests": "Leave Requests",
     "teamLeaves": "Team Leaves",
+    "teamCalendar": "Team Calendar",
     "teamMembers": "Team Members",
     "profile": "Profile",
     "settings": "Settings",
@@ -148,7 +149,26 @@
     "totalUsers": "Total Users",
     "totalTeams": "Total Teams",
     "yearlyStats": "Yearly Stats",
-    "recentActivity": "Recent Activity"
+    "recentActivity": "Recent Activity",
+    "charts": {
+      "title": "Trends & Analytics",
+      "monthlyHours": "Monthly Hours",
+      "monthlyLeave": "Leave Usage by Month",
+      "hours": "Hours",
+      "manDays": "Man-Days",
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec"
+    }
   },
   "timesheet": {
     "title": "Timesheet",
@@ -639,6 +659,22 @@
     "teamRequests": "Team Leave Requests",
     "reviewApprove": "Review and approve leave requests from your team members"
   },
+  "teamCalendar": {
+    "title": "Team Calendar",
+    "description": "View team leave schedule on calendar",
+    "today": "Today",
+    "holiday": "Holiday",
+    "more": "more",
+    "days": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    }
+  },
   "teamOverview": {
     "selectTeam": "Select a team to view details",
     "backToOverview": "Back to Overview",
@@ -672,5 +708,34 @@
     "noUsersAvailable": "No users available to add",
     "confirmRemove": "Are you sure you want to remove this member from the team?",
     "memberRemoved": "Member removed from team"
+  },
+  "bulkAction": {
+    "selectAll": "Select all pending items",
+    "selected": "{count} selected",
+    "approveSelected": "Approve Selected",
+    "rejectSelected": "Reject Selected",
+    "rejectTitle": "Reject Selected Requests",
+    "rejectDesc": "You are about to reject {count} leave request(s). Please provide a reason.",
+    "rejectAll": "Reject All",
+    "approvedCount": "{count} request(s) approved successfully",
+    "rejectedCount": "{count} request(s) rejected successfully",
+    "failedCount": "{count} request(s) failed"
+  },
+  "template": {
+    "title": "Template",
+    "apply": "Apply Template",
+    "saveAs": "Save as Template",
+    "name": "Template Name",
+    "namePlaceholder": "Enter template name",
+    "descriptionPlaceholder": "Describe this template (optional)",
+    "saveDesc": "Save current working day pattern as a reusable template",
+    "applyDesc": "Apply a saved template to auto-fill working day entries",
+    "setAsDefault": "Set as default template",
+    "default": "Default",
+    "use": "Use",
+    "noTemplates": "No templates saved yet. Save your first template to use this feature.",
+    "saved": "Template saved successfully",
+    "applied": "Template applied successfully",
+    "nameRequired": "Template name is required"
   }
 }

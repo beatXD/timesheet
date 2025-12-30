@@ -45,9 +45,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText } from "lucide-react";
+import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText, Layout, Bookmark } from "lucide-react";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
 import type { ITimesheet, ITimesheetEntry, EntryType, TimesheetStatus, LeaveType } from "@/types";
+
+interface Template {
+  _id: string;
+  name: string;
+  description?: string;
+  entries: {
+    dayOfWeek: number;
+    type: string;
+    task?: string;
+    timeIn?: string;
+    timeOut?: string;
+    baseHours: number;
+  }[];
+  isDefault: boolean;
+}
 
 const statusColors: Record<TimesheetStatus, string> = {
   draft: "bg-slate-100 text-slate-800 dark:bg-slate-500/20 dark:text-slate-300",
@@ -80,6 +96,15 @@ export default function TimesheetDetailPage() {
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+
+  // Template states
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+  const [showApplyTemplateDialog, setShowApplyTemplateDialog] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
+  const [isDefaultTemplate, setIsDefaultTemplate] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   const isEditable =
     timesheet?.status === "draft" || timesheet?.status === "rejected";
@@ -197,11 +222,109 @@ export default function TimesheetDetailPage() {
       toast.success(t("success.timesheetSubmitted"));
       setShowSubmitDialog(false);
       fetchTimesheet();
-    } catch (error) {
+    } catch {
       toast.error(t("errors.failedToSubmit"));
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Template functions
+  const fetchTemplates = useCallback(async () => {
+    try {
+      const res = await fetch("/api/timesheet-templates");
+      const data = await res.json();
+      if (data.data) {
+        setTemplates(data.data);
+      }
+    } catch {
+      // Silent fail - templates are optional
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
+  const saveAsTemplate = async () => {
+    if (!templateName.trim()) {
+      toast.error(t("template.nameRequired"));
+      return;
+    }
+
+    setSavingTemplate(true);
+    try {
+      // Convert current entries to template format (by day of week)
+      const templateEntries = entries.map((entry) => {
+        const date = new Date(timesheet!.year, timesheet!.month - 1, entry.date);
+        return {
+          dayOfWeek: date.getDay(),
+          type: entry.type,
+          task: entry.task,
+          timeIn: entry.timeIn,
+          timeOut: entry.timeOut,
+          baseHours: entry.baseHours || 0,
+        };
+      }).filter(e => e.type === "working"); // Only save working day patterns
+
+      const res = await fetch("/api/timesheet-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: templateName,
+          description: templateDescription,
+          entries: templateEntries,
+          isDefault: isDefaultTemplate,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || t("errors.failedToSave"));
+        return;
+      }
+
+      toast.success(t("template.saved"));
+      setShowSaveTemplateDialog(false);
+      setTemplateName("");
+      setTemplateDescription("");
+      setIsDefaultTemplate(false);
+      fetchTemplates();
+    } catch {
+      toast.error(t("errors.failedToSave"));
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const applyTemplate = (template: Template) => {
+    if (!timesheet) return;
+
+    const newEntries = [...entries];
+
+    // Apply template entries based on day of week
+    newEntries.forEach((entry, index) => {
+      const date = new Date(timesheet.year, timesheet.month - 1, entry.date);
+      const dayOfWeek = date.getDay();
+
+      // Find matching template entry for this day of week
+      const templateEntry = template.entries.find(te => te.dayOfWeek === dayOfWeek);
+
+      if (templateEntry && entry.type !== "holiday" && entry.type !== "leave") {
+        newEntries[index] = {
+          ...entry,
+          type: templateEntry.type as EntryType,
+          task: templateEntry.task,
+          timeIn: templateEntry.timeIn,
+          timeOut: templateEntry.timeOut,
+          baseHours: templateEntry.baseHours,
+        };
+      }
+    });
+
+    setEntries(newEntries);
+    setShowApplyTemplateDialog(false);
+    toast.success(t("template.applied"));
   };
 
   const totalBaseHours = entries.reduce((sum, e) => sum + (e.baseHours || 0), 0);
@@ -266,6 +389,28 @@ export default function TimesheetDetailPage() {
         </div>
 
         <div className="flex gap-2">
+          {/* Template buttons - only when editable */}
+          {isEditable && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Layout className="w-4 h-4 mr-2" />
+                  {t("template.title")}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => setShowApplyTemplateDialog(true)}>
+                  <Layout className="w-4 h-4 mr-2" />
+                  {t("template.apply")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowSaveTemplateDialog(true)}>
+                  <Bookmark className="w-4 h-4 mr-2" />
+                  {t("template.saveAs")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           {/* Export buttons */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -571,6 +716,122 @@ export default function TimesheetDetailPage() {
             </Button>
             <Button onClick={submitTimesheet} disabled={submitting}>
               {submitting ? t("timesheet.submitting") : t("timesheet.submit")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Template Dialog */}
+      <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("template.saveAs")}</DialogTitle>
+            <DialogDescription>
+              {t("template.saveDesc")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="templateName">{t("template.name")}</Label>
+              <Input
+                id="templateName"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder={t("template.namePlaceholder")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="templateDescription">{t("common.description")}</Label>
+              <Textarea
+                id="templateDescription"
+                value={templateDescription}
+                onChange={(e) => setTemplateDescription(e.target.value)}
+                placeholder={t("template.descriptionPlaceholder")}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isDefault"
+                checked={isDefaultTemplate}
+                onChange={(e) => setIsDefaultTemplate(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor="isDefault" className="text-sm font-normal">
+                {t("template.setAsDefault")}
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowSaveTemplateDialog(false);
+                setTemplateName("");
+                setTemplateDescription("");
+                setIsDefaultTemplate(false);
+              }}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button onClick={saveAsTemplate} disabled={savingTemplate || !templateName.trim()}>
+              {savingTemplate ? t("common.saving") : t("common.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Apply Template Dialog */}
+      <Dialog open={showApplyTemplateDialog} onOpenChange={setShowApplyTemplateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("template.apply")}</DialogTitle>
+            <DialogDescription>
+              {t("template.applyDesc")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {templates.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                {t("template.noTemplates")}
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {templates.map((template) => (
+                  <div
+                    key={template._id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                    onClick={() => applyTemplate(template)}
+                  >
+                    <div>
+                      <div className="font-medium flex items-center gap-2">
+                        {template.name}
+                        {template.isDefault && (
+                          <Badge variant="secondary" className="text-xs">
+                            {t("template.default")}
+                          </Badge>
+                        )}
+                      </div>
+                      {template.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {template.description}
+                        </p>
+                      )}
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      {t("template.use")}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowApplyTemplateDialog(false)}
+            >
+              {t("common.cancel")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -355,6 +355,59 @@ export async function GET(request: NextRequest) {
       .populate("userId", "name email image")
       .lean();
 
+    // ===== MONTHLY CHART DATA =====
+    // Get all timesheets for the year to build monthly chart
+    const yearlyTimesheets = await Timesheet.find({
+      ...userFilter,
+      year: filterYear,
+    }).lean();
+
+    // Build monthly hours data
+    const monthlyHours: { month: number; hours: number; manDays: number }[] = [];
+    for (let m = 1; m <= 12; m++) {
+      const monthTimesheets = yearlyTimesheets.filter(
+        (ts) => ts.month === m && (ts.status === "approved" || ts.status === "final_approved")
+      );
+      const hours = monthTimesheets.reduce(
+        (sum, ts) => sum + (ts.totalBaseHours || 0),
+        0
+      );
+      monthlyHours.push({
+        month: m,
+        hours,
+        manDays: hours / 8,
+      });
+    }
+
+    // Build monthly leave data
+    const monthlyLeave: { month: number; sick: number; personal: number; annual: number }[] = [];
+    for (let m = 1; m <= 12; m++) {
+      const monthTimesheets = yearlyTimesheets.filter(
+        (ts) => ts.month === m && (ts.status === "approved" || ts.status === "final_approved")
+      );
+      const leave = { month: m, sick: 0, personal: 0, annual: 0 };
+      monthTimesheets.forEach((ts) => {
+        if (ts.entries) {
+          ts.entries.forEach((entry: { type?: string; leaveType?: string }) => {
+            if (entry.type === "leave" && entry.leaveType) {
+              if (entry.leaveType === "sick") leave.sick++;
+              else if (entry.leaveType === "personal") leave.personal++;
+              else if (entry.leaveType === "annual") leave.annual++;
+            }
+          });
+        }
+      });
+      monthlyLeave.push(leave);
+    }
+
+    // Build status distribution
+    const statusDistribution = [
+      { status: "draft", count: draftCount },
+      { status: "submitted", count: submittedCount },
+      { status: "approved", count: approvedCount },
+      { status: "rejected", count: rejectedCount },
+    ];
+
     return NextResponse.json({
       data: {
         // Current month timesheet info
@@ -387,6 +440,12 @@ export async function GET(request: NextRequest) {
         },
         leaveSummary,
         recentTimesheets,
+        // Chart data
+        charts: {
+          monthlyHours,
+          monthlyLeave,
+          statusDistribution,
+        },
       },
     });
   } catch (error) {
