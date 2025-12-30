@@ -89,6 +89,7 @@
     "holidays": "Holidays",
     "leaves": "Leave Records",
     "adminTimesheets": "Final Approval",
+    "timesheetRecords": "Timesheet Records",
     "leaveRequests": "Leave Requests",
     "teamLeaves": "Team Leaves",
     "teamMembers": "Team Members",
@@ -346,6 +347,13 @@
       "rejectAll": "Reject All",
       "completed": "Completed",
       "noTimesheets": "No team submissions found"
+    },
+    "timesheetRecords": {
+      "title": "Timesheet Records",
+      "description": "View all timesheet records across the organization",
+      "totalRecords": "Total Records",
+      "allRecords": "All Records",
+      "additionalHours": "Additional Hours"
     }
   },
   "profile": {
@@ -409,7 +417,9 @@
     "failedToFetch": "Failed to fetch data",
     "failedToSave": "Failed to save",
     "failedToDelete": "Failed to delete",
-    "unauthorized": "Unauthorized",
+    "unauthorized": "Access Denied",
+    "noPermission": "You don't have permission to access this page.",
+    "backToDashboard": "Back to Dashboard",
     "forbidden": "Forbidden",
     "generic": "An error occurred. Please try again.",
     "failedToApprove": "Failed to approve",

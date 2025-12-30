@@ -16,7 +16,9 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get("status");
-    const scope = searchParams.get("scope") || "own"; // "own" or "team"
+    // Default scope: admin sees all, others see own
+    const defaultScope = session.user.role === "admin" ? "all" : "own";
+    const scope = searchParams.get("scope") || defaultScope;
 
     // Build query filter
     const filter: Record<string, unknown> = {};

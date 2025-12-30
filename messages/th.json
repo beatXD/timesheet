@@ -89,6 +89,7 @@
     "holidays": "วันหยุด",
     "leaves": "ประวัติการลา",
     "adminTimesheets": "อนุมัติขั้นสุดท้าย",
+    "timesheetRecords": "ประวัติไทม์ชีท",
     "leaveRequests": "คำขอลางาน",
     "teamLeaves": "การลาของทีม",
     "teamMembers": "สมาชิกทีม",
@@ -346,6 +347,13 @@
       "rejectAll": "ปฏิเสธทั้งหมด",
       "completed": "เสร็จสิ้น",
       "noTimesheets": "ไม่พบการส่งของทีม"
+    },
+    "timesheetRecords": {
+      "title": "ประวัติไทม์ชีท",
+      "description": "ดูประวัติไทม์ชีททั้งหมดขององค์กร",
+      "totalRecords": "จำนวนทั้งหมด",
+      "allRecords": "ทั้งหมด",
+      "additionalHours": "ชั่วโมงเพิ่มเติม"
     }
   },
   "profile": {
@@ -409,7 +417,9 @@
     "failedToFetch": "ไม่สามารถดึงข้อมูลได้",
     "failedToSave": "ไม่สามารถบันทึกได้",
     "failedToDelete": "ไม่สามารถลบได้",
-    "unauthorized": "ไม่ได้รับอนุญาต",
+    "unauthorized": "ไม่มีสิทธิ์เข้าถึง",
+    "noPermission": "คุณไม่มีสิทธิ์เข้าถึงหน้านี้",
+    "backToDashboard": "กลับไปแดชบอร์ด",
     "forbidden": "ถูกปฏิเสธการเข้าถึง",
     "generic": "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
     "failedToApprove": "ไม่สามารถอนุมัติได้",

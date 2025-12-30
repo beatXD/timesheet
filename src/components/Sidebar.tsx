@@ -19,6 +19,7 @@ import {
   CalendarCheck,
   ClipboardList,
   UsersRound,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -48,6 +49,12 @@ const navSections: NavSection[] = [
         href: "/admin/leaves",
         labelKey: "nav.leaves",
         icon: <Briefcase className="w-5 h-5" />,
+        roles: ["admin"],
+      },
+      {
+        href: "/admin/timesheets/records",
+        labelKey: "nav.timesheetRecords",
+        icon: <FileSpreadsheet className="w-5 h-5" />,
         roles: ["admin"],
       },
     ],

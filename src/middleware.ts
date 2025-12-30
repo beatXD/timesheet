@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { defaultLocale, locales, type Locale } from "./i18n/config";
 
-export function middleware(request: NextRequest) {
+// Role-based path access control
+const adminPaths = ["/admin"];
+const leaderPaths = ["/team"];
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths
@@ -60,6 +65,35 @@ export function middleware(request: NextRequest) {
       response.cookies.set("NEXT_LOCALE", locale, { path: "/" });
     }
     return response;
+  }
+
+  // Role-based access control for protected paths
+  if (token) {
+    const jwtToken = await getToken({
+      req: request,
+      secret: process.env.AUTH_SECRET,
+    });
+    const userRole = jwtToken?.role as string;
+
+    // Admin-only paths
+    const isAdminPath = adminPaths.some(p => pathname.startsWith(p));
+    if (isAdminPath && userRole !== "admin") {
+      const response = NextResponse.redirect(new URL("/unauthorized", request.url));
+      if (!localeCookie) {
+        response.cookies.set("NEXT_LOCALE", locale, { path: "/" });
+      }
+      return response;
+    }
+
+    // Leader/Admin paths
+    const isLeaderPath = leaderPaths.some(p => pathname.startsWith(p));
+    if (isLeaderPath && !["admin", "leader"].includes(userRole)) {
+      const response = NextResponse.redirect(new URL("/unauthorized", request.url));
+      if (!localeCookie) {
+        response.cookies.set("NEXT_LOCALE", locale, { path: "/" });
+      }
+      return response;
+    }
   }
 
   const response = NextResponse.next();
