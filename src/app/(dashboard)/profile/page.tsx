@@ -1,0 +1,467 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSession, signIn } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { Loader2, User, Key, Link2, Unlink, Check } from "lucide-react";
+
+interface LinkedAccount {
+  provider: string;
+  providerAccountId: string;
+}
+
+interface ProfileData {
+  id: string;
+  name: string;
+  email: string;
+  image?: string;
+  role: string;
+  hasPassword: boolean;
+  linkedAccounts: LinkedAccount[];
+}
+
+export default function ProfilePage() {
+  const { data: session, update } = useSession();
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Form state
+  const [name, setName] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch("/api/profile");
+      const data = await res.json();
+      if (res.ok) {
+        setProfile(data.data);
+        setName(data.data.name);
+      }
+    } catch {
+      toast.error("Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const updateData: Record<string, string> = {};
+
+      if (name !== profile?.name) {
+        updateData.name = name;
+      }
+
+      if (newPassword) {
+        if (newPassword !== confirmPassword) {
+          toast.error("รหัสผ่านไม่ตรงกัน");
+          setSaving(false);
+          return;
+        }
+        if (profile?.hasPassword && !currentPassword) {
+          toast.error("กรุณากรอกรหัสผ่านปัจจุบัน");
+          setSaving(false);
+          return;
+        }
+        updateData.currentPassword = currentPassword;
+        updateData.newPassword = newPassword;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        toast.info("ไม่มีข้อมูลที่ต้องอัพเดท");
+        setSaving(false);
+        return;
+      }
+
+      const res = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error);
+        return;
+      }
+
+      toast.success(data.message);
+
+      // Clear password fields
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+
+      // Update session if name changed
+      if (updateData.name) {
+        await update({ name: updateData.name });
+      }
+
+      // Refresh profile
+      fetchProfile();
+    } catch {
+      toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLinkAccount = (provider: string) => {
+    // Redirect to OAuth with linking intent
+    signIn(provider, { callbackUrl: "/profile" });
+  };
+
+  const handleUnlinkAccount = async (provider: string) => {
+    try {
+      const res = await fetch(`/api/profile/accounts?provider=${provider}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error);
+        return;
+      }
+
+      toast.success(data.message);
+      fetchProfile();
+    } catch {
+      toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    }
+  };
+
+  const isAccountLinked = (provider: string) => {
+    return profile?.linkedAccounts.some((acc) => acc.provider === provider);
+  };
+
+  const getProviderIcon = (provider: string) => {
+    if (provider === "google") {
+      return (
+        <svg className="w-5 h-5" viewBox="0 0 24 24">
+          <path
+            fill="currentColor"
+            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+          />
+          <path
+            fill="currentColor"
+            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+          />
+          <path
+            fill="currentColor"
+            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+          />
+          <path
+            fill="currentColor"
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+          />
+        </svg>
+      );
+    }
+    if (provider === "github") {
+      return (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+        </svg>
+      );
+    }
+    return null;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Profile Settings</h1>
+        <p className="text-muted-foreground">
+          Manage your account settings and linked accounts
+        </p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Profile Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Profile Information
+            </CardTitle>
+            <CardDescription>
+              Update your personal information
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profile?.email || ""}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Email cannot be changed
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={saving}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <div>
+                  <Badge variant="secondary">
+                    {profile?.role === "admin"
+                      ? "Admin"
+                      : profile?.role === "leader"
+                      ? "Leader"
+                      : "User"}
+                  </Badge>
+                </div>
+              </div>
+
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Changes
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Password Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5" />
+              Password
+            </CardTitle>
+            <CardDescription>
+              {profile?.hasPassword
+                ? "Change your password"
+                : "Set a password to login with email"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              {profile?.hasPassword && (
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    disabled={saving}
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">
+                  {profile?.hasPassword ? "New Password" : "Password"}
+                </Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  placeholder="Min 6 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={saving}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={saving}
+                />
+              </div>
+
+              <Button type="submit" disabled={saving || !newPassword}>
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {profile?.hasPassword ? "Change Password" : "Set Password"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Linked Accounts */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link2 className="w-5 h-5" />
+            Linked Accounts
+          </CardTitle>
+          <CardDescription>
+            Connect your account with other services for easier login
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Google */}
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-3">
+                {getProviderIcon("google")}
+                <div>
+                  <p className="font-medium">Google</p>
+                  <p className="text-sm text-muted-foreground">
+                    {isAccountLinked("google")
+                      ? "Connected"
+                      : "Not connected"}
+                  </p>
+                </div>
+              </div>
+              {isAccountLinked("google") ? (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Unlink className="w-4 h-4 mr-2" />
+                      Disconnect
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Disconnect Google Account?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        You will no longer be able to sign in with Google.
+                        Make sure you have another way to access your account.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleUnlinkAccount("google")}
+                      >
+                        Disconnect
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleLinkAccount("google")}
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  Connect
+                </Button>
+              )}
+            </div>
+
+            {/* GitHub */}
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-3">
+                {getProviderIcon("github")}
+                <div>
+                  <p className="font-medium">GitHub</p>
+                  <p className="text-sm text-muted-foreground">
+                    {isAccountLinked("github")
+                      ? "Connected"
+                      : "Not connected"}
+                  </p>
+                </div>
+              </div>
+              {isAccountLinked("github") ? (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Unlink className="w-4 h-4 mr-2" />
+                      Disconnect
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Disconnect GitHub Account?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        You will no longer be able to sign in with GitHub.
+                        Make sure you have another way to access your account.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleUnlinkAccount("github")}
+                      >
+                        Disconnect
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleLinkAccount("github")}
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  Connect
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
