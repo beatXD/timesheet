@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,7 +25,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +38,7 @@ interface Vendor {
 }
 
 export default function VendorsPage() {
+  const t = useTranslations();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -71,7 +72,7 @@ export default function VendorsPage() {
         setVendors(data.data);
       }
     } catch (error) {
-      toast.error("Failed to fetch vendors");
+      toast.error(t("errors.failedToFetch"));
     } finally {
       setLoading(false);
     }
@@ -91,7 +92,7 @@ export default function VendorsPage() {
 
   const saveVendor = async () => {
     if (!formData.name) {
-      toast.error("Name is required");
+      toast.error(t("admin.vendors.nameRequired"));
       return;
     }
     setSaving(true);
@@ -109,22 +110,22 @@ export default function VendorsPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to save");
+        toast.error(data.error || t("errors.failedToSave"));
         return;
       }
 
-      toast.success(editVendor ? "Vendor updated" : "Vendor created");
+      toast.success(editVendor ? t("success.vendorUpdated") : t("success.vendorCreated"));
       setIsDialogOpen(false);
       fetchVendors();
     } catch (error) {
-      toast.error("Failed to save vendor");
+      toast.error(t("errors.failedToSave"));
     } finally {
       setSaving(false);
     }
   };
 
   const deleteVendor = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this vendor?")) return;
+    if (!confirm(t("confirm.deleteVendor"))) return;
 
     try {
       const res = await fetch(`/api/admin/vendors?id=${id}`, {
@@ -133,14 +134,14 @@ export default function VendorsPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to delete");
+        toast.error(data.error || t("errors.failedToDelete"));
         return;
       }
 
-      toast.success("Vendor deleted");
+      toast.success(t("success.vendorDeleted"));
       fetchVendors();
     } catch (error) {
-      toast.error("Failed to delete vendor");
+      toast.error(t("errors.failedToDelete"));
     }
   };
 
@@ -156,12 +157,12 @@ export default function VendorsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Vendors</h1>
-          <p className="text-muted-foreground">Manage vendor companies</p>
+          <h1 className="text-2xl font-bold">{t("admin.vendors.title")}</h1>
+          <p className="text-muted-foreground">{t("admin.vendors.description")}</p>
         </div>
         <Button onClick={openCreateDialog}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Vendor
+          {t("admin.vendors.addVendor")}
         </Button>
       </div>
 
@@ -169,14 +170,14 @@ export default function VendorsPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>All Vendors</CardTitle>
-              <CardDescription>Vendor companies for timesheets</CardDescription>
+              <CardTitle>{t("admin.vendors.allVendors")}</CardTitle>
+              <CardDescription>{t("admin.vendors.vendorCompanies")}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search vendors..."
+                  placeholder={t("admin.vendors.searchVendors")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-8 w-48"
@@ -193,15 +194,15 @@ export default function VendorsPage() {
         <CardContent>
           {filteredVendors.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? "No vendors match the search." : "No vendors yet. Add your first vendor."}
+              {searchQuery ? t("admin.vendors.noVendorsMatch") : t("admin.vendors.noVendors")}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Contract No.</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("admin.vendors.contractNo")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -239,42 +240,42 @@ export default function VendorsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editVendor ? "Edit Vendor" : "Add Vendor"}
+              {editVendor ? t("admin.vendors.editVendor") : t("admin.vendors.addVendor")}
             </DialogTitle>
             <DialogDescription>
               {editVendor
-                ? "Update vendor information"
-                : "Add a new vendor company"}
+                ? t("admin.vendors.updateVendor")
+                : t("admin.vendors.addNewVendor")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Name *</Label>
+              <Label>{t("admin.vendors.vendorName")} *</Label>
               <Input
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                placeholder="Company name"
+                placeholder={t("admin.vendors.companyName")}
               />
             </div>
             <div className="grid gap-2">
-              <Label>Contract No.</Label>
+              <Label>{t("admin.vendors.contractNo")}</Label>
               <Input
                 value={formData.contractNo}
                 onChange={(e) =>
                   setFormData({ ...formData, contractNo: e.target.value })
                 }
-                placeholder="Contract number (optional)"
+                placeholder={t("admin.vendors.contractNoPlaceholder")}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={saveVendor} disabled={saving}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

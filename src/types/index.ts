@@ -10,7 +10,16 @@ export type EntryType = "working" | "weekend" | "holiday" | "leave";
 export type LeaveType = "sick" | "personal" | "annual";
 
 // Timesheet Status
-export type TimesheetStatus = "draft" | "submitted" | "approved" | "rejected";
+export type TimesheetStatus =
+  | "draft"
+  | "submitted"
+  | "approved"
+  | "rejected"
+  | "team_submitted"
+  | "final_approved";
+
+// Leave Request Status
+export type LeaveRequestStatus = "pending" | "approved" | "rejected";
 
 // User
 export interface IUser {
@@ -99,6 +108,10 @@ export interface ITimesheet {
   approvedAt?: Date;
   approvedBy?: Types.ObjectId;
   rejectedReason?: string;
+  teamSubmittedAt?: Date;
+  teamSubmittedBy?: Types.ObjectId;
+  finalApprovedAt?: Date;
+  finalApprovedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -110,6 +123,22 @@ export interface IHoliday {
   name: string;
   year: number;
   createdBy?: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Leave Request
+export interface ILeaveRequest {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  startDate: Date;
+  endDate: Date;
+  leaveType: LeaveType;
+  reason?: string;
+  status: LeaveRequestStatus;
+  reviewedBy?: Types.ObjectId;
+  reviewedAt?: Date;
+  rejectionReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }

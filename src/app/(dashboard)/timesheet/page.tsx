@@ -49,6 +49,8 @@ const statusColors: Record<TimesheetStatus, string> = {
   submitted: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
   approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
   rejected: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+  team_submitted: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
+  final_approved: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
 };
 
 export default function TimesheetListPage() {

@@ -30,7 +30,7 @@ const TimesheetSchema = new Schema<ITimesheet>(
     year: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["draft", "submitted", "approved", "rejected"] as TimesheetStatus[],
+      enum: ["draft", "submitted", "approved", "rejected", "team_submitted", "final_approved"] as TimesheetStatus[],
       default: "draft",
     },
     entries: [TimesheetEntrySchema],
@@ -40,6 +40,10 @@ const TimesheetSchema = new Schema<ITimesheet>(
     approvedAt: { type: Date },
     approvedBy: { type: Schema.Types.ObjectId, ref: "User" },
     rejectedReason: { type: String },
+    teamSubmittedAt: { type: Date },
+    teamSubmittedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    finalApprovedAt: { type: Date },
+    finalApprovedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   {
     timestamps: true,

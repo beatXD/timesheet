@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +45,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
+  const t = useTranslations();
   const { data: session, update } = useSession();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,7 @@ export default function ProfilePage() {
         setName(data.data.name);
       }
     } catch {
-      toast.error("Failed to load profile");
+      toast.error(t("errors.failedToFetch"));
     } finally {
       setLoading(false);
     }
@@ -87,12 +89,12 @@ export default function ProfilePage() {
 
       if (newPassword) {
         if (newPassword !== confirmPassword) {
-          toast.error("รหัสผ่านไม่ตรงกัน");
+          toast.error(t("profile.passwordsDoNotMatch"));
           setSaving(false);
           return;
         }
         if (profile?.hasPassword && !currentPassword) {
-          toast.error("กรุณากรอกรหัสผ่านปัจจุบัน");
+          toast.error(t("profile.pleaseEnterCurrentPassword"));
           setSaving(false);
           return;
         }
@@ -101,7 +103,7 @@ export default function ProfilePage() {
       }
 
       if (Object.keys(updateData).length === 0) {
-        toast.info("ไม่มีข้อมูลที่ต้องอัพเดท");
+        toast.info(t("profile.nothingToUpdate"));
         setSaving(false);
         return;
       }
@@ -134,7 +136,7 @@ export default function ProfilePage() {
       // Refresh profile
       fetchProfile();
     } catch {
-      toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      toast.error(t("errors.generic"));
     } finally {
       setSaving(false);
     }
@@ -161,7 +163,7 @@ export default function ProfilePage() {
       toast.success(data.message);
       fetchProfile();
     } catch {
-      toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      toast.error(t("errors.generic"));
     }
   };
 
@@ -213,9 +215,9 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Profile Settings</h1>
+        <h1 className="text-3xl font-bold">{t("profile.settings")}</h1>
         <p className="text-muted-foreground">
-          Manage your account settings and linked accounts
+          {t("profile.manageSettings")}
         </p>
       </div>
 
@@ -225,16 +227,16 @@ export default function ProfilePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="w-5 h-5" />
-              Profile Information
+              {t("profile.profileInfo")}
             </CardTitle>
             <CardDescription>
-              Update your personal information
+              {t("profile.updatePersonalInfo")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -243,12 +245,12 @@ export default function ProfilePage() {
                   className="bg-muted"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Email cannot be changed
+                  {t("profile.emailCannotChange")}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t("auth.name")}</Label>
                 <Input
                   id="name"
                   type="text"
@@ -259,21 +261,17 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Role</Label>
+                <Label>{t("profile.role")}</Label>
                 <div>
                   <Badge variant="secondary">
-                    {profile?.role === "admin"
-                      ? "Admin"
-                      : profile?.role === "leader"
-                      ? "Leader"
-                      : "User"}
+                    {t(`roles.${profile?.role || "user"}`)}
                   </Badge>
                 </div>
               </div>
 
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Save Changes
+                {t("profile.saveChanges")}
               </Button>
             </form>
           </CardContent>
@@ -284,19 +282,19 @@ export default function ProfilePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Key className="w-5 h-5" />
-              Password
+              {t("profile.password")}
             </CardTitle>
             <CardDescription>
               {profile?.hasPassword
-                ? "Change your password"
-                : "Set a password to login with email"}
+                ? t("profile.changePasswordDesc")
+                : t("profile.setPasswordDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               {profile?.hasPassword && (
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Label htmlFor="currentPassword">{t("profile.currentPassword")}</Label>
                   <Input
                     id="currentPassword"
                     type="password"
@@ -309,12 +307,12 @@ export default function ProfilePage() {
 
               <div className="space-y-2">
                 <Label htmlFor="newPassword">
-                  {profile?.hasPassword ? "New Password" : "Password"}
+                  {profile?.hasPassword ? t("profile.newPassword") : t("profile.password")}
                 </Label>
                 <Input
                   id="newPassword"
                   type="password"
-                  placeholder="Min 6 characters"
+                  placeholder={t("profile.minChars")}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   disabled={saving}
@@ -322,7 +320,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">{t("profile.confirmPassword")}</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -334,7 +332,7 @@ export default function ProfilePage() {
 
               <Button type="submit" disabled={saving || !newPassword}>
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {profile?.hasPassword ? "Change Password" : "Set Password"}
+                {profile?.hasPassword ? t("profile.changePassword") : t("profile.setPassword")}
               </Button>
             </form>
           </CardContent>
@@ -346,10 +344,10 @@ export default function ProfilePage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Link2 className="w-5 h-5" />
-            Linked Accounts
+            {t("profile.linkedAccounts")}
           </CardTitle>
           <CardDescription>
-            Connect your account with other services for easier login
+            {t("profile.linkAccountsDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -362,8 +360,8 @@ export default function ProfilePage() {
                   <p className="font-medium">Google</p>
                   <p className="text-sm text-muted-foreground">
                     {isAccountLinked("google")
-                      ? "Connected"
-                      : "Not connected"}
+                      ? t("profile.connected")
+                      : t("profile.notConnected")}
                   </p>
                 </div>
               </div>
@@ -372,25 +370,24 @@ export default function ProfilePage() {
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm">
                       <Unlink className="w-4 h-4 mr-2" />
-                      Disconnect
+                      {t("profile.disconnect")}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
-                        Disconnect Google Account?
+                        {t("profile.disconnectGoogle")}
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        You will no longer be able to sign in with Google.
-                        Make sure you have another way to access your account.
+                        {t("profile.disconnectWarning", { provider: "Google" })}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => handleUnlinkAccount("google")}
                       >
-                        Disconnect
+                        {t("profile.disconnect")}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -402,7 +399,7 @@ export default function ProfilePage() {
                   onClick={() => handleLinkAccount("google")}
                 >
                   <Link2 className="w-4 h-4 mr-2" />
-                  Connect
+                  {t("profile.connect")}
                 </Button>
               )}
             </div>
@@ -415,8 +412,8 @@ export default function ProfilePage() {
                   <p className="font-medium">GitHub</p>
                   <p className="text-sm text-muted-foreground">
                     {isAccountLinked("github")
-                      ? "Connected"
-                      : "Not connected"}
+                      ? t("profile.connected")
+                      : t("profile.notConnected")}
                   </p>
                 </div>
               </div>
@@ -425,25 +422,24 @@ export default function ProfilePage() {
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm">
                       <Unlink className="w-4 h-4 mr-2" />
-                      Disconnect
+                      {t("profile.disconnect")}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
-                        Disconnect GitHub Account?
+                        {t("profile.disconnectGitHub")}
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        You will no longer be able to sign in with GitHub.
-                        Make sure you have another way to access your account.
+                        {t("profile.disconnectWarning", { provider: "GitHub" })}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => handleUnlinkAccount("github")}
                       >
-                        Disconnect
+                        {t("profile.disconnect")}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -455,7 +451,7 @@ export default function ProfilePage() {
                   onClick={() => handleLinkAccount("github")}
                 >
                   <Link2 className="w-4 h-4 mr-2" />
-                  Connect
+                  {t("profile.connect")}
                 </Button>
               )}
             </div>

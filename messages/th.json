@@ -44,7 +44,8 @@
     "optional": "ไม่บังคับ",
     "user": "ผู้ใช้",
     "users": "ผู้ใช้",
-    "leaders": "หัวหน้า"
+    "leaders": "หัวหน้า",
+    "submitting": "กำลังส่ง..."
   },
   "auth": {
     "login": "เข้าสู่ระบบ",
@@ -68,7 +69,7 @@
   "nav": {
     "dashboard": "แดชบอร์ด",
     "timesheet": "ไทม์ชีท",
-    "team": "ทีม",
+    "team": "อนุมัติไทม์ชีท",
     "admin": "ผู้ดูแลระบบ",
     "users": "ผู้ใช้",
     "teams": "ทีม",
@@ -76,12 +77,19 @@
     "projects": "โปรเจกต์",
     "holidays": "วันหยุด",
     "leaves": "ประวัติการลา",
+    "adminTimesheets": "อนุมัติขั้นสุดท้าย",
+    "leaveRequests": "คำขอลางาน",
+    "teamLeaves": "การลาของทีม",
+    "teamMembers": "สมาชิกทีม",
     "profile": "โปรไฟล์",
     "settings": "ตั้งค่า",
     "sections": {
+      "overview": "ภาพรวม",
       "main": "หลัก",
-      "teamManagement": "จัดการทีม",
-      "administration": "จัดการระบบ"
+      "approval": "อนุมัติ",
+      "myTeam": "ทีมของฉัน",
+      "admin": "ผู้ดูแลระบบ",
+      "settings": "ตั้งค่า"
     }
   },
   "dashboard": {
@@ -160,13 +168,15 @@
       "draft": "ฉบับร่าง",
       "submitted": "ส่งแล้ว",
       "approved": "อนุมัติแล้ว",
-      "rejected": "ถูกปฏิเสธ"
+      "rejected": "ถูกปฏิเสธ",
+      "team_submitted": "ทีมส่งแล้ว",
+      "final_approved": "อนุมัติสุดท้าย"
     }
   },
   "team": {
-    "title": "ไทม์ชีททีม",
-    "description": "ตรวจสอบและอนุมัติไทม์ชีทของทีม",
-    "reviewApprove": "ตรวจสอบและอนุมัติไทม์ชีทของสมาชิกในทีม",
+    "title": "อนุมัติไทม์ชีท",
+    "description": "ตรวจสอบและอนุมัติไทม์ชีทของสมาชิกในทีม",
+    "reviewApprove": "ตรวจสอบและอนุมัติไทม์ชีทก่อนส่งให้ Admin",
     "pending": "รอดำเนินการ",
     "pendingApproval": "รอการอนุมัติ",
     "approved": "อนุมัติแล้ว",
@@ -185,7 +195,11 @@
     "member": "สมาชิก",
     "baseHours": "ชั่วโมงปกติ",
     "filterByYear": "กรองตามปี",
-    "filterByStatus": "กรองตามสถานะ"
+    "filterByStatus": "กรองตามสถานะ",
+    "submitToAdmin": "ส่งให้ Admin",
+    "teamSubmittedToAdmin": "ส่งไทม์ชีททีมให้ Admin แล้ว",
+    "confirmSubmitToAdmin": "ส่งไทม์ชีทที่อนุมัติแล้วทั้งหมดให้ Admin เพื่ออนุมัติขั้นสุดท้าย?",
+    "noTeams": "คุณยังไม่ได้ถูกกำหนดเป็นหัวหน้าทีมใด"
   },
   "admin": {
     "users": {
@@ -285,6 +299,23 @@
       "holidayNamePlaceholder": "ชื่อวันหยุด",
       "holidayDate": "วันที่",
       "dateNameRequired": "กรุณากรอกวันที่และชื่อ"
+    },
+    "timesheets": {
+      "title": "อนุมัติขั้นสุดท้าย",
+      "description": "อนุมัติขั้นสุดท้ายสำหรับการส่งของทีม",
+      "teamsSubmitted": "ทีมที่ส่งแล้ว",
+      "totalTimesheets": "ไทม์ชีททั้งหมด",
+      "members": "สมาชิก",
+      "finalApproved": "อนุมัติสุดท้าย",
+      "teamSubmittedAt": "ทีมส่งเมื่อ",
+      "confirmApproveTeam": "อนุมัติไทม์ชีททั้งหมดของทีมนี้?",
+      "enterRejectReason": "ระบุเหตุผลในการปฏิเสธไทม์ชีทของทีมทั้งหมด",
+      "teamApproved": "อนุมัติไทม์ชีทของทีมแล้ว",
+      "teamRejected": "ปฏิเสธไทม์ชีทของทีมและส่งกลับเป็นฉบับร่างแล้ว",
+      "approveAll": "อนุมัติทั้งหมด",
+      "rejectAll": "ปฏิเสธทั้งหมด",
+      "completed": "เสร็จสิ้น",
+      "noTimesheets": "ไม่พบการส่งของทีม"
     }
   },
   "profile": {
@@ -315,7 +346,11 @@
     "disconnect": "ยกเลิกการเชื่อมต่อ",
     "disconnectGoogle": "ยกเลิกการเชื่อมต่อบัญชี Google?",
     "disconnectGitHub": "ยกเลิกการเชื่อมต่อบัญชี GitHub?",
-    "disconnectWarning": "คุณจะไม่สามารถเข้าสู่ระบบด้วย {provider} ได้อีก ตรวจสอบให้แน่ใจว่าคุณมีวิธีอื่นในการเข้าถึงบัญชี"
+    "disconnectWarning": "คุณจะไม่สามารถเข้าสู่ระบบด้วย {provider} ได้อีก ตรวจสอบให้แน่ใจว่าคุณมีวิธีอื่นในการเข้าถึงบัญชี",
+    "passwordsDoNotMatch": "รหัสผ่านไม่ตรงกัน",
+    "pleaseEnterCurrentPassword": "กรุณากรอกรหัสผ่านปัจจุบัน",
+    "nothingToUpdate": "ไม่มีข้อมูลที่ต้องอัปเดต",
+    "role": "Role"
   },
   "roles": {
     "admin": "ผู้ดูแลระบบ",
@@ -403,5 +438,63 @@
     "allTypes": "ทุกประเภท",
     "yearlyTotal": "รวมทั้งปี",
     "monthlyBreakdown": "รายละเอียดรายเดือน"
+  },
+  "leaveRequest": {
+    "title": "คำขอลางาน",
+    "description": "ขอและจัดการการลาของคุณ",
+    "newRequest": "ขอลาใหม่",
+    "newRequestDesc": "ส่งคำขอลาเพื่อขออนุมัติ",
+    "myRequests": "คำขอของฉัน",
+    "myRequestsDesc": "คำขอลาที่คุณส่งแล้ว",
+    "teamRequests": "คำขอของทีม",
+    "teamRequestsDesc": "คำขอลาจากสมาชิกในทีม",
+    "dateRange": "ช่วงวันที่",
+    "days": "วัน",
+    "selectDates": "เลือกวันที่",
+    "reason": "เหตุผล",
+    "reasonPlaceholder": "กรอกเหตุผลในการลา (ไม่บังคับ)",
+    "submit": "ส่งคำขอ",
+    "noRequests": "ไม่พบคำขอลา",
+    "rejectTitle": "ปฏิเสธคำขอลา",
+    "rejectDesc": "กรุณาระบุเหตุผลในการปฏิเสธคำขอลานี้",
+    "reject": "ปฏิเสธ",
+    "rejectionReason": "เหตุผลในการปฏิเสธ",
+    "rejectionReasonPlaceholder": "กรอกเหตุผลในการปฏิเสธ",
+    "status": {
+      "pending": "รอดำเนินการ",
+      "approved": "อนุมัติแล้ว",
+      "rejected": "ถูกปฏิเสธ"
+    },
+    "validation": {
+      "required": "กรุณาเลือกวันที่และประเภทการลา",
+      "reasonRequired": "กรุณาระบุเหตุผลในการปฏิเสธ"
+    },
+    "success": {
+      "created": "ส่งคำขอลาสำเร็จ",
+      "approved": "อนุมัติคำขอลาสำเร็จ",
+      "rejected": "ปฏิเสธคำขอลาสำเร็จ",
+      "cancelled": "ยกเลิกคำขอลาสำเร็จ"
+    },
+    "confirm": {
+      "cancel": "คุณแน่ใจหรือไม่ที่จะยกเลิกคำขอลานี้?"
+    }
+  },
+  "teamLeave": {
+    "title": "การลาของทีม",
+    "description": "ตรวจสอบและอนุมัติคำขอลาของทีม",
+    "teamRequests": "คำขอลาของทีม",
+    "reviewApprove": "ตรวจสอบและอนุมัติคำขอลาจากสมาชิกในทีม"
+  },
+  "teamMembers": {
+    "title": "สมาชิกทีม",
+    "description": "จัดการสมาชิกในทีมของคุณ",
+    "members": "สมาชิก",
+    "addMembers": "เพิ่มสมาชิก",
+    "editMembers": "แก้ไขสมาชิก",
+    "selectMembers": "เลือกสมาชิกในทีม",
+    "noMembers": "ยังไม่มีสมาชิกในทีมนี้",
+    "noUsersAvailable": "ไม่มีผู้ใช้ที่สามารถเพิ่มได้",
+    "confirmRemove": "คุณแน่ใจหรือไม่ที่จะลบสมาชิกนี้ออกจากทีม?",
+    "memberRemoved": "ลบสมาชิกออกจากทีมแล้ว"
   }
 }

@@ -4,3 +4,4 @@ export { default as Vendor } from "./Vendor";
 export { default as Project } from "./Project";
 export { default as Timesheet } from "./Timesheet";
 export { default as Holiday } from "./Holiday";
+export { default as LeaveRequest } from "./LeaveRequest";

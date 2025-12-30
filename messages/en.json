@@ -44,7 +44,8 @@
     "optional": "optional",
     "user": "User",
     "users": "Users",
-    "leaders": "Leaders"
+    "leaders": "Leaders",
+    "submitting": "Submitting..."
   },
   "auth": {
     "login": "Login",
@@ -68,7 +69,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "timesheet": "Timesheet",
-    "team": "Team",
+    "team": "Approve Timesheets",
     "admin": "Admin",
     "users": "Users",
     "teams": "Teams",
@@ -76,12 +77,19 @@
     "projects": "Projects",
     "holidays": "Holidays",
     "leaves": "Leave Records",
+    "adminTimesheets": "Final Approval",
+    "leaveRequests": "Leave Requests",
+    "teamLeaves": "Team Leaves",
+    "teamMembers": "Team Members",
     "profile": "Profile",
     "settings": "Settings",
     "sections": {
+      "overview": "Overview",
       "main": "Main",
-      "teamManagement": "Team Management",
-      "administration": "Administration"
+      "approval": "Approval",
+      "myTeam": "My Team",
+      "admin": "Admin",
+      "settings": "Settings"
     }
   },
   "dashboard": {
@@ -160,13 +168,15 @@
       "draft": "Draft",
       "submitted": "Submitted",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "team_submitted": "Team Submitted",
+      "final_approved": "Final Approved"
     }
   },
   "team": {
-    "title": "Team Timesheets",
-    "description": "Review and approve team timesheets",
-    "reviewApprove": "Review and approve team member timesheets",
+    "title": "Approve Timesheets",
+    "description": "Review and approve team member timesheets",
+    "reviewApprove": "Review and approve timesheets before submitting to admin",
     "pending": "Pending",
     "pendingApproval": "Pending Approval",
     "approved": "Approved",
@@ -185,7 +195,11 @@
     "member": "Member",
     "baseHours": "Base Hours",
     "filterByYear": "Filter by Year",
-    "filterByStatus": "Filter by Status"
+    "filterByStatus": "Filter by Status",
+    "submitToAdmin": "Submit to Admin",
+    "teamSubmittedToAdmin": "Team timesheets submitted to admin",
+    "confirmSubmitToAdmin": "Submit all approved timesheets to admin for final approval?",
+    "noTeams": "You are not assigned as leader of any team"
   },
   "admin": {
     "users": {
@@ -285,6 +299,23 @@
       "holidayNamePlaceholder": "Holiday name",
       "holidayDate": "Date",
       "dateNameRequired": "Date and name are required"
+    },
+    "timesheets": {
+      "title": "Final Approval",
+      "description": "Final approval for team submissions",
+      "teamsSubmitted": "Teams Submitted",
+      "totalTimesheets": "Total Timesheets",
+      "members": "members",
+      "finalApproved": "Final Approved",
+      "teamSubmittedAt": "Team Submitted At",
+      "confirmApproveTeam": "Approve all timesheets for this team?",
+      "enterRejectReason": "Enter reason for rejecting all team timesheets",
+      "teamApproved": "Team timesheets approved",
+      "teamRejected": "Team timesheets rejected and sent back to draft",
+      "approveAll": "Approve All",
+      "rejectAll": "Reject All",
+      "completed": "Completed",
+      "noTimesheets": "No team submissions found"
     }
   },
   "profile": {
@@ -315,7 +346,11 @@
     "disconnect": "Disconnect",
     "disconnectGoogle": "Disconnect Google Account?",
     "disconnectGitHub": "Disconnect GitHub Account?",
-    "disconnectWarning": "You will no longer be able to sign in with {provider}. Make sure you have another way to access your account."
+    "disconnectWarning": "You will no longer be able to sign in with {provider}. Make sure you have another way to access your account.",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "pleaseEnterCurrentPassword": "Please enter your current password",
+    "nothingToUpdate": "Nothing to update",
+    "role": "Role"
   },
   "roles": {
     "admin": "Admin",
@@ -403,5 +438,63 @@
     "allTypes": "All Types",
     "yearlyTotal": "Yearly Total",
     "monthlyBreakdown": "Monthly Breakdown"
+  },
+  "leaveRequest": {
+    "title": "Leave Requests",
+    "description": "Request and manage your leaves",
+    "newRequest": "New Leave Request",
+    "newRequestDesc": "Submit a new leave request for approval",
+    "myRequests": "My Requests",
+    "myRequestsDesc": "Your submitted leave requests",
+    "teamRequests": "Team Requests",
+    "teamRequestsDesc": "Leave requests from your team members",
+    "dateRange": "Date Range",
+    "days": "days",
+    "selectDates": "Select dates",
+    "reason": "Reason",
+    "reasonPlaceholder": "Enter reason for leave (optional)",
+    "submit": "Submit Request",
+    "noRequests": "No leave requests found",
+    "rejectTitle": "Reject Leave Request",
+    "rejectDesc": "Please provide a reason for rejecting this leave request",
+    "reject": "Reject",
+    "rejectionReason": "Rejection Reason",
+    "rejectionReasonPlaceholder": "Enter reason for rejection",
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "validation": {
+      "required": "Please select dates and leave type",
+      "reasonRequired": "Please provide a reason for rejection"
+    },
+    "success": {
+      "created": "Leave request submitted successfully",
+      "approved": "Leave request approved",
+      "rejected": "Leave request rejected",
+      "cancelled": "Leave request cancelled"
+    },
+    "confirm": {
+      "cancel": "Are you sure you want to cancel this leave request?"
+    }
+  },
+  "teamLeave": {
+    "title": "Team Leaves",
+    "description": "Review and approve team leave requests",
+    "teamRequests": "Team Leave Requests",
+    "reviewApprove": "Review and approve leave requests from your team members"
+  },
+  "teamMembers": {
+    "title": "Team Members",
+    "description": "Manage members in your team",
+    "members": "members",
+    "addMembers": "Add Members",
+    "editMembers": "Edit Members",
+    "selectMembers": "Select team members",
+    "noMembers": "No members in this team yet",
+    "noUsersAvailable": "No users available to add",
+    "confirmRemove": "Are you sure you want to remove this member from the team?",
+    "memberRemoved": "Member removed from team"
   }
 }

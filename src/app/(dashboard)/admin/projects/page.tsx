@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,6 +39,7 @@ interface Project {
 }
 
 export default function ProjectsPage() {
+  const t = useTranslations();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -84,7 +86,7 @@ export default function ProjectsPage() {
       const data = await res.json();
       if (data.data) setProjects(data.data);
     } catch (error) {
-      toast.error("Failed to fetch data");
+      toast.error(t("errors.failedToFetch"));
     } finally {
       setLoading(false);
     }
@@ -107,7 +109,7 @@ export default function ProjectsPage() {
 
   const saveProject = async () => {
     if (!formData.name) {
-      toast.error("Name is required");
+      toast.error(t("admin.projects.nameRequired"));
       return;
     }
     setSaving(true);
@@ -125,22 +127,22 @@ export default function ProjectsPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to save");
+        toast.error(data.error || t("errors.failedToSave"));
         return;
       }
 
-      toast.success(editProject ? "Project updated" : "Project created");
+      toast.success(editProject ? t("success.projectUpdated") : t("success.projectCreated"));
       setIsDialogOpen(false);
       fetchData();
     } catch (error) {
-      toast.error("Failed to save project");
+      toast.error(t("errors.failedToSave"));
     } finally {
       setSaving(false);
     }
   };
 
   const deleteProject = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this project?")) return;
+    if (!confirm(t("confirm.deleteProject"))) return;
 
     try {
       const res = await fetch(`/api/admin/projects?id=${id}`, {
@@ -149,14 +151,14 @@ export default function ProjectsPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to delete");
+        toast.error(data.error || t("errors.failedToDelete"));
         return;
       }
 
-      toast.success("Project deleted");
+      toast.success(t("success.projectDeleted"));
       fetchData();
     } catch (error) {
-      toast.error("Failed to delete project");
+      toast.error(t("errors.failedToDelete"));
     }
   };
 
@@ -172,12 +174,12 @@ export default function ProjectsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Projects</h1>
-          <p className="text-muted-foreground">Manage projects</p>
+          <h1 className="text-2xl font-bold">{t("admin.projects.title")}</h1>
+          <p className="text-muted-foreground">{t("admin.projects.description")}</p>
         </div>
         <Button onClick={openCreateDialog}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Project
+          {t("admin.projects.addProject")}
         </Button>
       </div>
 
@@ -185,14 +187,14 @@ export default function ProjectsPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>All Projects</CardTitle>
-              <CardDescription>Projects assigned to teams</CardDescription>
+              <CardTitle>{t("admin.projects.allProjects")}</CardTitle>
+              <CardDescription>{t("admin.projects.projectsAssigned")}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search projects..."
+                  placeholder={t("admin.projects.searchProjects")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-8 w-48"
@@ -210,16 +212,16 @@ export default function ProjectsPage() {
           {filteredProjects.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {hasActiveFilters
-                ? "No projects match the current filters."
-                : "No projects yet. Add your first project."}
+                ? t("admin.projects.noProjectsMatch")
+                : t("admin.projects.noProjects")}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("common.description")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -259,40 +261,40 @@ export default function ProjectsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editProject ? "Edit Project" : "Add Project"}
+              {editProject ? t("admin.projects.editProject") : t("admin.projects.addProject")}
             </DialogTitle>
             <DialogDescription>
-              {editProject ? "Update project information" : "Add a new project"}
+              {editProject ? t("admin.projects.updateProject") : t("admin.projects.addNewProject")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Name *</Label>
+              <Label>{t("admin.projects.projectName")} *</Label>
               <Input
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                placeholder="Project name"
+                placeholder={t("admin.projects.projectNamePlaceholder")}
               />
             </div>
             <div className="grid gap-2">
-              <Label>Description</Label>
+              <Label>{t("admin.projects.projectDescription")}</Label>
               <Textarea
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                placeholder="Project description (optional)"
+                placeholder={t("admin.projects.descriptionPlaceholder")}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={saveProject} disabled={saving}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

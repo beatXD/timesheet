@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import { th, enUS } from "date-fns/locale";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -46,6 +48,10 @@ interface Holiday {
 }
 
 export default function HolidaysPage() {
+  const t = useTranslations();
+  const locale = useLocale();
+  const dateLocale = locale === "th" ? th : enUS;
+
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(
@@ -73,7 +79,7 @@ export default function HolidaysPage() {
         setHolidays(data.data);
       }
     } catch (error) {
-      toast.error("Failed to fetch holidays");
+      toast.error(t("errors.failedToFetch"));
     } finally {
       setLoading(false);
     }
@@ -82,7 +88,7 @@ export default function HolidaysPage() {
   const seedHolidays = async () => {
     if (
       !confirm(
-        `This will replace all holidays for ${selectedYear} with Thai public holidays. Continue?`
+        t("admin.holidays.seedConfirm", { year: selectedYear })
       )
     )
       return;
@@ -98,14 +104,14 @@ export default function HolidaysPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || "Failed to seed");
+        toast.error(data.error || t("errors.failedToSave"));
         return;
       }
 
-      toast.success(`Imported ${data.count} holidays for ${selectedYear}`);
+      toast.success(t("admin.holidays.importedHolidays", { count: data.count, year: selectedYear }));
       fetchHolidays();
     } catch (error) {
-      toast.error("Failed to seed holidays");
+      toast.error(t("errors.failedToSave"));
     } finally {
       setSeeding(false);
     }
@@ -128,7 +134,7 @@ export default function HolidaysPage() {
 
   const saveHoliday = async () => {
     if (!formData.date || !formData.name) {
-      toast.error("Date and name are required");
+      toast.error(t("admin.holidays.dateNameRequired"));
       return;
     }
     setSaving(true);
@@ -146,22 +152,22 @@ export default function HolidaysPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to save");
+        toast.error(data.error || t("errors.failedToSave"));
         return;
       }
 
-      toast.success(editHoliday ? "Holiday updated" : "Holiday created");
+      toast.success(editHoliday ? t("success.holidayUpdated") : t("success.holidayCreated"));
       setIsDialogOpen(false);
       fetchHolidays();
     } catch (error) {
-      toast.error("Failed to save holiday");
+      toast.error(t("errors.failedToSave"));
     } finally {
       setSaving(false);
     }
   };
 
   const deleteHoliday = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this holiday?")) return;
+    if (!confirm(t("confirm.deleteHoliday"))) return;
 
     try {
       const res = await fetch(`/api/admin/holidays?id=${id}`, {
@@ -170,14 +176,14 @@ export default function HolidaysPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to delete");
+        toast.error(data.error || t("errors.failedToDelete"));
         return;
       }
 
-      toast.success("Holiday deleted");
+      toast.success(t("success.holidayDeleted"));
       fetchHolidays();
     } catch (error) {
-      toast.error("Failed to delete holiday");
+      toast.error(t("errors.failedToDelete"));
     }
   };
 
@@ -185,8 +191,8 @@ export default function HolidaysPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Holidays</h1>
-          <p className="text-muted-foreground">Manage public holidays</p>
+          <h1 className="text-2xl font-bold">{t("admin.holidays.title")}</h1>
+          <p className="text-muted-foreground">{t("admin.holidays.description")}</p>
         </div>
         <div className="flex gap-2">
           <Select value={selectedYear} onValueChange={setSelectedYear}>
@@ -203,20 +209,20 @@ export default function HolidaysPage() {
           </Select>
           <Button variant="outline" onClick={seedHolidays} disabled={seeding}>
             <Wand2 className="w-4 h-4 mr-2" />
-            {seeding ? "Seeding..." : "Seed Thai Holidays"}
+            {seeding ? t("common.seeding") : t("admin.holidays.seedThaiHolidays")}
           </Button>
           <Button onClick={openCreateDialog}>
             <Plus className="w-4 h-4 mr-2" />
-            Add Holiday
+            {t("admin.holidays.addHoliday")}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Holidays for {selectedYear}</CardTitle>
+          <CardTitle>{t("admin.holidays.holidaysForYear", { year: selectedYear })}</CardTitle>
           <CardDescription>
-            Public holidays that will be auto-filled in timesheets
+            {t("admin.holidays.publicHolidaysDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -226,23 +232,22 @@ export default function HolidaysPage() {
             </div>
           ) : holidays.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No holidays for {selectedYear}. Add holidays or seed Thai public
-              holidays.
+              {t("admin.holidays.noHolidays", { year: selectedYear })}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {holidays.map((holiday) => (
                   <TableRow key={holiday._id}>
                     <TableCell>
-                      {format(new Date(holiday.date), "dd MMMM yyyy")}
+                      {format(new Date(holiday.date), "dd MMMM yyyy", { locale: dateLocale })}
                     </TableCell>
                     <TableCell className="font-medium">{holiday.name}</TableCell>
                     <TableCell className="text-right">
@@ -275,17 +280,17 @@ export default function HolidaysPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editHoliday ? "Edit Holiday" : "Add Holiday"}
+              {editHoliday ? t("admin.holidays.editHoliday") : t("admin.holidays.addHoliday")}
             </DialogTitle>
             <DialogDescription>
               {editHoliday
-                ? "Update holiday information"
-                : "Add a new public holiday"}
+                ? t("admin.holidays.updateHoliday")
+                : t("admin.holidays.addNewHoliday")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Date *</Label>
+              <Label>{t("common.date")} *</Label>
               <Input
                 type="date"
                 value={formData.date}
@@ -295,22 +300,22 @@ export default function HolidaysPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label>Name *</Label>
+              <Label>{t("common.name")} *</Label>
               <Input
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                placeholder="Holiday name"
+                placeholder={t("admin.holidays.holidayName")}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={saveHoliday} disabled={saving}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

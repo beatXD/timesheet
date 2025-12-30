@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -62,6 +63,7 @@ interface Team {
 }
 
 export default function TeamsPage() {
+  const t = useTranslations();
   const [teams, setTeams] = useState<Team[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -109,7 +111,7 @@ export default function TeamsPage() {
       if (usersData.data) setUsers(usersData.data);
       if (projectsData.data) setProjects(projectsData.data);
     } catch (error) {
-      toast.error("Failed to fetch data");
+      toast.error(t("errors.failedToFetch"));
     } finally {
       setLoading(false);
     }
@@ -134,7 +136,7 @@ export default function TeamsPage() {
 
   const saveTeam = async () => {
     if (!formData.name || !formData.leaderId) {
-      toast.error("Name and leader are required");
+      toast.error(t("errors.required"));
       return;
     }
     setSaving(true);
@@ -150,22 +152,22 @@ export default function TeamsPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to save");
+        toast.error(data.error || t("errors.failedToSave"));
         return;
       }
 
-      toast.success(editTeam ? "Team updated" : "Team created");
+      toast.success(editTeam ? t("success.teamUpdated") : t("success.teamCreated"));
       setIsDialogOpen(false);
       fetchData();
     } catch (error) {
-      toast.error("Failed to save team");
+      toast.error(t("errors.failedToSave"));
     } finally {
       setSaving(false);
     }
   };
 
   const deleteTeam = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this team?")) return;
+    if (!confirm(t("confirm.deleteTeam"))) return;
 
     try {
       const res = await fetch(`/api/admin/teams?id=${id}`, {
@@ -174,14 +176,14 @@ export default function TeamsPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to delete");
+        toast.error(data.error || t("errors.failedToDelete"));
         return;
       }
 
-      toast.success("Team deleted");
+      toast.success(t("success.teamDeleted"));
       fetchData();
     } catch (error) {
-      toast.error("Failed to delete team");
+      toast.error(t("errors.failedToDelete"));
     }
   };
 
@@ -197,12 +199,12 @@ export default function TeamsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Teams</h1>
-          <p className="text-muted-foreground">Manage teams and members</p>
+          <h1 className="text-2xl font-bold">{t("admin.teams.title")}</h1>
+          <p className="text-muted-foreground">{t("admin.teams.description")}</p>
         </div>
         <Button onClick={openCreateDialog}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Team
+          {t("admin.teams.addTeam")}
         </Button>
       </div>
 
@@ -210,14 +212,14 @@ export default function TeamsPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>All Teams</CardTitle>
-              <CardDescription>Teams and their members</CardDescription>
+              <CardTitle>{t("admin.teams.allTeams")}</CardTitle>
+              <CardDescription>{t("admin.teams.teamsAndAssignments")}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search teams..."
+                  placeholder={t("admin.teams.searchTeams")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-8 w-48"
@@ -234,17 +236,17 @@ export default function TeamsPage() {
         <CardContent>
           {filteredTeams.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? "No teams match the search." : "No teams yet. Add your first team."}
+              {searchQuery ? t("admin.teams.noTeamsMatch") : t("admin.teams.noTeams")}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Leader</TableHead>
-                  <TableHead>Members</TableHead>
-                  <TableHead>Project</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("admin.teams.leader")}</TableHead>
+                  <TableHead>{t("admin.teams.members")}</TableHead>
+                  <TableHead>{t("admin.teams.project")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -275,7 +277,7 @@ export default function TeamsPage() {
                           </Badge>
                         )}
                         {team.memberIds.length === 0 && (
-                          <span className="text-muted-foreground">No members</span>
+                          <span className="text-muted-foreground">{t("admin.teams.noMembers")}</span>
                         )}
                       </div>
                     </TableCell>
@@ -309,25 +311,25 @@ export default function TeamsPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editTeam ? "Edit Team" : "Add Team"}</DialogTitle>
+            <DialogTitle>{editTeam ? t("admin.teams.editTeam") : t("admin.teams.addTeam")}</DialogTitle>
             <DialogDescription>
-              {editTeam ? "Update team information" : "Add a new team"}
+              {editTeam ? t("admin.teams.updateTeam") : t("admin.teams.addNewTeam")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Name *</Label>
+                <Label>{t("admin.teams.teamName")} *</Label>
                 <Input
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  placeholder="Team name"
+                  placeholder={t("admin.teams.teamName")}
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Project</Label>
+                <Label>{t("admin.teams.project")}</Label>
                 <Select
                   value={formData.projectId}
                   onValueChange={(v) =>
@@ -335,7 +337,7 @@ export default function TeamsPage() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select project" />
+                    <SelectValue placeholder={t("admin.teams.selectProject")} />
                   </SelectTrigger>
                   <SelectContent>
                     {projects.map((project) => (
@@ -348,7 +350,7 @@ export default function TeamsPage() {
               </div>
             </div>
             <div className="grid gap-2">
-              <Label>Leader *</Label>
+              <Label>{t("admin.teams.leader")} *</Label>
               <Select
                 value={formData.leaderId}
                 onValueChange={(v) =>
@@ -356,7 +358,7 @@ export default function TeamsPage() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select leader" />
+                  <SelectValue placeholder={t("admin.teams.selectLeader")} />
                 </SelectTrigger>
                 <SelectContent>
                   {users
@@ -370,11 +372,11 @@ export default function TeamsPage() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Members</Label>
+              <Label>{t("admin.teams.members")}</Label>
               <div className="grid grid-cols-2 gap-4 h-56">
                 {/* Left column: Regular Users */}
                 <div className="flex flex-col gap-2 h-full">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Users</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("admin.teams.users")}</p>
                   <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2">
                     {users
                       .filter((user) => (!user.role || user.role === "user") && user._id !== formData.leaderId)
@@ -408,13 +410,13 @@ export default function TeamsPage() {
                         </div>
                       ))}
                     {users.filter((user) => (!user.role || user.role === "user") && user._id !== formData.leaderId).length === 0 && (
-                      <p className="text-sm text-muted-foreground">No users</p>
+                      <p className="text-sm text-muted-foreground">{t("admin.teams.noUsers")}</p>
                     )}
                   </div>
                 </div>
                 {/* Right column: Leaders (can be members in other teams) */}
                 <div className="flex flex-col gap-2 h-full">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Leaders</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("admin.teams.leaders")}</p>
                   <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2">
                     {users
                       .filter((user) => (user.role === "leader" || user.role === "admin") && user._id !== formData.leaderId)
@@ -445,13 +447,13 @@ export default function TeamsPage() {
                           >
                             {user.name}
                             <Badge variant="secondary" className="ml-2 text-xs">
-                              {user.role}
+                              {t(`roles.${user.role}`)}
                             </Badge>
                           </label>
                         </div>
                       ))}
                     {users.filter((user) => (user.role === "leader" || user.role === "admin") && user._id !== formData.leaderId).length === 0 && (
-                      <p className="text-sm text-muted-foreground">No leaders</p>
+                      <p className="text-sm text-muted-foreground">{t("admin.teams.noLeaders")}</p>
                     )}
                   </div>
                 </div>
@@ -460,10 +462,10 @@ export default function TeamsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={saveTeam} disabled={saving}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

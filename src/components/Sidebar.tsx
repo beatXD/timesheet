@@ -16,6 +16,11 @@ import {
   UserCog,
   ChevronLeft,
   Briefcase,
+  CalendarPlus,
+  CalendarCheck,
+  ClipboardList,
+  Settings,
+  UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -34,39 +39,74 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    titleKey: "nav.sections.main",
+    titleKey: "nav.sections.overview",
     items: [
       {
         href: "/dashboard",
         labelKey: "nav.dashboard",
         icon: <LayoutDashboard className="w-5 h-5" />,
       },
+    ],
+  },
+  {
+    titleKey: "nav.sections.main",
+    items: [
       {
         href: "/timesheet",
         labelKey: "nav.timesheet",
         icon: <Clock className="w-5 h-5" />,
       },
       {
-        href: "/admin/leaves",
-        labelKey: "nav.leaves",
-        icon: <Briefcase className="w-5 h-5" />,
+        href: "/leave-requests",
+        labelKey: "nav.leaveRequests",
+        icon: <CalendarPlus className="w-5 h-5" />,
       },
     ],
   },
   {
-    titleKey: "nav.sections.teamManagement",
+    titleKey: "nav.sections.approval",
     roles: ["admin", "leader"],
     items: [
       {
         href: "/team",
         labelKey: "nav.team",
-        icon: <Users className="w-5 h-5" />,
+        icon: <ClipboardList className="w-5 h-5" />,
+        roles: ["admin", "leader"],
+      },
+      {
+        href: "/team/leaves",
+        labelKey: "nav.teamLeaves",
+        icon: <CalendarCheck className="w-5 h-5" />,
         roles: ["admin", "leader"],
       },
     ],
   },
   {
-    titleKey: "nav.sections.administration",
+    titleKey: "nav.sections.myTeam",
+    roles: ["admin", "leader"],
+    items: [
+      {
+        href: "/team/members",
+        labelKey: "nav.teamMembers",
+        icon: <UsersRound className="w-5 h-5" />,
+        roles: ["admin", "leader"],
+      },
+    ],
+  },
+  {
+    titleKey: "nav.sections.admin",
+    roles: ["admin"],
+    items: [
+      {
+        href: "/admin/timesheets",
+        labelKey: "nav.adminTimesheets",
+        icon: <ClipboardList className="w-5 h-5" />,
+        roles: ["admin"],
+      },
+    ],
+  },
+  {
+    titleKey: "nav.sections.settings",
     roles: ["admin"],
     items: [
       {
@@ -97,6 +137,12 @@ const navSections: NavSection[] = [
         href: "/admin/holidays",
         labelKey: "nav.holidays",
         icon: <Calendar className="w-5 h-5" />,
+        roles: ["admin"],
+      },
+      {
+        href: "/admin/leaves",
+        labelKey: "nav.leaves",
+        icon: <Briefcase className="w-5 h-5" />,
         roles: ["admin"],
       },
     ],

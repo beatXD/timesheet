@@ -1,0 +1,414 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { format, differenceInDays } from "date-fns";
+import { th, enUS } from "date-fns/locale";
+import { useTranslations, useLocale } from "next-intl";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Plus,
+  Calendar as CalendarIcon,
+  Trash2,
+  Clock,
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+interface LeaveRequestUser {
+  _id: string;
+  name: string;
+  email: string;
+  image?: string;
+}
+
+interface LeaveRequest {
+  _id: string;
+  userId: LeaveRequestUser;
+  startDate: string;
+  endDate: string;
+  leaveType: string;
+  reason?: string;
+  status: "pending" | "approved" | "rejected";
+  reviewedBy?: { _id: string; name: string; email: string };
+  reviewedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+}
+
+const leaveTypeColors: Record<string, string> = {
+  sick: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+  personal:
+    "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+  annual: "bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300",
+};
+
+const statusColors: Record<string, string> = {
+  pending:
+    "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300",
+  approved:
+    "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
+  rejected: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
+};
+
+export default function LeaveRequestsPage() {
+  const t = useTranslations();
+  const locale = useLocale();
+  const dateLocale = locale === "th" ? th : enUS;
+
+  const [myRequests, setMyRequests] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // New request dialog
+  const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({ from: undefined, to: undefined });
+  const [leaveType, setLeaveType] = useState("");
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchRequests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/leave-requests?scope=own");
+      const data = await res.json();
+      if (data.data) {
+        setMyRequests(data.data);
+      }
+    } catch (error) {
+      toast.error(t("errors.fetchFailed"));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  const handleSubmitRequest = async () => {
+    if (!dateRange.from || !leaveType) {
+      toast.error(t("leaveRequest.validation.required"));
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/leave-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          startDate: dateRange.from.toISOString(),
+          endDate: (dateRange.to || dateRange.from).toISOString(),
+          leaveType,
+          reason,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || t("errors.failedToCreate"));
+        return;
+      }
+
+      toast.success(t("leaveRequest.success.created"));
+      setIsNewDialogOpen(false);
+      resetForm();
+      fetchRequests();
+    } catch (error) {
+      toast.error(t("errors.failedToCreate"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCancel = async (request: LeaveRequest) => {
+    if (!confirm(t("leaveRequest.confirm.cancel"))) return;
+
+    try {
+      const res = await fetch(`/api/leave-requests/${request._id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || t("errors.failedToDelete"));
+        return;
+      }
+
+      toast.success(t("leaveRequest.success.cancelled"));
+      fetchRequests();
+    } catch (error) {
+      toast.error(t("errors.failedToDelete"));
+    }
+  };
+
+  const resetForm = () => {
+    setDateRange({ from: undefined, to: undefined });
+    setLeaveType("");
+    setReason("");
+  };
+
+  const formatDateRange = (start: string, end: string) => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const isSameDay = startDate.toDateString() === endDate.toDateString();
+
+    if (isSameDay) {
+      return format(startDate, "dd MMM yyyy", { locale: dateLocale });
+    }
+    return `${format(startDate, "dd MMM", { locale: dateLocale })} - ${format(
+      endDate,
+      "dd MMM yyyy",
+      { locale: dateLocale }
+    )}`;
+  };
+
+  const calculateDays = (start: string, end: string) => {
+    return differenceInDays(new Date(end), new Date(start)) + 1;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{t("leaveRequest.title")}</h1>
+          <p className="text-muted-foreground">
+            {t("leaveRequest.description")}
+          </p>
+        </div>
+        <Button onClick={() => setIsNewDialogOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          {t("leaveRequest.newRequest")}
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("leaveRequest.myRequests")}</CardTitle>
+          <CardDescription>{t("leaveRequest.myRequestsDesc")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("leaveRequest.dateRange")}</TableHead>
+                  <TableHead>{t("leaveRequest.days")}</TableHead>
+                  <TableHead>{t("leave.leaveType")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("timesheet.remark")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("common.actions")}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {myRequests.map((request) => (
+                  <TableRow key={request._id}>
+                    <TableCell>
+                      {formatDateRange(request.startDate, request.endDate)}
+                    </TableCell>
+                    <TableCell>
+                      {calculateDays(request.startDate, request.endDate)}{" "}
+                      {t("leave.days")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={leaveTypeColors[request.leaveType]}>
+                        {t(`leave.${request.leaveType}`)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={statusColors[request.status]}>
+                        {t(`leaveRequest.status.${request.status}`)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="max-w-[200px] truncate">
+                      {request.reason || request.rejectionReason || "-"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {request.status === "pending" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleCancel(request)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {request.status !== "pending" && (
+                        <span className="text-xs text-muted-foreground">
+                          {request.reviewedAt &&
+                            format(new Date(request.reviewedAt), "dd/MM/yy", {
+                              locale: dateLocale,
+                            })}
+                        </span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {myRequests.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      {t("leaveRequest.noRequests")}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* New Request Dialog */}
+      <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t("leaveRequest.newRequest")}</DialogTitle>
+            <DialogDescription>
+              {t("leaveRequest.newRequestDesc")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>{t("leaveRequest.dateRange")} *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !dateRange.from && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "dd/MM/yyyy")} -{" "}
+                          {format(dateRange.to, "dd/MM/yyyy")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "dd/MM/yyyy")
+                      )
+                    ) : (
+                      t("leaveRequest.selectDates")
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange.from}
+                    selected={dateRange}
+                    onSelect={(range) =>
+                      setDateRange({ from: range?.from, to: range?.to })
+                    }
+                    numberOfMonths={2}
+                    disabled={(date) => date < new Date()}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>{t("leave.leaveType")} *</Label>
+              <Select value={leaveType} onValueChange={setLeaveType}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("leave.selectType")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sick">{t("leave.sick")}</SelectItem>
+                  <SelectItem value="personal">{t("leave.personal")}</SelectItem>
+                  <SelectItem value="annual">{t("leave.annual")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>
+                {t("leaveRequest.reason")} ({t("common.optional")})
+              </Label>
+              <Textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder={t("leaveRequest.reasonPlaceholder")}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsNewDialogOpen(false);
+                resetForm();
+              }}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button onClick={handleSubmitRequest} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  {t("common.submitting")}
+                </>
+              ) : (
+                t("leaveRequest.submit")
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

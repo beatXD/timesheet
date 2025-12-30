@@ -54,6 +54,8 @@ const statusColors: Record<TimesheetStatus, string> = {
   submitted: "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300",
   approved: "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300",
   rejected: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300",
+  team_submitted: "bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-300",
+  final_approved: "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300",
 };
 
 const typeOptions: EntryType[] = ["working", "weekend", "holiday", "leave"];
@@ -91,11 +93,11 @@ export default function TimesheetDetailPage() {
         setEntries(data.data.entries);
       }
     } catch (error) {
-      toast.error("Failed to fetch timesheet");
+      toast.error(t("errors.failedToFetch"));
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [params.id, t]);
 
   useEffect(() => {
     fetchTimesheet();
@@ -142,14 +144,14 @@ export default function TimesheetDetailPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to save");
+        toast.error(data.error || t("errors.failedToSave"));
         return;
       }
 
-      toast.success("Timesheet saved");
+      toast.success(t("success.timesheetSaved"));
       fetchTimesheet();
     } catch (error) {
-      toast.error("Failed to save timesheet");
+      toast.error(t("errors.failedToSave"));
     } finally {
       setSaving(false);
     }
@@ -172,15 +174,15 @@ export default function TimesheetDetailPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to submit");
+        toast.error(data.error || t("errors.failedToSubmit"));
         return;
       }
 
-      toast.success("Timesheet submitted for approval");
+      toast.success(t("success.timesheetSubmitted"));
       setShowSubmitDialog(false);
       fetchTimesheet();
     } catch (error) {
-      toast.error("Failed to submit timesheet");
+      toast.error(t("errors.failedToSubmit"));
     } finally {
       setSubmitting(false);
     }

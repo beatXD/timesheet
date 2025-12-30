@@ -63,8 +63,13 @@ export async function POST(
       }
     }
 
-    timesheet.status = "rejected";
+    // Leader/Admin reject → back to draft so user can edit
+    timesheet.status = "draft";
     timesheet.rejectedReason = reason;
+    // Clear approval fields
+    timesheet.approvedAt = undefined;
+    timesheet.approvedBy = undefined;
+    timesheet.submittedAt = undefined;
 
     await timesheet.save();
 

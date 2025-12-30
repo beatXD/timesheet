@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -68,6 +69,7 @@ const roleColors: Record<UserRole, string> = {
 };
 
 export default function UsersPage() {
+  const t = useTranslations();
   const [users, setUsers] = useState<User[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -133,7 +135,7 @@ export default function UsersPage() {
       if (teamsData.data) setTeams(teamsData.data);
       if (vendorsData.data) setVendors(vendorsData.data);
     } catch (error) {
-      toast.error("Failed to fetch users");
+      toast.error(t("errors.failedToFetch"));
     } finally {
       setLoading(false);
     }
@@ -154,15 +156,15 @@ export default function UsersPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to save");
+        toast.error(data.error || t("errors.failedToSave"));
         return;
       }
 
-      toast.success("User updated");
+      toast.success(t("success.userUpdated"));
       setEditUser(null);
       fetchUsers();
     } catch (error) {
-      toast.error("Failed to save user");
+      toast.error(t("errors.failedToSave"));
     } finally {
       setSaving(false);
     }
@@ -179,24 +181,24 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Users</h1>
-        <p className="text-muted-foreground">Manage user roles and assignments</p>
+        <h1 className="text-2xl font-bold">{t("admin.users.title")}</h1>
+        <p className="text-muted-foreground">{t("admin.users.description")}</p>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>All Users</CardTitle>
+              <CardTitle>{t("admin.users.allUsers")}</CardTitle>
               <CardDescription>
-                Users are created automatically when they sign in with OAuth
+                {t("admin.users.usersCreatedAuto")}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search users..."
+                  placeholder={t("admin.users.searchUsers")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-8 w-48"
@@ -204,22 +206,22 @@ export default function UsersPage() {
               </div>
               <Select value={filterRole} onValueChange={setFilterRole}>
                 <SelectTrigger className="w-28">
-                  <SelectValue placeholder="Role" />
+                  <SelectValue placeholder={t("admin.users.role")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="leader">Leader</SelectItem>
-                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="all">{t("common.allRoles")}</SelectItem>
+                  <SelectItem value="admin">{t("roles.admin")}</SelectItem>
+                  <SelectItem value="leader">{t("roles.leader")}</SelectItem>
+                  <SelectItem value="user">{t("roles.user")}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filterTeam} onValueChange={setFilterTeam}>
                 <SelectTrigger className="w-36">
-                  <SelectValue placeholder="Team" />
+                  <SelectValue placeholder={t("common.team")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Teams</SelectItem>
-                  <SelectItem value="none">No Team</SelectItem>
+                  <SelectItem value="all">{t("common.allTeams")}</SelectItem>
+                  <SelectItem value="none">{t("common.noTeam")}</SelectItem>
                   {teams.map((team) => (
                     <SelectItem key={team._id} value={team._id}>
                       {team.name}
@@ -239,19 +241,19 @@ export default function UsersPage() {
           {filteredUsers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {hasActiveFilters
-                ? "No users match the current filters."
-                : "No users found."}
+                ? t("admin.users.noUsersMatch")
+                : t("admin.users.noUsers")}
             </div>
           ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Contract Role</TableHead>
-                <TableHead>Teams</TableHead>
-                <TableHead>Vendor</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("common.user")}</TableHead>
+                <TableHead>{t("admin.users.role")}</TableHead>
+                <TableHead>{t("admin.users.contractRole")}</TableHead>
+                <TableHead>{t("admin.users.teams")}</TableHead>
+                <TableHead>{t("admin.users.vendor")}</TableHead>
+                <TableHead className="text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -277,7 +279,7 @@ export default function UsersPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={roleColors[user.role]}>{user.role}</Badge>
+                    <Badge className={roleColors[user.role]}>{t(`roles.${user.role}`)}</Badge>
                   </TableCell>
                   <TableCell>{user.contractRole || "-"}</TableCell>
                   <TableCell>
@@ -315,15 +317,15 @@ export default function UsersPage() {
       <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
+            <DialogTitle>{t("admin.users.editUser")}</DialogTitle>
             <DialogDescription>
-              Update user role and assignments
+              {t("admin.users.updateRoleAssignments")}
             </DialogDescription>
           </DialogHeader>
           {editUser && (
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label>Role</Label>
+                <Label>{t("admin.users.role")}</Label>
                 <Select
                   value={editUser.role}
                   onValueChange={(v) =>
@@ -334,24 +336,24 @@ export default function UsersPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="leader">Leader</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="user">{t("roles.user")}</SelectItem>
+                    <SelectItem value="leader">{t("roles.leader")}</SelectItem>
+                    <SelectItem value="admin">{t("roles.admin")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label>Contract Role</Label>
+                <Label>{t("admin.users.contractRole")}</Label>
                 <Input
                   value={editUser.contractRole || ""}
                   onChange={(e) =>
                     setEditUser({ ...editUser, contractRole: e.target.value })
                   }
-                  placeholder="e.g., Full-stack Developer"
+                  placeholder={t("admin.users.contractRolePlaceholder")}
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Vendor</Label>
+                <Label>{t("admin.users.vendor")}</Label>
                 <Select
                   value={editUser.vendorId?._id || "none"}
                   onValueChange={(v) =>
@@ -368,7 +370,7 @@ export default function UsersPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No Vendor</SelectItem>
+                    <SelectItem value="none">{t("admin.users.noVendor")}</SelectItem>
                     {vendors.map((vendor) => (
                       <SelectItem key={vendor._id} value={vendor._id}>
                         {vendor.name}
@@ -381,10 +383,10 @@ export default function UsersPage() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditUser(null)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={saveUser} disabled={saving}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
