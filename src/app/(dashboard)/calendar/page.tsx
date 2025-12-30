@@ -11,6 +11,9 @@ import {
   subMonths,
   getDay,
   isWeekend,
+  isBefore,
+  isAfter,
+  differenceInDays,
 } from "date-fns";
 import { th, enUS } from "date-fns/locale";
 import { useTranslations, useLocale } from "next-intl";
@@ -140,16 +143,127 @@ export default function MyCalendarPage() {
   // Get first day of month (0 = Sunday, 1 = Monday, etc.)
   const firstDayOfMonth = getDay(startOfMonth(currentMonth));
 
-  // Get leaves for a specific day
-  const getLeavesForDay = useCallback(
-    (day: Date) => {
-      return leaveRequests.filter((req) => {
-        const start = new Date(req.startDate);
-        const end = new Date(req.endDate);
-        return day >= start && day <= end;
+  // Split days into weeks for the calendar grid
+  const weeksInMonth = useMemo(() => {
+    const weeks: Date[][] = [];
+    let currentWeek: Date[] = [];
+
+    // Add empty slots for days before first day of month
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      currentWeek.push(null as unknown as Date);
+    }
+
+    daysInMonth.forEach((day) => {
+      currentWeek.push(day);
+      if (currentWeek.length === 7) {
+        weeks.push(currentWeek);
+        currentWeek = [];
+      }
+    });
+
+    // Push remaining days
+    if (currentWeek.length > 0) {
+      weeks.push(currentWeek);
+    }
+
+    return weeks;
+  }, [daysInMonth, firstDayOfMonth]);
+
+  // Calculate leave bars for each week
+  interface LeaveBar {
+    leave: LeaveRequest;
+    startCol: number;
+    span: number;
+    isStart: boolean;
+    isEnd: boolean;
+  }
+
+  const getLeavesBarsForWeek = useCallback(
+    (weekDays: Date[], weekIndex: number): LeaveBar[] => {
+      const bars: LeaveBar[] = [];
+      const monthStart = startOfMonth(currentMonth);
+      const monthEnd = endOfMonth(currentMonth);
+
+      leaveRequests.forEach((leave) => {
+        const leaveStart = new Date(leave.startDate);
+        const leaveEnd = new Date(leave.endDate);
+
+        // Get the actual days in this week (filter out nulls)
+        const validDays = weekDays.filter((d) => d !== null);
+        if (validDays.length === 0) return;
+
+        const weekStart = validDays[0];
+        const weekEnd = validDays[validDays.length - 1];
+
+        // Check if leave overlaps with this week
+        if (isAfter(leaveStart, weekEnd) || isBefore(leaveEnd, weekStart)) {
+          return;
+        }
+
+        // Calculate start column (0-6)
+        let startCol = 0;
+        if (isBefore(leaveStart, weekStart) || isSameDay(leaveStart, weekStart)) {
+          startCol = weekDays.findIndex((d) => d !== null);
+        } else {
+          startCol = weekDays.findIndex(
+            (d) => d !== null && isSameDay(d, leaveStart)
+          );
+        }
+
+        // Calculate end column
+        let endCol = 6;
+        if (isAfter(leaveEnd, weekEnd) || isSameDay(leaveEnd, weekEnd)) {
+          endCol = weekDays.length - 1;
+          for (let i = weekDays.length - 1; i >= 0; i--) {
+            if (weekDays[i] !== null) {
+              endCol = i;
+              break;
+            }
+          }
+        } else {
+          endCol = weekDays.findIndex(
+            (d) => d !== null && isSameDay(d, leaveEnd)
+          );
+        }
+
+        if (startCol === -1 || endCol === -1) return;
+
+        const span = endCol - startCol + 1;
+        const isStart =
+          isSameDay(leaveStart, weekDays[startCol]) ||
+          (weekIndex === 0 && isBefore(leaveStart, monthStart));
+        const isEnd =
+          isSameDay(leaveEnd, weekDays[endCol]) ||
+          (weekIndex === weeksInMonth.length - 1 && isAfter(leaveEnd, monthEnd));
+
+        bars.push({
+          leave,
+          startCol,
+          span,
+          isStart,
+          isEnd,
+        });
       });
+
+      // Sort bars by start date for consistent stacking
+      bars.sort((a, b) => {
+        const aStart = new Date(a.leave.startDate).getTime();
+        const bStart = new Date(b.leave.startDate).getTime();
+        if (aStart !== bStart) return aStart - bStart;
+        const aDuration = differenceInDays(
+          new Date(a.leave.endDate),
+          new Date(a.leave.startDate)
+        );
+        const bDuration = differenceInDays(
+          new Date(b.leave.endDate),
+          new Date(b.leave.startDate)
+        );
+        return bDuration - aDuration;
+      });
+
+      return bars;
     },
-    [leaveRequests]
+    [leaveRequests, currentMonth, weeksInMonth.length]
   );
 
   // Get holiday for a specific day
@@ -247,71 +361,96 @@ export default function MyCalendarPage() {
                 ))}
               </div>
 
-              {/* Calendar grid */}
-              <div className="grid grid-cols-7">
-                {/* Empty cells for days before first day of month */}
-                {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                  <div
-                    key={`empty-${i}`}
-                    className="min-h-[100px] p-2 border-b border-r bg-muted/20"
-                  />
-                ))}
+              {/* Calendar grid - week by week */}
+              {weeksInMonth.map((week, weekIndex) => {
+                const leaveBars = getLeavesBarsForWeek(week, weekIndex);
 
-                {/* Days of the month */}
-                {daysInMonth.map((day) => {
-                  const dayLeaves = getLeavesForDay(day);
-                  const holiday = getHolidayForDay(day);
-                  const isToday = isSameDay(day, new Date());
-                  const isWeekendDay = isWeekend(day);
+                return (
+                  <div key={weekIndex} className="relative">
+                    {/* Day cells */}
+                    <div className="grid grid-cols-7">
+                      {week.map((day, dayIndex) => {
+                        if (!day) {
+                          return (
+                            <div
+                              key={`empty-${weekIndex}-${dayIndex}`}
+                              className="min-h-[100px] p-2 border-b border-r bg-muted/20"
+                            />
+                          );
+                        }
 
-                  return (
-                    <div
-                      key={day.toISOString()}
-                      className={cn(
-                        "min-h-[100px] p-2 border-b border-r relative",
-                        isWeekendDay && "bg-muted/20",
-                        holiday && "bg-red-50 dark:bg-red-900/10"
-                      )}
-                    >
-                      {/* Day number */}
-                      <div
-                        className={cn(
-                          "text-sm font-medium mb-1",
-                          isToday &&
-                            "bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center",
-                          isWeekendDay && !isToday && "text-muted-foreground"
-                        )}
-                      >
-                        {format(day, "d")}
+                        const holiday = getHolidayForDay(day);
+                        const isToday = isSameDay(day, new Date());
+                        const isWeekendDay = isWeekend(day);
+
+                        return (
+                          <div
+                            key={day.toISOString()}
+                            className={cn(
+                              "min-h-[100px] p-2 border-b border-r relative",
+                              isWeekendDay && "bg-muted/20",
+                              holiday && "bg-red-50 dark:bg-red-900/10"
+                            )}
+                          >
+                            {/* Day number */}
+                            <div
+                              className={cn(
+                                "text-sm font-medium mb-1",
+                                isToday &&
+                                  "bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center",
+                                isWeekendDay && !isToday && "text-muted-foreground"
+                              )}
+                            >
+                              {format(day, "d")}
+                            </div>
+
+                            {/* Holiday indicator */}
+                            {holiday && (
+                              <div className="text-xs text-red-600 dark:text-red-400 font-medium truncate mb-1">
+                                {holiday.name}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Leave bars overlay */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="grid grid-cols-7 h-full">
+                        {week.map((_, dayIndex) => (
+                          <div key={dayIndex} className="relative" />
+                        ))}
                       </div>
+                      {/* Render spanning leave bars */}
+                      {leaveBars.slice(0, 4).map((bar, barIndex) => {
+                        const { leave, startCol, span, isStart, isEnd } = bar;
+                        const colors =
+                          leave.status === "approved"
+                            ? leaveTypeColors[leave.leaveType]
+                            : statusColors[leave.status];
 
-                      {/* Holiday indicator */}
-                      {holiday && (
-                        <div className="text-xs text-red-600 dark:text-red-400 font-medium truncate mb-1">
-                          {holiday.name}
-                        </div>
-                      )}
-
-                      {/* Leave indicators */}
-                      <div className="space-y-1">
-                        {dayLeaves.map((leave) => (
-                          <Popover key={leave._id}>
+                        return (
+                          <Popover key={`${leave._id}-${weekIndex}`}>
                             <PopoverTrigger asChild>
                               <button
                                 className={cn(
-                                  "w-full text-left text-xs px-1.5 py-0.5 rounded truncate",
-                                  leave.status === "approved"
-                                    ? leaveTypeColors[leave.leaveType].bg
-                                    : statusColors[leave.status].bg,
-                                  leave.status === "approved"
-                                    ? leaveTypeColors[leave.leaveType].text
-                                    : statusColors[leave.status].text
+                                  "absolute h-5 text-xs px-1.5 flex items-center pointer-events-auto truncate transition-opacity hover:opacity-80",
+                                  colors.bg,
+                                  colors.text,
+                                  isStart ? "rounded-l" : "rounded-l-none border-l-0",
+                                  isEnd ? "rounded-r" : "rounded-r-none"
                                 )}
+                                style={{
+                                  left: `calc(${(startCol / 7) * 100}% + 4px)`,
+                                  width: `calc(${(span / 7) * 100}% - 8px)`,
+                                  top: `${32 + barIndex * 22}px`,
+                                }}
                               >
-                                {t(`leave.type.${leave.leaveType}`)}
+                                {isStart && t(`leave.type.${leave.leaveType}`)}
                               </button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-64 p-3">
+                            <PopoverContent className="w-64 p-3 pointer-events-auto">
                               <div className="space-y-2 text-sm">
                                 <div className="flex items-center justify-between">
                                   <span className="text-muted-foreground">
@@ -366,12 +505,23 @@ export default function MyCalendarPage() {
                               </div>
                             </PopoverContent>
                           </Popover>
-                        ))}
-                      </div>
+                        );
+                      })}
+                      {leaveBars.length > 4 && (
+                        <div
+                          className="absolute text-xs text-muted-foreground pointer-events-auto"
+                          style={{
+                            left: "4px",
+                            top: `${32 + 4 * 22}px`,
+                          }}
+                        >
+                          +{leaveBars.length - 4} {t("teamCalendar.more")}
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
