@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, User, Vendor, Project } from "@/models";
+import { Timesheet, User, Vendor, Project, Team } from "@/models";
 import { generateTimesheetPDF } from "@/lib/export/pdf";
 import { format } from "date-fns";
 
@@ -28,11 +28,22 @@ export async function GET(
     }
 
     // Check permission
-    if (
-      timesheet.userId.toString() !== session.user.id &&
-      session.user.role === "user"
-    ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (timesheet.userId.toString() !== session.user.id) {
+      // Regular users can only export their own timesheets
+      if (session.user.role === "user") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      // Leaders can only export their team members' timesheets
+      if (session.user.role === "leader") {
+        const teams = await Team.find({ leaderId: session.user.id });
+        const allMemberIds = teams.flatMap((t) =>
+          t.memberIds.map((id: { toString: () => string }) => id.toString())
+        );
+        if (!allMemberIds.includes(timesheet.userId.toString())) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+      }
+      // Admins can export all timesheets
     }
 
     // Get related data
@@ -44,8 +55,8 @@ export async function GET(
     const vendor = user.vendorId
       ? await Vendor.findById(user.vendorId).lean()
       : undefined;
-    const project = user.teamId
-      ? await Project.findOne({ _id: { $in: [user.teamId] } }).lean()
+    const project = user.teamIds && user.teamIds.length > 0
+      ? await Project.findOne({ _id: { $in: user.teamIds } }).lean()
       : undefined;
 
     const buffer = await generateTimesheetPDF({

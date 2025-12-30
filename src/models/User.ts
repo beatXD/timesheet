@@ -13,7 +13,7 @@ const UserSchema = new Schema<IUser>(
       enum: ["admin", "leader", "user"] as UserRole[],
       default: "user",
     },
-    teamId: { type: Schema.Types.ObjectId, ref: "Team" },
+    teamIds: [{ type: Schema.Types.ObjectId, ref: "Team" }],
     vendorId: { type: Schema.Types.ObjectId, ref: "Vendor" },
     contractRole: { type: String },
   },

@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,10 +19,12 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const error = searchParams.get("error");
 
@@ -48,7 +51,7 @@ function LoginForm() {
         router.refresh();
       }
     } catch {
-      toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      toast.error(t("errors.generic"));
     } finally {
       setLoading(false);
     }
@@ -62,24 +65,24 @@ function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">Timesheet</CardTitle>
+        <CardTitle className="text-2xl font-bold">{t("common.appName")}</CardTitle>
         <CardDescription>
-          Sign in to manage your timesheet
+          {t("auth.signInDescription")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
           <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
             {error === "CredentialsSignin"
-              ? "Email หรือรหัสผ่านไม่ถูกต้อง"
-              : "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"}
+              ? t("errors.invalidCredentials")
+              : t("errors.generic")}
           </div>
         )}
 
         {/* Email/Password Form */}
         <form onSubmit={handleEmailLogin} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("auth.email")}</Label>
             <Input
               id="email"
               type="email"
@@ -91,11 +94,11 @@ function LoginForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("auth.password")}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="Enter your password"
+              placeholder={t("auth.enterPassword")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -104,7 +107,7 @@ function LoginForm() {
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Sign in with Email
+            {t("auth.signInWithEmail")}
           </Button>
         </form>
 
@@ -114,7 +117,7 @@ function LoginForm() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-white px-2 text-muted-foreground">
-              Or continue with
+              {t("auth.orContinueWith")}
             </span>
           </div>
         </div>
@@ -168,9 +171,9 @@ function LoginForm() {
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          {t("auth.noAccount")}{" "}
           <Link href="/register" className="text-primary hover:underline font-medium">
-            Sign up
+            {t("auth.signUp")}
           </Link>
         </p>
       </CardFooter>
@@ -179,12 +182,14 @@ function LoginForm() {
 }
 
 function LoginFormFallback() {
+  const t = useTranslations();
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">Timesheet</CardTitle>
+        <CardTitle className="text-2xl font-bold">{t("common.appName")}</CardTitle>
         <CardDescription>
-          Sign in to manage your timesheet
+          {t("auth.signInDescription")}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex items-center justify-center py-8">
@@ -196,7 +201,10 @@ function LoginFormFallback() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <Suspense fallback={<LoginFormFallback />}>
         <LoginForm />
       </Suspense>

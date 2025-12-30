@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,59 +25,64 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Search, X } from "lucide-react";
 import { toast } from "sonner";
-
-interface Vendor {
-  _id: string;
-  name: string;
-}
 
 interface Project {
   _id: string;
   name: string;
   description?: string;
-  vendorId?: Vendor;
 }
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    vendorId: "",
   });
   const [saving, setSaving] = useState(false);
+
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchData();
   }, []);
 
+  // Filtered projects
+  const filteredProjects = useMemo(() => {
+    return projects.filter((project) => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        if (
+          !project.name.toLowerCase().includes(query) &&
+          !(project.description && project.description.toLowerCase().includes(query))
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [projects, searchQuery]);
+
+  const clearFilters = () => {
+    setSearchQuery("");
+  };
+
+  const hasActiveFilters = searchQuery !== "";
+
   const fetchData = async () => {
     try {
-      const [projectsRes, vendorsRes] = await Promise.all([
-        fetch("/api/admin/projects"),
-        fetch("/api/admin/vendors"),
-      ]);
-      const projectsData = await projectsRes.json();
-      const vendorsData = await vendorsRes.json();
-
-      if (projectsData.data) setProjects(projectsData.data);
-      if (vendorsData.data) setVendors(vendorsData.data);
+      const res = await fetch("/api/admin/projects");
+      const data = await res.json();
+      if (data.data) setProjects(data.data);
     } catch (error) {
       toast.error("Failed to fetch data");
     } finally {
@@ -87,7 +92,7 @@ export default function ProjectsPage() {
 
   const openCreateDialog = () => {
     setEditProject(null);
-    setFormData({ name: "", description: "", vendorId: "" });
+    setFormData({ name: "", description: "" });
     setIsDialogOpen(true);
   };
 
@@ -96,7 +101,6 @@ export default function ProjectsPage() {
     setFormData({
       name: project.name,
       description: project.description || "",
-      vendorId: project.vendorId?._id || "",
     });
     setIsDialogOpen(true);
   };
@@ -179,29 +183,49 @@ export default function ProjectsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Projects</CardTitle>
-          <CardDescription>Projects assigned to teams</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>All Projects</CardTitle>
+              <CardDescription>Projects assigned to teams</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search projects..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 w-48"
+                />
+              </div>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {projects.length === 0 ? (
+          {filteredProjects.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No projects yet. Add your first project.
+              {hasActiveFilters
+                ? "No projects match the current filters."
+                : "No projects yet. Add your first project."}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Vendor</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {projects.map((project) => (
+                {filteredProjects.map((project) => (
                   <TableRow key={project._id}>
                     <TableCell className="font-medium">{project.name}</TableCell>
-                    <TableCell>{project.vendorId?.name || "-"}</TableCell>
                     <TableCell className="max-w-xs truncate">
                       {project.description || "-"}
                     </TableCell>
@@ -251,26 +275,6 @@ export default function ProjectsPage() {
                 }
                 placeholder="Project name"
               />
-            </div>
-            <div className="grid gap-2">
-              <Label>Vendor</Label>
-              <Select
-                value={formData.vendorId}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, vendorId: v })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select vendor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vendors.map((vendor) => (
-                    <SelectItem key={vendor._id} value={vendor._id}>
-                      {vendor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
             <div className="grid gap-2">
               <Label>Description</Label>

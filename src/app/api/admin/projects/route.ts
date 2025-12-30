@@ -14,7 +14,6 @@ export async function GET() {
     await connectDB();
 
     const projects = await Project.find()
-      .populate("vendorId", "name")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -39,13 +38,16 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { name, vendorId, description } = body;
+    const { name, description } = body;
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    const project = await Project.create({ name, vendorId, description });
+    const project = await Project.create({
+      name,
+      description,
+    });
 
     return NextResponse.json({ data: project }, { status: 201 });
   } catch (error) {
@@ -68,7 +70,7 @@ export async function PUT(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { _id, name, vendorId, description } = body;
+    const { _id, name, description } = body;
 
     if (!_id) {
       return NextResponse.json(
@@ -79,7 +81,7 @@ export async function PUT(request: NextRequest) {
 
     const project = await Project.findByIdAndUpdate(
       _id,
-      { name, vendorId, description },
+      { name, description },
       { new: true }
     );
 

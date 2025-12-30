@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet } from "@/models";
+import { Timesheet, Team } from "@/models";
 
 // GET /api/timesheets/[id] - Get single timesheet
 export async function GET(
@@ -26,12 +26,23 @@ export async function GET(
       );
     }
 
-    // Check if user owns this timesheet or is admin/leader
-    if (
-      timesheet.userId.toString() !== session.user.id &&
-      session.user.role === "user"
-    ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // Check if user owns this timesheet
+    if (timesheet.userId.toString() !== session.user.id) {
+      // Regular users can only view their own timesheets
+      if (session.user.role === "user") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      // Leaders can only view their team members' timesheets
+      if (session.user.role === "leader") {
+        const teams = await Team.find({ leaderId: session.user.id });
+        const allMemberIds = teams.flatMap((t) =>
+          t.memberIds.map((id: { toString: () => string }) => id.toString())
+        );
+        if (!allMemberIds.includes(timesheet.userId.toString())) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+      }
+      // Admins can view all timesheets
     }
 
     return NextResponse.json({ data: timesheet });

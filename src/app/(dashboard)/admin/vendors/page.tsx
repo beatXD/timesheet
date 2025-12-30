@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface Vendor {
@@ -45,9 +45,23 @@ export default function VendorsPage() {
   const [formData, setFormData] = useState({ name: "", contractNo: "" });
   const [saving, setSaving] = useState(false);
 
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState("");
+
   useEffect(() => {
     fetchVendors();
   }, []);
+
+  // Filtered vendors
+  const filteredVendors = useMemo(() => {
+    if (!searchQuery) return vendors;
+    const query = searchQuery.toLowerCase();
+    return vendors.filter(
+      (vendor) =>
+        vendor.name.toLowerCase().includes(query) ||
+        (vendor.contractNo && vendor.contractNo.toLowerCase().includes(query))
+    );
+  }, [vendors, searchQuery]);
 
   const fetchVendors = async () => {
     try {
@@ -153,13 +167,33 @@ export default function VendorsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Vendors</CardTitle>
-          <CardDescription>Vendor companies for timesheets</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>All Vendors</CardTitle>
+              <CardDescription>Vendor companies for timesheets</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search vendors..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 w-48"
+                />
+              </div>
+              {searchQuery && (
+                <Button variant="ghost" size="sm" onClick={() => setSearchQuery("")}>
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {vendors.length === 0 ? (
+          {filteredVendors.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No vendors yet. Add your first vendor.
+              {searchQuery ? "No vendors match the search." : "No vendors yet. Add your first vendor."}
             </div>
           ) : (
             <Table>
@@ -171,7 +205,7 @@ export default function VendorsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {vendors.map((vendor) => (
+                {filteredVendors.map((vendor) => (
                   <TableRow key={vendor._id}>
                     <TableCell className="font-medium">{vendor.name}</TableCell>
                     <TableCell>{vendor.contractNo || "-"}</TableCell>

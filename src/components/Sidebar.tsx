@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/store";
 import type { UserRole } from "@/types";
@@ -19,7 +20,7 @@ import { Button } from "@/components/ui/button";
 
 interface NavItem {
   href: string;
-  label: string;
+  labelKey: string;
   icon: React.ReactNode;
   roles?: UserRole[];
 }
@@ -27,47 +28,47 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     href: "/dashboard",
-    label: "Dashboard",
+    labelKey: "nav.dashboard",
     icon: <LayoutDashboard className="w-5 h-5" />,
   },
   {
     href: "/timesheet",
-    label: "Timesheet",
+    labelKey: "nav.timesheet",
     icon: <Clock className="w-5 h-5" />,
   },
   {
     href: "/team",
-    label: "Team",
+    labelKey: "nav.team",
     icon: <Users className="w-5 h-5" />,
     roles: ["admin", "leader"],
   },
   {
     href: "/admin/users",
-    label: "Users",
+    labelKey: "nav.users",
     icon: <UserCog className="w-5 h-5" />,
     roles: ["admin"],
   },
   {
     href: "/admin/teams",
-    label: "Teams",
+    labelKey: "nav.teams",
     icon: <Users className="w-5 h-5" />,
     roles: ["admin"],
   },
   {
     href: "/admin/vendors",
-    label: "Vendors",
+    labelKey: "nav.vendors",
     icon: <Building2 className="w-5 h-5" />,
     roles: ["admin"],
   },
   {
     href: "/admin/projects",
-    label: "Projects",
+    labelKey: "nav.projects",
     icon: <FolderKanban className="w-5 h-5" />,
     roles: ["admin"],
   },
   {
     href: "/admin/holidays",
-    label: "Holidays",
+    labelKey: "nav.holidays",
     icon: <Calendar className="w-5 h-5" />,
     roles: ["admin"],
   },
@@ -80,6 +81,7 @@ interface SidebarProps {
 export function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname();
   const { isOpen, toggle } = useSidebarStore();
+  const t = useTranslations();
 
   const filteredItems = navItems.filter(
     (item) => !item.roles || item.roles.includes(userRole)
@@ -95,7 +97,7 @@ export function Sidebar({ userRole }: SidebarProps) {
       <div className="flex h-16 items-center justify-between px-4 border-b">
         {isOpen && (
           <Link href="/dashboard" className="font-bold text-xl">
-            Timesheet
+            {t("common.appName")}
           </Link>
         )}
         <Button
@@ -116,6 +118,7 @@ export function Sidebar({ userRole }: SidebarProps) {
       <nav className="p-2 space-y-1">
         {filteredItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const label = t(item.labelKey);
           return (
             <Link
               key={item.href}
@@ -127,10 +130,10 @@ export function Sidebar({ userRole }: SidebarProps) {
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                 !isOpen && "justify-center"
               )}
-              title={!isOpen ? item.label : undefined}
+              title={!isOpen ? label : undefined}
             >
               {item.icon}
-              {isOpen && <span>{item.label}</span>}
+              {isOpen && <span>{label}</span>}
             </Link>
           );
         })}

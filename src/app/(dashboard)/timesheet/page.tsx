@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -39,7 +39,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, FileEdit, Eye } from "lucide-react";
+import { Plus, FileEdit, Eye, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import type { ITimesheet, TimesheetStatus } from "@/types";
 
@@ -70,6 +70,10 @@ export default function TimesheetListPage() {
   );
   const [creating, setCreating] = useState(false);
 
+  // Filter states
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterYear, setFilterYear] = useState<string>("all");
+
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -77,6 +81,22 @@ export default function TimesheetListPage() {
   useEffect(() => {
     fetchTimesheets();
   }, []);
+
+  // Filtered timesheets
+  const filteredTimesheets = useMemo(() => {
+    return timesheets.filter((ts) => {
+      if (filterStatus !== "all" && ts.status !== filterStatus) return false;
+      if (filterYear !== "all" && ts.year !== parseInt(filterYear)) return false;
+      return true;
+    });
+  }, [timesheets, filterStatus, filterYear]);
+
+  const clearFilters = () => {
+    setFilterStatus("all");
+    setFilterYear("all");
+  };
+
+  const hasActiveFilters = filterStatus !== "all" || filterYear !== "all";
 
   const fetchTimesheets = async () => {
     try {
@@ -204,15 +224,54 @@ export default function TimesheetListPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Timesheets</CardTitle>
-          <CardDescription>
-            View and manage your submitted timesheets
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Your Timesheets</CardTitle>
+              <CardDescription>
+                View and manage your submitted timesheets
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterYear} onValueChange={setFilterYear}>
+                <SelectTrigger className="w-28">
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Years</SelectItem>
+                  {years.map((y) => (
+                    <SelectItem key={y} value={y.toString()}>
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {timesheets.length === 0 ? (
+          {filteredTimesheets.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No timesheets yet. Create your first timesheet to get started.
+              {hasActiveFilters
+                ? "No timesheets match the current filters."
+                : "No timesheets yet. Create your first timesheet to get started."}
             </div>
           ) : (
             <Table>
@@ -227,7 +286,7 @@ export default function TimesheetListPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {timesheets.map((ts) => (
+                {filteredTimesheets.map((ts) => (
                   <TableRow key={ts._id.toString()}>
                     <TableCell className="font-medium">
                       {getMonthName(ts.month, ts.year)}

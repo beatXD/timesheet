@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Eye, Check, X } from "lucide-react";
+import { Eye, Check, X, Filter } from "lucide-react";
 import { toast } from "sonner";
 import type { TimesheetStatus } from "@/types";
 
@@ -62,11 +62,17 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("submitted");
 
+  // Filter states
+  const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
+  const [filterMonth, setFilterMonth] = useState<string>("all");
+
   const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
   useEffect(() => {
     fetchTimesheets();
-  }, [filter]);
+  }, [filter, filterYear, filterMonth]);
 
   const fetchTimesheets = async () => {
     setLoading(true);
@@ -75,7 +81,10 @@ export default function TeamPage() {
       if (filter !== "all") {
         params.set("status", filter);
       }
-      params.set("year", currentYear.toString());
+      params.set("year", filterYear);
+      if (filterMonth !== "all") {
+        params.set("month", filterMonth);
+      }
 
       const res = await fetch(`/api/team/timesheets?${params}`);
       const data = await res.json();
@@ -140,9 +149,39 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Team Timesheets</h1>
-        <p className="text-gray-500">Review and approve team member timesheets</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Team Timesheets</h1>
+          <p className="text-gray-500">Review and approve team member timesheets</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Months</SelectItem>
+              {months.map((m) => (
+                <SelectItem key={m} value={m.toString()}>
+                  {format(new Date(2024, m - 1), "MMMM")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-28">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((y) => (
+                <SelectItem key={y} value={y.toString()}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <Tabs value={filter} onValueChange={setFilter}>

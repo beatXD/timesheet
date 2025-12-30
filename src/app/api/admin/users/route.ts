@@ -14,7 +14,7 @@ export async function GET() {
     await connectDB();
 
     const users = await User.find()
-      .populate("teamId", "name")
+      .populate("teamIds", "name")
       .populate("vendorId", "name")
       .sort({ createdAt: -1 })
       .lean();
@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { _id, role, teamId, vendorId, contractRole } = body;
+    const { _id, role, vendorId, contractRole } = body;
 
     if (!_id) {
       return NextResponse.json(
@@ -51,7 +51,7 @@ export async function PUT(request: NextRequest) {
 
     const user = await User.findByIdAndUpdate(
       _id,
-      { role, teamId, vendorId, contractRole },
+      { role, vendorId, contractRole },
       { new: true }
     );
 

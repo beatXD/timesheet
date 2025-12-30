@@ -1,15 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { th, enUS } from "date-fns/locale";
+import { useTranslations, useLocale } from "next-intl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, FileCheck, FileX, Send, Calendar, TrendingUp } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Clock, FileCheck, FileX, Send, Calendar, TrendingUp, X } from "lucide-react";
 import { toast } from "sonner";
 import type { TimesheetStatus } from "@/types";
+
+interface Team {
+  _id: string;
+  name: string;
+}
+
+interface Vendor {
+  _id: string;
+  name: string;
+}
 
 interface DashboardData {
   counts: {
@@ -47,29 +66,105 @@ const statusColors: Record<TimesheetStatus, string> = {
 };
 
 export default function DashboardPage() {
+  const t = useTranslations();
+  const locale = useLocale();
+  const dateLocale = locale === "th" ? th : enUS;
+
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [userRole, setUserRole] = useState<string>("user");
 
-  useEffect(() => {
-    fetchDashboard();
+  // Filter states
+  const currentYear = new Date().getFullYear();
+  const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
+  const [filterMonth, setFilterMonth] = useState<string>("all");
+  const [filterTeam, setFilterTeam] = useState<string>("all");
+  const [filterVendor, setFilterVendor] = useState<string>("all");
+
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const months = [
+    { value: "1", labelKey: "months.january" },
+    { value: "2", labelKey: "months.february" },
+    { value: "3", labelKey: "months.march" },
+    { value: "4", labelKey: "months.april" },
+    { value: "5", labelKey: "months.may" },
+    { value: "6", labelKey: "months.june" },
+    { value: "7", labelKey: "months.july" },
+    { value: "8", labelKey: "months.august" },
+    { value: "9", labelKey: "months.september" },
+    { value: "10", labelKey: "months.october" },
+    { value: "11", labelKey: "months.november" },
+    { value: "12", labelKey: "months.december" },
+  ];
+
+  const fetchFiltersData = useCallback(async () => {
+    try {
+      const [teamsRes, vendorsRes, profileRes] = await Promise.all([
+        fetch("/api/admin/teams"),
+        fetch("/api/admin/vendors"),
+        fetch("/api/profile"),
+      ]);
+      const teamsData = await teamsRes.json();
+      const vendorsData = await vendorsRes.json();
+      const profileData = await profileRes.json();
+
+      if (teamsData.data) setTeams(teamsData.data);
+      if (vendorsData.data) setVendors(vendorsData.data);
+      if (profileData.data?.role) setUserRole(profileData.data.role);
+    } catch (error) {
+      // Silent fail for filters
+    }
   }, []);
 
-  const fetchDashboard = async () => {
+  const fetchDashboard = useCallback(async () => {
     try {
-      const res = await fetch("/api/dashboard");
+      const params = new URLSearchParams();
+      params.set("year", filterYear);
+      if (filterMonth !== "all") params.set("month", filterMonth);
+      if (filterTeam !== "all") params.set("teamId", filterTeam);
+      if (filterVendor !== "all") params.set("vendorId", filterVendor);
+
+      const res = await fetch(`/api/dashboard?${params.toString()}`);
       const result = await res.json();
       if (result.data) {
         setData(result.data);
       }
     } catch (error) {
-      toast.error("Failed to fetch dashboard");
+      toast.error(t("errors.fetchFailed"));
     } finally {
       setLoading(false);
     }
+  }, [filterYear, filterMonth, filterTeam, filterVendor, t]);
+
+  useEffect(() => {
+    fetchFiltersData();
+  }, [fetchFiltersData]);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  const clearFilters = () => {
+    setFilterYear(currentYear.toString());
+    setFilterMonth("all");
+    setFilterTeam("all");
+    setFilterVendor("all");
   };
 
+  const hasActiveFilters =
+    filterYear !== currentYear.toString() ||
+    filterMonth !== "all" ||
+    filterTeam !== "all" ||
+    filterVendor !== "all";
+
   const getMonthName = (month: number, year: number) => {
-    return format(new Date(year, month - 1), "MMM yyyy", { locale: th });
+    return format(new Date(year, month - 1), "MMM yyyy", { locale: dateLocale });
+  };
+
+  const getStatusLabel = (status: TimesheetStatus) => {
+    return t(`timesheet.status.${status}`);
   };
 
   if (loading) {
@@ -82,60 +177,124 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-gray-500">Overview of your timesheet activities</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{t("dashboard.title")}</h1>
+          <p className="text-gray-500">{t("dashboard.overview")}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-24">
+              <SelectValue placeholder={t("common.year")} />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder={t("common.month")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("common.allMonths")}</SelectItem>
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value}>
+                  {t(month.labelKey)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {userRole !== "user" && (
+            <>
+              <Select value={filterTeam} onValueChange={setFilterTeam}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder={t("common.team")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("common.allTeams")}</SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team._id} value={team._id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterVendor} onValueChange={setFilterVendor}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder={t("common.vendor")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("common.allVendors")}</SelectItem>
+                  {vendors.map((vendor) => (
+                    <SelectItem key={vendor._id} value={vendor._id}>
+                      {vendor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Status Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Draft</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("timesheet.status.draft")}</CardTitle>
             <Clock className="w-4 h-4 text-gray-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data?.counts.draft || 0}</div>
-            <p className="text-xs text-gray-500">timesheets in draft</p>
+            <p className="text-xs text-gray-500">{t("dashboard.timesheetsInDraft")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Submitted</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("timesheet.status.submitted")}</CardTitle>
             <Send className="w-4 h-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {data?.counts.submitted || 0}
             </div>
-            <p className="text-xs text-gray-500">pending approval</p>
+            <p className="text-xs text-gray-500">{t("dashboard.pendingApproval")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("timesheet.status.approved")}</CardTitle>
             <FileCheck className="w-4 h-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {data?.counts.approved || 0}
             </div>
-            <p className="text-xs text-gray-500">this year</p>
+            <p className="text-xs text-gray-500">{t("dashboard.thisYear")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("timesheet.status.rejected")}</CardTitle>
             <FileX className="w-4 h-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {data?.counts.rejected || 0}
             </div>
-            <p className="text-xs text-gray-500">need revision</p>
+            <p className="text-xs text-gray-500">{t("dashboard.needRevision")}</p>
           </CardContent>
         </Card>
       </div>
@@ -145,20 +304,20 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Base Hours
+              {t("dashboard.totalBaseHours")}
             </CardTitle>
             <Calendar className="w-4 h-4 text-gray-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data?.hours.base || 0}</div>
-            <p className="text-xs text-gray-500">approved this year</p>
+            <p className="text-xs text-gray-500">{t("dashboard.approvedThisYear")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">
-              Additional Hours
+              {t("dashboard.additionalHours")}
             </CardTitle>
             <TrendingUp className="w-4 h-4 text-gray-500" />
           </CardHeader>
@@ -166,20 +325,20 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">
               {data?.hours.additional || 0}
             </div>
-            <p className="text-xs text-gray-500">approved this year</p>
+            <p className="text-xs text-gray-500">{t("dashboard.approvedThisYear")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Man-Days</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("dashboard.totalManDays")}</CardTitle>
             <Calendar className="w-4 h-4 text-gray-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {data?.hours.manDays.toFixed(1) || 0}
             </div>
-            <p className="text-xs text-gray-500">approved this year</p>
+            <p className="text-xs text-gray-500">{t("dashboard.approvedThisYear")}</p>
           </CardContent>
         </Card>
       </div>
@@ -187,8 +346,8 @@ export default function DashboardPage() {
       {/* Recent Timesheets */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Timesheets</CardTitle>
-          <CardDescription>Latest timesheet activities</CardDescription>
+          <CardTitle>{t("dashboard.recentTimesheets")}</CardTitle>
+          <CardDescription>{t("dashboard.latestActivities")}</CardDescription>
         </CardHeader>
         <CardContent>
           {data?.recentTimesheets && data.recentTimesheets.length > 0 ? (
@@ -215,13 +374,13 @@ export default function DashboardPage() {
                       <p className="font-medium">{ts.userId.name}</p>
                       <p className="text-sm text-gray-500">
                         {getMonthName(ts.month, ts.year)} - {ts.totalBaseHours}{" "}
-                        hrs
+                        {t("common.hours")}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge className={statusColors[ts.status]}>
-                      {ts.status.charAt(0).toUpperCase() + ts.status.slice(1)}
+                      {getStatusLabel(ts.status)}
                     </Badge>
                     <span className="text-xs text-gray-500">
                       {format(new Date(ts.updatedAt), "dd/MM/yyyy")}
@@ -232,7 +391,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <p className="text-center text-gray-500 py-8">
-              No timesheets yet. Create your first timesheet to get started.
+              {t("dashboard.noTimesheets")}
             </p>
           )}
         </CardContent>

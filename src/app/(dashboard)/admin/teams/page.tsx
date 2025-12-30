@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,7 +36,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Edit, Trash2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
@@ -74,9 +75,23 @@ export default function TeamsPage() {
   });
   const [saving, setSaving] = useState(false);
 
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState("");
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Filtered teams
+  const filteredTeams = useMemo(() => {
+    if (!searchQuery) return teams;
+    const query = searchQuery.toLowerCase();
+    return teams.filter(
+      (team) =>
+        team.name.toLowerCase().includes(query) ||
+        team.leaderId.name.toLowerCase().includes(query)
+    );
+  }, [teams, searchQuery]);
 
   const fetchData = async () => {
     try {
@@ -192,13 +207,33 @@ export default function TeamsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Teams</CardTitle>
-          <CardDescription>Teams and their members</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>All Teams</CardTitle>
+              <CardDescription>Teams and their members</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search teams..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 w-48"
+                />
+              </div>
+              {searchQuery && (
+                <Button variant="ghost" size="sm" onClick={() => setSearchQuery("")}>
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {teams.length === 0 ? (
+          {filteredTeams.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No teams yet. Add your first team.
+              {searchQuery ? "No teams match the search." : "No teams yet. Add your first team."}
             </div>
           ) : (
             <Table>
@@ -212,7 +247,7 @@ export default function TeamsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {teams.map((team) => (
+                {filteredTeams.map((team) => (
                   <TableRow key={team._id}>
                     <TableCell className="font-medium">{team.name}</TableCell>
                     <TableCell>
@@ -308,6 +343,45 @@ export default function TeamsPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Members</Label>
+              <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
+                {users
+                  .filter((user) => user._id !== formData.leaderId)
+                  .map((user) => (
+                    <div key={user._id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`member-${user._id}`}
+                        checked={formData.memberIds.includes(user._id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({
+                              ...formData,
+                              memberIds: [...formData.memberIds, user._id],
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              memberIds: formData.memberIds.filter(
+                                (id) => id !== user._id
+                              ),
+                            });
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor={`member-${user._id}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        {user.name}
+                      </label>
+                    </div>
+                  ))}
+                {users.filter((user) => user._id !== formData.leaderId).length === 0 && (
+                  <p className="text-sm text-gray-500">No users available</p>
+                )}
+              </div>
             </div>
             <div className="grid gap-2">
               <Label>Project</Label>

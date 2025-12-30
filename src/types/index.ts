@@ -18,7 +18,7 @@ export interface IUser {
   image?: string;
   password?: string;
   role: UserRole;
-  teamId?: Types.ObjectId;
+  teamIds?: Types.ObjectId[];
   vendorId?: Types.ObjectId;
   contractRole?: string;
   createdAt: Date;
@@ -64,7 +64,6 @@ export interface IVendor {
 export interface IProject {
   _id: Types.ObjectId;
   name: string;
-  vendorId?: Types.ObjectId;
   description?: string;
   createdAt: Date;
   updatedAt: Date;

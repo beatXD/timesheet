@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 config({ path: ".env.local" });
 
 // MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI as string;
 if (!MONGODB_URI) {
   console.error("MONGODB_URI is not set in .env.local");
   process.exit(1);
@@ -20,7 +20,7 @@ const UserSchema = new mongoose.Schema({
   image: { type: String },
   password: { type: String },
   role: { type: String, enum: ["admin", "leader", "user"], default: "user" },
-  teamId: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
+  teamIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Team" }],
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: "Vendor" },
   contractRole: { type: String },
 }, { timestamps: true });
@@ -148,10 +148,10 @@ async function seed() {
   );
   console.log(`  Team A: ${teamA.name} (Leader: ${leader1.name})`);
 
-  // Update team members with teamId
+  // Update team members and leader with teamIds
   await User.updateMany(
-    { _id: { $in: [user1._id, user2._id] } },
-    { teamId: teamA._id }
+    { _id: { $in: [leader1._id, user1._id, user2._id] } },
+    { $addToSet: { teamIds: teamA._id } }
   );
 
   // Team B
@@ -166,10 +166,10 @@ async function seed() {
   );
   console.log(`  Team B: ${teamB.name} (Leader: ${leader2.name})`);
 
-  // Update team members with teamId
+  // Update team members and leader with teamIds
   await User.updateMany(
-    { _id: { $in: [user3._id, user4._id] } },
-    { teamId: teamB._id }
+    { _id: { $in: [leader2._id, user3._id, user4._id] } },
+    { $addToSet: { teamIds: teamB._id } }
   );
 
   console.log("\n========================================");

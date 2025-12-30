@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { LogOut, User } from "lucide-react";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import type { UserRole } from "@/types";
 
 interface HeaderProps {
@@ -32,6 +34,7 @@ const roleColors: Record<UserRole, string> = {
 };
 
 export function Header({ user }: HeaderProps) {
+  const t = useTranslations();
   const initials = user.name
     .split(" ")
     .map((n) => n[0])
@@ -40,7 +43,8 @@ export function Header({ user }: HeaderProps) {
     .slice(0, 2);
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white border-b flex items-center justify-end px-6">
+    <header className="sticky top-0 z-30 h-16 bg-white border-b flex items-center justify-end px-6 gap-4">
+      <LanguageSwitcher />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="flex items-center gap-3">
@@ -67,7 +71,7 @@ export function Header({ user }: HeaderProps) {
           <DropdownMenuItem asChild>
             <Link href="/profile">
               <User className="w-4 h-4 mr-2" />
-              Profile
+              {t("nav.profile")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -76,7 +80,7 @@ export function Header({ user }: HeaderProps) {
             onClick={() => signOut({ callbackUrl: "/login" })}
           >
             <LogOut className="w-4 h-4 mr-2" />
-            Sign out
+            {t("auth.signOut")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

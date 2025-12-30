@@ -30,10 +30,14 @@ export async function GET(request: NextRequest) {
       const users = await User.find({}, "_id").lean();
       memberIds = users.map((u) => u._id.toString());
     } else {
-      // Leader can only see their team members
-      const team = await Team.findOne({ leaderId: session.user.id });
-      if (team) {
-        memberIds = team.memberIds.map((id: { toString: () => string }) => id.toString());
+      // Leader can see their teams' members (leader can lead multiple teams)
+      const teams = await Team.find({ leaderId: session.user.id });
+      if (teams.length > 0) {
+        const allMemberIds = teams.flatMap((team) =>
+          team.memberIds.map((id: { toString: () => string }) => id.toString())
+        );
+        // Remove duplicates (if same user is in multiple teams)
+        memberIds = [...new Set(allMemberIds)];
       }
     }
 

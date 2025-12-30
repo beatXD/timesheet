@@ -4,7 +4,6 @@ import type { IProject } from "@/types";
 const ProjectSchema = new Schema<IProject>(
   {
     name: { type: String, required: true },
-    vendorId: { type: Schema.Types.ObjectId, ref: "Vendor" },
     description: { type: String },
   },
   {

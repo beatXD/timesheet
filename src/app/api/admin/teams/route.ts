@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Team } from "@/models";
+import { Team, User } from "@/models";
 
 // GET /api/admin/teams - List all teams
 export async function GET() {
@@ -57,6 +57,17 @@ export async function POST(request: NextRequest) {
       projectId,
     });
 
+    // Add team to leader's teamIds
+    await User.findByIdAndUpdate(leaderId, { $addToSet: { teamIds: team._id } });
+
+    // Add team to members' teamIds
+    if (memberIds && memberIds.length > 0) {
+      await User.updateMany(
+        { _id: { $in: memberIds } },
+        { $addToSet: { teamIds: team._id } }
+      );
+    }
+
     return NextResponse.json({ data: team }, { status: 201 });
   } catch (error) {
     console.error("Error creating team:", error);
@@ -87,14 +98,53 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Get old team to compare members
+    const oldTeam = await Team.findById(_id);
+    if (!oldTeam) {
+      return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    }
+
+    const oldLeaderId = oldTeam.leaderId?.toString();
+    const oldMemberIds = oldTeam.memberIds.map((id: { toString: () => string }) => id.toString());
+    const newMemberIds = memberIds || [];
+
+    // Find removed and added members
+    const removedMembers = oldMemberIds.filter((id: string) => !newMemberIds.includes(id));
+    const addedMembers = newMemberIds.filter((id: string) => !oldMemberIds.includes(id));
+
+    // Update team
     const team = await Team.findByIdAndUpdate(
       _id,
       { name, leaderId, memberIds, projectId },
       { new: true }
     );
 
-    if (!team) {
-      return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    // Handle leader change
+    if (oldLeaderId !== leaderId) {
+      // Remove team from old leader's teamIds
+      if (oldLeaderId) {
+        await User.findByIdAndUpdate(oldLeaderId, { $pull: { teamIds: _id } });
+      }
+      // Add team to new leader's teamIds
+      if (leaderId) {
+        await User.findByIdAndUpdate(leaderId, { $addToSet: { teamIds: _id } });
+      }
+    }
+
+    // Remove team from removed members' teamIds
+    if (removedMembers.length > 0) {
+      await User.updateMany(
+        { _id: { $in: removedMembers } },
+        { $pull: { teamIds: _id } }
+      );
+    }
+
+    // Add team to added members' teamIds
+    if (addedMembers.length > 0) {
+      await User.updateMany(
+        { _id: { $in: addedMembers } },
+        { $addToSet: { teamIds: _id } }
+      );
     }
 
     return NextResponse.json({ data: team });
@@ -126,6 +176,12 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Remove team from all users' teamIds
+    await User.updateMany(
+      { teamIds: id },
+      { $pull: { teamIds: id } }
+    );
 
     await Team.findByIdAndDelete(id);
 
