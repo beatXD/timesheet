@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
             teamName: team.name,
             leaderName: (team.leaderId as { name?: string })?.name || "-",
             leaderEmail: (team.leaderId as { email?: string })?.email || "-",
-            memberCount: team.memberIds.length,
+            memberCount: team.memberIds.length + 1, // +1 for leader
             stats: {
               pending,
               approved,
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
             teamName: team.name,
             leaderName: (team.leaderId as { name?: string })?.name || "-",
             leaderEmail: (team.leaderId as { email?: string })?.email || "-",
-            memberCount: team.memberIds.length,
+            memberCount: team.memberIds.length + 1, // +1 for leader
             stats: {
               pending,
               approved,

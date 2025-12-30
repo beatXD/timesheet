@@ -239,24 +239,36 @@ async function addLeaveToTimesheet(leaveRequest: {
       continue;
     }
 
-    // Find or create timesheet for this month
-    let timesheet = await Timesheet.findOne({
-      userId: leaveRequest.userId.toString(),
-      month,
-      year,
-    });
-
-    if (!timesheet) {
-      // Create new timesheet
-      timesheet = await Timesheet.create({
+    // Find or create timesheet for this month using findOneAndUpdate with upsert
+    // This prevents race conditions when approving multiple requests simultaneously
+    const timesheet = await Timesheet.findOneAndUpdate(
+      {
         userId: leaveRequest.userId.toString(),
         month,
         year,
-        status: "draft",
-        entries: [],
-        totalBaseHours: 0,
-        totalAdditionalHours: 0,
-      });
+      },
+      {
+        $setOnInsert: {
+          status: "draft",
+          entries: [],
+          totalBaseHours: 0,
+          totalAdditionalHours: 0,
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    // Check if timesheet is already submitted/approved - skip adding leave entry
+    if (
+      ["approved", "final_approved", "team_submitted"].includes(
+        timesheet.status
+      )
+    ) {
+      console.warn(
+        `Timesheet ${timesheet._id} already submitted/approved, skipping auto-add leave for day ${day}`
+      );
+      currentDate.setDate(currentDate.getDate() + 1);
+      continue;
     }
 
     // Check if entry for this day already exists

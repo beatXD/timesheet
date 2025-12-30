@@ -103,7 +103,7 @@ export async function sendLeaveRequestEmail(params: LeaveRequestEmailParams) {
     <p style="margin-bottom: 25px;">กรุณาเข้าสู่ระบบเพื่ออนุมัติหรือปฏิเสธคำขอนี้:</p>
 
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${process.env.NEXTAUTH_URL || "http://localhost:3000"}/leave-requests"
+      <a href="${process.env.NEXTAUTH_URL || "http://localhost:3000"}/team/leaves"
          style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
         ดูคำขอลางาน
       </a>

@@ -188,6 +188,13 @@ export default function TeamLeavesPage() {
         );
         setTeams(myTeams);
 
+        // Redirect leader with no teams to dashboard
+        if (session?.user?.role === "leader" && myTeams.length === 0) {
+          toast.error(t("team.noTeamsAssigned") || "You are not assigned to lead any team");
+          router.push("/dashboard");
+          return;
+        }
+
         // Add team info to requests
         if (requestsData.data) {
           const requestsWithTeam = requestsData.data.map((req: LeaveRequest) => {

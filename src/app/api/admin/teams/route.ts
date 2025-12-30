@@ -73,6 +73,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check for duplicate team name
+    const existingTeam = await Team.findOne({ name });
+    if (existingTeam) {
+      return NextResponse.json(
+        { error: "A team with this name already exists" },
+        { status: 400 }
+      );
+    }
+
     const team = await Team.create({
       name,
       leaderId,
@@ -125,6 +134,17 @@ export async function PUT(request: NextRequest) {
     const oldTeam = await Team.findById(_id);
     if (!oldTeam) {
       return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    }
+
+    // Check for duplicate team name (if name is being changed)
+    if (name && name !== oldTeam.name) {
+      const existingTeam = await Team.findOne({ name, _id: { $ne: _id } });
+      if (existingTeam) {
+        return NextResponse.json(
+          { error: "A team with this name already exists" },
+          { status: 400 }
+        );
+      }
     }
 
     const oldLeaderId = oldTeam.leaderId?.toString();

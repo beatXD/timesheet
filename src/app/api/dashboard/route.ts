@@ -3,6 +3,42 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Timesheet, Team, User } from "@/models";
 
+// Type guard for populated user
+interface PopulatedUser {
+  _id: { toString: () => string };
+  name: string;
+  email: string;
+}
+
+interface PopulatedLeader {
+  name: string;
+  email: string;
+}
+
+function isPopulatedUser(obj: unknown): obj is PopulatedUser {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "_id" in obj &&
+    "name" in obj &&
+    "email" in obj
+  );
+}
+
+function isPopulatedLeader(obj: unknown): obj is PopulatedLeader {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "name" in obj &&
+    "email" in obj
+  );
+}
+
+// All statuses that count as "submitted" for team summary
+const SUBMITTED_STATUSES = ["submitted", "approved", "team_submitted", "final_approved"];
+// Statuses that are pending approval
+const PENDING_STATUSES = ["submitted", "team_submitted"];
+
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
@@ -32,12 +68,30 @@ export async function GET(request: NextRequest) {
     }).lean();
 
     // Calculate progress for current month timesheet
+    // FIX #5: Count actual working entries instead of rough estimate
     let currentMonthProgress = 0;
     if (currentMonthTimesheet) {
+      const entries = currentMonthTimesheet.entries || [];
+      // Count entries that have actual work (type is 'work' or has hours filled)
+      const workingEntries = entries.filter((entry: { type?: string; baseHours?: number }) =>
+        entry.type === "work" || (entry.baseHours && entry.baseHours > 0)
+      ).length;
+
+      // Calculate working days in the month (excluding weekends)
       const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-      const workDays = Math.ceil(daysInMonth * 5 / 7); // Rough estimate of work days
-      const filledDays = currentMonthTimesheet.entries?.length || 0;
-      currentMonthProgress = Math.min(Math.round((filledDays / workDays) * 100), 100);
+      let workDays = 0;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(currentYear, currentMonth - 1, day);
+        const dayOfWeek = date.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          workDays++;
+        }
+      }
+
+      // FIX #7: Prevent division by zero
+      currentMonthProgress = workDays > 0
+        ? Math.min(Math.round((workingEntries / workDays) * 100), 100)
+        : 0;
     }
 
     // ===== TEAM SUMMARY (for leader) =====
@@ -63,25 +117,28 @@ export async function GET(request: NextRequest) {
 
         // Include team members
         leaderTeams.forEach((team) => {
-          team.memberIds.forEach((member: { _id: { toString: () => string }; name: string; email: string }) => {
-            const memberId = member._id.toString();
-            if (!memberIdSet.has(memberId)) {
-              memberIdSet.add(memberId);
-              allMembers.push({
-                _id: memberId,
-                name: member.name,
-                email: member.email,
-              });
+          team.memberIds.forEach((member: unknown) => {
+            // FIX #8: Use type guard instead of unsafe cast
+            if (isPopulatedUser(member)) {
+              const memberId = member._id.toString();
+              if (!memberIdSet.has(memberId)) {
+                memberIdSet.add(memberId);
+                allMembers.push({
+                  _id: memberId,
+                  name: member.name,
+                  email: member.email,
+                });
+              }
             }
           });
         });
 
-        // Get submitted timesheets for current month
+        // FIX #2: Include all submitted statuses
         const submittedTimesheets = await Timesheet.find({
           userId: { $in: Array.from(memberIdSet) },
           year: currentYear,
           month: currentMonth,
-          status: { $in: ["submitted", "approved"] },
+          status: { $in: SUBMITTED_STATUSES },
         }).lean();
 
         const submittedUserIds = new Set(
@@ -113,33 +170,41 @@ export async function GET(request: NextRequest) {
         User.countDocuments(),
       ]);
 
-      // Get all timesheets for current month
+      // FIX #4: Fetch timesheets once and filter in JavaScript
       const allCurrentMonthTimesheets = await Timesheet.find({
         year: currentYear,
         month: currentMonth,
       }).lean();
 
+      // FIX #2: Include all submitted statuses
       const submittedUserIds = new Set(
         allCurrentMonthTimesheets
-          .filter((ts) => ts.status === "submitted" || ts.status === "approved")
+          .filter((ts) => SUBMITTED_STATUSES.includes(ts.status))
           .map((ts) => ts.userId.toString())
       );
 
+      // FIX #3: Include team_submitted in pending count
       const pendingUserIds = new Set(
         allCurrentMonthTimesheets
-          .filter((ts) => ts.status === "submitted")
+          .filter((ts) => PENDING_STATUSES.includes(ts.status))
           .map((ts) => ts.userId.toString())
       );
 
       const teamStats = allTeams.map((team) => {
-        const memberIds = team.memberIds.map((m: { _id: { toString: () => string } }) =>
-          m._id.toString()
-        );
+        const memberIds: string[] = [];
+        team.memberIds.forEach((m: unknown) => {
+          // FIX #8: Use type guard
+          if (typeof m === "object" && m !== null && "_id" in m) {
+            const obj = m as { _id: { toString: () => string } };
+            memberIds.push(obj._id.toString());
+          }
+        });
+
         const teamSubmitted = memberIds.filter((id: string) => submittedUserIds.has(id)).length;
         const teamPending = memberIds.filter((id: string) => pendingUserIds.has(id)).length;
 
-        // leaderId is populated with User document
-        const leader = team.leaderId as unknown as { name: string; email: string } | null;
+        // FIX #8: Use type guard for leader
+        const leader = isPopulatedLeader(team.leaderId) ? team.leaderId : null;
 
         return {
           teamId: team._id.toString(),
@@ -171,9 +236,16 @@ export async function GET(request: NextRequest) {
       userFilter = {}; // All timesheets
     } else if (session.user.role === "leader") {
       if (leaderTeams.length > 0) {
-        const allMemberIds = leaderTeams.flatMap((t) =>
-          t.memberIds.map((m: { _id: { toString: () => string } }) => m._id.toString())
-        );
+        const allMemberIds: string[] = [];
+        leaderTeams.forEach((t) => {
+          t.memberIds.forEach((m: unknown) => {
+            // FIX #8: Use type guard
+            if (typeof m === "object" && m !== null && "_id" in m) {
+              const obj = m as { _id: { toString: () => string } };
+              allMemberIds.push(obj._id.toString());
+            }
+          });
+        });
         userFilter = { userId: { $in: [session.user.id, ...allMemberIds] } };
       }
     }
@@ -182,7 +254,21 @@ export async function GET(request: NextRequest) {
     if (teamIdParam && session.user.role !== "user") {
       const team = await Team.findById(teamIdParam);
       if (team) {
-        const teamMemberIds = team.memberIds.map((id: { toString: () => string }) => id.toString());
+        // FIX #1: Security check - Leader can only view their own teams
+        if (session.user.role === "leader") {
+          const isLeaderOfTeam = team.leaderId.toString() === session.user.id;
+          if (!isLeaderOfTeam) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+          }
+        }
+
+        const teamMemberIds: string[] = [];
+        team.memberIds.forEach((id: unknown) => {
+          if (typeof id === "object" && id !== null && "toString" in id) {
+            teamMemberIds.push((id as { toString: () => string }).toString());
+          }
+        });
+
         // Intersect with existing userFilter if leader
         if (session.user.role === "leader" && userFilter.userId) {
           const existingIds = (userFilter.userId as { $in: string[] }).$in || [];
@@ -214,29 +300,23 @@ export async function GET(request: NextRequest) {
       dateFilter.month = parseInt(monthParam);
     }
 
-    // Get counts by status
-    const [draftCount, submittedCount, approvedCount, rejectedCount] =
-      await Promise.all([
-        Timesheet.countDocuments({ ...userFilter, ...dateFilter, status: "draft" }),
-        Timesheet.countDocuments({ ...userFilter, ...dateFilter, status: "submitted" }),
-        Timesheet.countDocuments({
-          ...userFilter,
-          ...dateFilter,
-          status: "approved",
-        }),
-        Timesheet.countDocuments({
-          ...userFilter,
-          ...dateFilter,
-          status: "rejected",
-        }),
-      ]);
-
-    // Get total hours for the filtered period
-    const approvedTimesheets = await Timesheet.find({
+    // FIX #4: Fetch all timesheets once and calculate stats in JavaScript
+    const allTimesheets = await Timesheet.find({
       ...userFilter,
       ...dateFilter,
-      status: "approved",
     }).lean();
+
+    // Calculate counts from fetched data
+    const draftCount = allTimesheets.filter(ts => ts.status === "draft").length;
+    const submittedCount = allTimesheets.filter(ts => ts.status === "submitted").length;
+    const approvedCount = allTimesheets.filter(ts => ts.status === "approved").length;
+    const rejectedCount = allTimesheets.filter(ts => ts.status === "rejected").length;
+
+    // Get approved timesheets for hours calculation
+    // FIX #6: Also include final_approved for accurate hour totals
+    const approvedTimesheets = allTimesheets.filter(
+      ts => ts.status === "approved" || ts.status === "final_approved"
+    );
 
     const totalBaseHours = approvedTimesheets.reduce(
       (sum, ts) => sum + (ts.totalBaseHours || 0),
@@ -247,12 +327,7 @@ export async function GET(request: NextRequest) {
       0
     );
 
-    // Calculate leave summary from all timesheets (not just approved)
-    const allTimesheets = await Timesheet.find({
-      ...userFilter,
-      ...dateFilter,
-    }).lean();
-
+    // FIX #6: Calculate leave summary from approved timesheets only
     const leaveSummary = {
       sick: 0,
       personal: 0,
@@ -260,7 +335,7 @@ export async function GET(request: NextRequest) {
       total: 0,
     };
 
-    allTimesheets.forEach((ts) => {
+    approvedTimesheets.forEach((ts) => {
       if (ts.entries) {
         ts.entries.forEach((entry: { type?: string; leaveType?: string }) => {
           if (entry.type === "leave" && entry.leaveType) {
@@ -273,7 +348,7 @@ export async function GET(request: NextRequest) {
     });
     leaveSummary.total = leaveSummary.sick + leaveSummary.personal + leaveSummary.annual;
 
-    // Get recent timesheets (with date filter)
+    // Get recent timesheets (sort in memory since we already have the data)
     const recentTimesheets = await Timesheet.find({ ...userFilter, ...dateFilter })
       .sort({ updatedAt: -1 })
       .limit(5)

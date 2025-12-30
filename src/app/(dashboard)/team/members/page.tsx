@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -62,6 +64,8 @@ interface MemberWithTeam extends User {
 
 export default function TeamMembersPage() {
   const t = useTranslations();
+  const { data: session } = useSession();
+  const router = useRouter();
   const [teams, setTeams] = useState<Team[]>([]);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,13 +89,20 @@ export default function TeamMembersPage() {
       if (data.data) {
         setTeams(data.data.teams);
         setAvailableUsers(data.data.availableUsers);
+
+        // Redirect leader with no teams to dashboard
+        if (session?.user?.role === "leader" && data.data.teams.length === 0) {
+          toast.error(t("team.noTeamsAssigned") || "You are not assigned to lead any team");
+          router.push("/dashboard");
+          return;
+        }
       }
     } catch (error) {
       toast.error(t("errors.fetchFailed"));
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, session?.user?.role, router]);
 
   useEffect(() => {
     fetchData();

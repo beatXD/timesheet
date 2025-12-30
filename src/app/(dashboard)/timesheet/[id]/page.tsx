@@ -113,7 +113,23 @@ export default function TimesheetDetailPage() {
       if (entry.timeIn && entry.timeOut && entry.type === "working") {
         const [inH, inM] = entry.timeIn.split(":").map(Number);
         const [outH, outM] = entry.timeOut.split(":").map(Number);
-        const hours = outH - inH + (outM - inM) / 60 - 1; // -1 for lunch
+        const timeInMinutes = inH * 60 + inM;
+        const timeOutMinutes = outH * 60 + outM;
+
+        let hours = (timeOutMinutes - timeInMinutes) / 60;
+
+        // Only deduct lunch break (12:00-13:00) if the work period covers it
+        const lunchStart = 12 * 60; // 12:00 in minutes
+        const lunchEnd = 13 * 60;   // 13:00 in minutes
+
+        if (timeInMinutes < lunchEnd && timeOutMinutes > lunchStart) {
+          // Calculate actual overlap with lunch period
+          const overlapStart = Math.max(timeInMinutes, lunchStart);
+          const overlapEnd = Math.min(timeOutMinutes, lunchEnd);
+          const lunchOverlap = Math.max(0, overlapEnd - overlapStart) / 60;
+          hours -= lunchOverlap;
+        }
+
         newEntries[index].baseHours = Math.max(0, Math.round(hours * 100) / 100);
       }
     }

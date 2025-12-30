@@ -242,6 +242,8 @@ export default function TimesheetListPage() {
                   <SelectItem value="submitted">{t("timesheet.status.submitted")}</SelectItem>
                   <SelectItem value="approved">{t("timesheet.status.approved")}</SelectItem>
                   <SelectItem value="rejected">{t("timesheet.status.rejected")}</SelectItem>
+                  <SelectItem value="team_submitted">{t("timesheet.status.team_submitted")}</SelectItem>
+                  <SelectItem value="final_approved">{t("timesheet.status.final_approved")}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filterYear} onValueChange={setFilterYear}>

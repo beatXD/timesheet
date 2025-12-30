@@ -63,6 +63,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate month is between 1-12
+    if (month < 1 || month > 12) {
+      return NextResponse.json(
+        { error: "Invalid month. Must be between 1 and 12" },
+        { status: 400 }
+      );
+    }
+
+    // Validate year is reasonable (e.g., not before 2000 or too far in the future)
+    const currentYear = new Date().getFullYear();
+    if (year < 2000 || year > currentYear + 1) {
+      return NextResponse.json(
+        { error: `Invalid year. Must be between 2000 and ${currentYear + 1}` },
+        { status: 400 }
+      );
+    }
+
     // Check if timesheet already exists
     const existing = await Timesheet.findOne({
       userId: session.user.id,

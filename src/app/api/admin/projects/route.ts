@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Project } from "@/models";
+import { Project, Team } from "@/models";
 
 // GET /api/admin/projects - List all projects
 export async function GET() {
@@ -115,6 +115,15 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "Project ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if project is being used by any teams
+    const teamsUsingProject = await Team.countDocuments({ projectId: id });
+    if (teamsUsingProject > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete project. It is being used by ${teamsUsingProject} team(s).` },
         { status: 400 }
       );
     }

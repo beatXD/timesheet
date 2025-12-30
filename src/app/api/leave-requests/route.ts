@@ -100,6 +100,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate not requesting leave for past dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      return NextResponse.json(
+        { error: "Cannot request leave for past dates" },
+        { status: 400 }
+      );
+    }
+
+    // Check for overlapping leave requests
+    const overlapping = await LeaveRequest.findOne({
+      userId: session.user.id,
+      status: { $in: ["pending", "approved"] },
+      $or: [{ startDate: { $lte: end }, endDate: { $gte: start } }],
+    });
+
+    if (overlapping) {
+      return NextResponse.json(
+        { error: "You already have a leave request for overlapping dates" },
+        { status: 400 }
+      );
+    }
+
     // Create leave request
     const leaveRequest = await LeaveRequest.create({
       userId: session.user.id,

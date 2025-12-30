@@ -95,6 +95,58 @@ export async function PUT(
     const { entries } = body;
 
     if (entries) {
+      // Validate entries
+      const daysInMonth = new Date(timesheet.year, timesheet.month, 0).getDate();
+
+      for (const entry of entries) {
+        // Validate date is within the month
+        if (entry.date < 1 || entry.date > daysInMonth) {
+          return NextResponse.json(
+            { error: `Invalid date: ${entry.date}. Must be between 1 and ${daysInMonth}` },
+            { status: 400 }
+          );
+        }
+
+        // Validate timeOut > timeIn if both exist
+        if (entry.timeIn && entry.timeOut) {
+          const [inH, inM] = entry.timeIn.split(":").map(Number);
+          const [outH, outM] = entry.timeOut.split(":").map(Number);
+          const timeInMinutes = inH * 60 + inM;
+          const timeOutMinutes = outH * 60 + outM;
+
+          if (timeOutMinutes <= timeInMinutes) {
+            return NextResponse.json(
+              { error: `Invalid time for date ${entry.date}: timeOut must be after timeIn` },
+              { status: 400 }
+            );
+          }
+        }
+
+        // Validate baseHours >= 0
+        if (entry.baseHours !== undefined && entry.baseHours < 0) {
+          return NextResponse.json(
+            { error: `Invalid baseHours for date ${entry.date}: must be >= 0` },
+            { status: 400 }
+          );
+        }
+
+        // Validate additionalHours >= 0
+        if (entry.additionalHours !== undefined && entry.additionalHours < 0) {
+          return NextResponse.json(
+            { error: `Invalid additionalHours for date ${entry.date}: must be >= 0` },
+            { status: 400 }
+          );
+        }
+
+        // Validate leaveType is required when type is "leave"
+        if (entry.type === "leave" && !entry.leaveType) {
+          return NextResponse.json(
+            { error: `Leave type is required for date ${entry.date}` },
+            { status: 400 }
+          );
+        }
+      }
+
       timesheet.entries = entries;
       timesheet.totalBaseHours = entries.reduce(
         (sum: number, e: { baseHours: number }) => sum + (e.baseHours || 0),

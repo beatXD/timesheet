@@ -44,13 +44,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get all team member timesheets for this month/year
-    const memberIds = team.memberIds.map((id: { toString: () => string }) =>
-      id.toString()
-    );
+    // Get all team member timesheets for this month/year (including leader)
+    const allMemberIds = [
+      team.leaderId.toString(),
+      ...team.memberIds.map((id: { toString: () => string }) => id.toString()),
+    ];
 
     const timesheets = await Timesheet.find({
-      userId: { $in: memberIds },
+      userId: { $in: allMemberIds },
       month,
       year,
     });
@@ -59,14 +60,14 @@ export async function POST(request: NextRequest) {
     const approvedTimesheets = timesheets.filter(
       (ts) => ts.status === "approved"
     );
-    const notApprovedCount = memberIds.length - approvedTimesheets.length;
+    const notApprovedCount = allMemberIds.length - approvedTimesheets.length;
 
     if (notApprovedCount > 0) {
       return NextResponse.json(
         {
           error: `Cannot submit team: ${notApprovedCount} member(s) have not been approved yet`,
           approved: approvedTimesheets.length,
-          total: memberIds.length,
+          total: allMemberIds.length,
         },
         { status: 400 }
       );
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     await Timesheet.updateMany(
       {
-        userId: { $in: memberIds },
+        userId: { $in: allMemberIds },
         month,
         year,
         status: "approved",

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Holiday } from "@/models";
+import { Holiday, Timesheet } from "@/models";
 
 // Interface for Calendarific API response
 interface CalendarificHoliday {
@@ -275,6 +275,21 @@ export async function PUT(request: NextRequest) {
     }
 
     const holidayDate = date ? new Date(date) : undefined;
+
+    // Check for duplicate holiday on the same date (if date is being updated)
+    if (holidayDate) {
+      const existingHoliday = await Holiday.findOne({
+        date: holidayDate,
+        _id: { $ne: _id },
+      });
+      if (existingHoliday) {
+        return NextResponse.json(
+          { error: "A holiday already exists on this date" },
+          { status: 400 }
+        );
+      }
+    }
+
     const updateData: Record<string, unknown> = { name };
     if (holidayDate) {
       updateData.date = holidayDate;
@@ -315,6 +330,33 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "Holiday ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Find the holiday to get its date
+    const holiday = await Holiday.findById(id);
+    if (!holiday) {
+      return NextResponse.json(
+        { error: "Holiday not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if any timesheets reference this holiday date
+    const holidayDate = new Date(holiday.date);
+    const affectedTimesheets = await Timesheet.countDocuments({
+      month: holidayDate.getMonth() + 1,
+      year: holidayDate.getFullYear(),
+      "entries.date": holidayDate.getDate(),
+      "entries.type": "holiday",
+    });
+
+    if (affectedTimesheets > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete. This holiday is referenced in ${affectedTimesheets} timesheet(s). Consider updating those timesheets first.`,
+        },
         { status: 400 }
       );
     }

@@ -24,15 +24,39 @@ export async function GET(request: NextRequest) {
     const year = searchParams.get("year");
 
     let memberIds: string[] = [];
+    let teamsData: Array<{
+      _id: string;
+      name: string;
+      leaderId: string;
+      memberIds: string[];
+    }> = [];
 
     if (session.user.role === "admin") {
       // Admin can see all timesheets
       const users = await User.find({}, "_id").lean();
       memberIds = users.map((u) => u._id.toString());
+      // Get all teams for mapping
+      const teams = await Team.find().lean();
+      teamsData = teams.map((t) => ({
+        _id: t._id.toString(),
+        name: t.name,
+        leaderId: t.leaderId?.toString() || "",
+        memberIds: t.memberIds.map((id: { toString: () => string }) =>
+          id.toString()
+        ),
+      }));
     } else {
       // Leader can see their teams' members + their own timesheet
       const teams = await Team.find({ leaderId: session.user.id });
       if (teams.length > 0) {
+        teamsData = teams.map((t) => ({
+          _id: t._id.toString(),
+          name: t.name,
+          leaderId: t.leaderId?.toString() || "",
+          memberIds: t.memberIds.map((id: { toString: () => string }) =>
+            id.toString()
+          ),
+        }));
         const allMemberIds = teams.flatMap((team) =>
           team.memberIds.map((id: { toString: () => string }) => id.toString())
         );
@@ -62,7 +86,20 @@ export async function GET(request: NextRequest) {
       .sort({ submittedAt: -1 })
       .lean();
 
-    return NextResponse.json({ data: timesheets });
+    // Add team info to each timesheet
+    const timesheetsWithTeam = timesheets.map((ts) => {
+      const userId = (ts.userId as { _id?: { toString(): string } })?._id?.toString() || "";
+      const team = teamsData.find(
+        (t) => t.leaderId === userId || t.memberIds.includes(userId)
+      );
+      return {
+        ...ts,
+        teamId: team?._id || null,
+        teamName: team?.name || null,
+      };
+    });
+
+    return NextResponse.json({ data: timesheetsWithTeam });
   } catch (error) {
     console.error("Error fetching team timesheets:", error);
     return NextResponse.json(

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Vendor } from "@/models";
+import { Vendor, User } from "@/models";
 
 // GET /api/admin/vendors - List all vendors
 export async function GET() {
@@ -113,6 +113,15 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "Vendor ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if vendor is assigned to any users
+    const usersWithVendor = await User.countDocuments({ vendorId: id });
+    if (usersWithVendor > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete vendor. It is assigned to ${usersWithVendor} user(s).` },
         { status: 400 }
       );
     }

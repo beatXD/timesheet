@@ -49,6 +49,14 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Check if admin is trying to change their own role
+    if (_id === session.user.id && role !== "admin") {
+      return NextResponse.json(
+        { error: "You cannot change your own admin role" },
+        { status: 400 }
+      );
+    }
+
     const user = await User.findByIdAndUpdate(
       _id,
       { role, vendorId, contractRole },
