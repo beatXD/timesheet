@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, Team } from "@/models";
+import { Timesheet, Team, AuditLog } from "@/models";
 
 // POST /api/admin/timesheets/reject - Admin rejects timesheets
 export async function POST(request: NextRequest) {
@@ -30,6 +30,12 @@ export async function POST(request: NextRequest) {
 
     // Option 1: Reject specific timesheets by IDs
     if (timesheetIds && Array.isArray(timesheetIds) && timesheetIds.length > 0) {
+      // Get timesheets before update for audit logging
+      const timesheetsToUpdate = await Timesheet.find({
+        _id: { $in: timesheetIds },
+        status: "team_submitted",
+      });
+
       const result = await Timesheet.updateMany(
         {
           _id: { $in: timesheetIds },
@@ -50,6 +56,19 @@ export async function POST(request: NextRequest) {
         }
       );
 
+      // Log audit for each timesheet
+      for (const ts of timesheetsToUpdate) {
+        await AuditLog.logAction({
+          entityType: "timesheet",
+          entityId: ts._id,
+          action: "reject",
+          fromStatus: "team_submitted",
+          toStatus: "draft",
+          performedBy: session.user.id,
+          reason,
+        });
+      }
+
       return NextResponse.json({
         message: "Timesheets rejected",
         count: result.modifiedCount,
@@ -66,6 +85,14 @@ export async function POST(request: NextRequest) {
       const memberIds = team.memberIds.map((id: { toString: () => string }) =>
         id.toString()
       );
+
+      // Get timesheets before update for audit logging
+      const timesheetsToUpdate = await Timesheet.find({
+        userId: { $in: memberIds },
+        month,
+        year,
+        status: "team_submitted",
+      });
 
       const result = await Timesheet.updateMany(
         {
@@ -88,6 +115,20 @@ export async function POST(request: NextRequest) {
           },
         }
       );
+
+      // Log audit for each timesheet
+      for (const ts of timesheetsToUpdate) {
+        await AuditLog.logAction({
+          entityType: "timesheet",
+          entityId: ts._id,
+          action: "reject",
+          fromStatus: "team_submitted",
+          toStatus: "draft",
+          performedBy: session.user.id,
+          reason,
+          metadata: { teamId, teamName: team.name },
+        });
+      }
 
       return NextResponse.json({
         message: "Team timesheets rejected",

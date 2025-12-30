@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, Team } from "@/models";
+import { Timesheet, Team, AuditLog, User } from "@/models";
+import { sendTimesheetStatusEmail } from "@/lib/email";
+import { timesheetRejectSchema, validateRequest } from "@/lib/validation/schemas";
 
 // POST /api/timesheets/[id]/reject - Reject timesheet
 export async function POST(
@@ -23,14 +25,14 @@ export async function POST(
     const { id } = await params;
 
     const body = await request.json();
-    const { reason } = body;
 
-    if (!reason) {
-      return NextResponse.json(
-        { error: "Rejection reason is required" },
-        { status: 400 }
-      );
+    // Validate with Zod schema
+    const validation = validateRequest(timesheetRejectSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
+
+    const { reason } = validation.data;
 
     const timesheet = await Timesheet.findById(id);
 
@@ -68,6 +70,7 @@ export async function POST(
     }
 
     // Leader/Admin reject → set status to rejected
+    const previousStatus = timesheet.status;
     timesheet.status = "rejected";
     timesheet.rejectedReason = reason;
     // Clear approval fields
@@ -76,6 +79,36 @@ export async function POST(
     timesheet.submittedAt = undefined;
 
     await timesheet.save();
+
+    // Log the rejection
+    await AuditLog.logAction({
+      entityType: "timesheet",
+      entityId: timesheet._id,
+      action: "reject",
+      fromStatus: previousStatus,
+      toStatus: "rejected",
+      performedBy: session.user.id,
+      reason,
+    });
+
+    // Send email notification
+    try {
+      const timesheetUser = await User.findById(timesheet.userId).lean();
+      if (timesheetUser?.email) {
+        await sendTimesheetStatusEmail({
+          to: timesheetUser.email,
+          userName: timesheetUser.name || "User",
+          month: timesheet.month,
+          year: timesheet.year,
+          status: "rejected",
+          reviewerName: session.user.name || "Manager",
+          rejectionReason: reason,
+        });
+      }
+    } catch (emailError) {
+      console.error("Failed to send timesheet status email:", emailError);
+      // Don't fail the request if email fails
+    }
 
     return NextResponse.json({ data: timesheet });
   } catch (error) {

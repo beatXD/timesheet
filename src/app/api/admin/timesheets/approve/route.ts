@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, Team } from "@/models";
+import { Timesheet, Team, AuditLog } from "@/models";
 
 // POST /api/admin/timesheets/approve - Admin approves timesheets
 export async function POST(request: NextRequest) {
@@ -25,6 +25,12 @@ export async function POST(request: NextRequest) {
 
     // Option 1: Approve specific timesheets by IDs
     if (timesheetIds && Array.isArray(timesheetIds) && timesheetIds.length > 0) {
+      // Get timesheets before update for audit logging
+      const timesheetsToUpdate = await Timesheet.find({
+        _id: { $in: timesheetIds },
+        status: "team_submitted",
+      });
+
       const result = await Timesheet.updateMany(
         {
           _id: { $in: timesheetIds },
@@ -38,6 +44,18 @@ export async function POST(request: NextRequest) {
           },
         }
       );
+
+      // Log audit for each timesheet
+      for (const ts of timesheetsToUpdate) {
+        await AuditLog.logAction({
+          entityType: "timesheet",
+          entityId: ts._id,
+          action: "final_approve",
+          fromStatus: "team_submitted",
+          toStatus: "final_approved",
+          performedBy: session.user.id,
+        });
+      }
 
       return NextResponse.json({
         message: "Timesheets approved",
@@ -56,6 +74,14 @@ export async function POST(request: NextRequest) {
         id.toString()
       );
 
+      // Get timesheets before update for audit logging
+      const timesheetsToUpdate = await Timesheet.find({
+        userId: { $in: memberIds },
+        month,
+        year,
+        status: "team_submitted",
+      });
+
       const result = await Timesheet.updateMany(
         {
           userId: { $in: memberIds },
@@ -71,6 +97,19 @@ export async function POST(request: NextRequest) {
           },
         }
       );
+
+      // Log audit for each timesheet
+      for (const ts of timesheetsToUpdate) {
+        await AuditLog.logAction({
+          entityType: "timesheet",
+          entityId: ts._id,
+          action: "final_approve",
+          fromStatus: "team_submitted",
+          toStatus: "final_approved",
+          performedBy: session.user.id,
+          metadata: { teamId, teamName: team.name },
+        });
+      }
 
       return NextResponse.json({
         message: "Team timesheets approved",

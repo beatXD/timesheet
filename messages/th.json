@@ -87,6 +87,7 @@
     "vendors": "เวนเดอร์",
     "projects": "โปรเจกต์",
     "holidays": "วันหยุด",
+    "leaveSettings": "ตั้งค่าการลา",
     "leaves": "ประวัติการลา",
     "adminTimesheets": "อนุมัติขั้นสุดท้าย",
     "timesheetRecords": "ประวัติไทม์ชีท",
@@ -354,7 +355,57 @@
       "totalRecords": "จำนวนทั้งหมด",
       "allRecords": "ทั้งหมด",
       "additionalHours": "ชั่วโมงเพิ่มเติม"
+    },
+    "leaveSettings": {
+      "title": "ตั้งค่าการลา",
+      "description": "กำหนดโควต้าวันลาเริ่มต้นขององค์กร",
+      "defaultQuotas": "โควต้าเริ่มต้นต่อปี",
+      "defaultQuotasDesc": "ค่าเริ่มต้นเหล่านี้จะใช้กับผู้ใช้ใหม่ในแต่ละปี",
+      "sickLeave": "ลาป่วย",
+      "personalLeave": "ลากิจ",
+      "annualLeave": "พักร้อน",
+      "daysPerYear": "วัน/ปี",
+      "resetMonth": "เดือนรีเซ็ตยอด",
+      "resetMonthDesc": "เดือนที่ยอดวันลาจะถูกรีเซ็ตในแต่ละปี",
+      "saveSettings": "บันทึกการตั้งค่า",
+      "settingsSaved": "บันทึกการตั้งค่าวันลาเรียบร้อยแล้ว"
     }
+  },
+  "leaveBalance": {
+    "title": "ยอดวันลา",
+    "yourBalance": "ยอดวันลาของคุณ",
+    "remaining": "คงเหลือ",
+    "used": "ใช้ไปแล้ว",
+    "total": "ทั้งหมด",
+    "days": "วัน",
+    "sick": "ลาป่วย",
+    "personal": "ลากิจ",
+    "annual": "พักร้อน",
+    "balanceWarning": "ยอด{type}ของคุณ ({remaining} วัน) น้อยกว่าที่ขอ ({requested} วัน)",
+    "requestSubmittedWithWarning": "ส่งคำขอแล้ว หมายเหตุ: ยอดคงเหลืออาจไม่เพียงพอ",
+    "balanceExceeded": "ยอดเกินโควต้า",
+    "sufficientBalance": "ยอดเพียงพอ"
+  },
+  "auditLog": {
+    "title": "ประวัติ",
+    "noHistory": "ไม่มีประวัติ",
+    "action": {
+      "create": "สร้าง",
+      "submit": "ส่ง",
+      "approve": "อนุมัติ",
+      "reject": "ปฏิเสธ",
+      "cancel": "ยกเลิก",
+      "team_submit": "ส่งจากทีม",
+      "final_approve": "อนุมัติขั้นสุดท้าย"
+    },
+    "by": "โดย",
+    "reason": "เหตุผล"
+  },
+  "validation": {
+    "hoursNegative": "ชั่วโมงต้องไม่ติดลบ",
+    "dateOutOfRange": "วันที่ต้องอยู่ในช่วงของไทม์ชีท",
+    "dateFuture": "ไม่สามารถบันทึกเวลาสำหรับวันในอนาคต",
+    "invalidData": "ข้อมูลไม่ถูกต้อง"
   },
   "profile": {
     "title": "โปรไฟล์",

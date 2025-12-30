@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, Team } from "@/models";
+import { Timesheet, Team, AuditLog } from "@/models";
 
 // POST /api/team/submit - Leader submits team timesheets to admin
 export async function POST(request: NextRequest) {
@@ -90,6 +90,19 @@ export async function POST(request: NextRequest) {
         },
       }
     );
+
+    // Log audit for each timesheet
+    for (const ts of approvedTimesheets) {
+      await AuditLog.logAction({
+        entityType: "timesheet",
+        entityId: ts._id,
+        action: "team_submit",
+        fromStatus: "approved",
+        toStatus: "team_submitted",
+        performedBy: session.user.id,
+        metadata: { teamId, teamName: team.name },
+      });
+    }
 
     return NextResponse.json({
       message: "Team timesheets submitted to admin",

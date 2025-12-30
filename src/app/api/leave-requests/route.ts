@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { LeaveRequest, Team, User } from "@/models";
+import { LeaveRequest, Team, User, LeaveBalance, LeaveSettings } from "@/models";
+import { parsePaginationParams, createPaginationMeta } from "@/lib/pagination";
 import { sendLeaveRequestEmail } from "@/lib/email";
+import { createLeaveRequestSchema, validateRequest } from "@/lib/validation/schemas";
+
+// Helper function to calculate working days between two dates
+function calculateWorkingDays(startDate: Date, endDate: Date): number {
+  let count = 0;
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    const dayOfWeek = current.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return count;
+}
 
 // GET /api/leave-requests - List leave requests
 export async function GET(request: NextRequest) {
@@ -46,10 +62,18 @@ export async function GET(request: NextRequest) {
     }
     // Admin with scope "team" can see all
 
+    // Parse pagination params
+    const { page, limit, skip } = parsePaginationParams(request);
+
+    // Get total count
+    const total = await LeaveRequest.countDocuments(filter);
+
     const leaveRequests = await LeaveRequest.find(filter)
       .populate("userId", "name email image")
       .populate("reviewedBy", "name email")
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
 
     // Convert ObjectIds to strings
@@ -60,7 +84,10 @@ export async function GET(request: NextRequest) {
       reviewedBy: lr.reviewedBy || null,
     }));
 
-    return NextResponse.json({ data });
+    return NextResponse.json({
+      data,
+      pagination: createPaginationMeta(page, limit, total),
+    });
   } catch (error) {
     console.error("Error fetching leave requests:", error);
     return NextResponse.json(
@@ -81,15 +108,14 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { startDate, endDate, leaveType, reason } = body;
 
-    // Validate required fields
-    if (!startDate || !endDate || !leaveType) {
-      return NextResponse.json(
-        { error: "Start date, end date, and leave type are required" },
-        { status: 400 }
-      );
+    // Validate with Zod schema
+    const validation = validateRequest(createLeaveRequestSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
+
+    const { startDate, endDate, leaveType, reason } = validation.data;
 
     // Validate dates
     const start = new Date(startDate);
@@ -127,6 +153,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check leave balance
+    const requestedDays = calculateWorkingDays(start, end);
+    const settings = await LeaveSettings.getSettings();
+    const balance = await LeaveBalance.getOrCreateForUser(
+      session.user.id,
+      start.getFullYear(),
+      settings.defaultQuotas
+    );
+
+    // Get remaining balance for this leave type
+    const leaveTypeKey = leaveType as "sick" | "personal" | "annual";
+    const remaining = balance.quotas[leaveTypeKey].total - balance.quotas[leaveTypeKey].used;
+    const balanceWarning = requestedDays > remaining;
+
     // Create leave request
     const leaveRequest = await LeaveRequest.create({
       userId: session.user.id,
@@ -135,6 +175,8 @@ export async function POST(request: NextRequest) {
       leaveType,
       reason,
       status: "pending",
+      daysRequested: requestedDays,
+      exceedsBalance: balanceWarning,
     });
 
     // Find the user's team leader(s) to send notification
@@ -171,7 +213,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ data: leaveRequest }, { status: 201 });
+    // Include balance warning in response if applicable
+    const response: {
+      data: typeof leaveRequest;
+      warning?: string;
+      balance?: {
+        remaining: number;
+        requested: number;
+      };
+    } = { data: leaveRequest };
+
+    if (balanceWarning) {
+      response.warning = `Your ${leaveType} leave balance (${remaining} days) is less than requested (${requestedDays} days). Request submitted for approval.`;
+      response.balance = {
+        remaining,
+        requested: requestedDays,
+      };
+    }
+
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error("Error creating leave request:", error);
     return NextResponse.json(

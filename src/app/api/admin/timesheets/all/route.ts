@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Timesheet, Team } from "@/models";
+import { parsePaginationParams, createPaginationMeta } from "@/lib/pagination";
 
 // GET /api/admin/timesheets/all - Get all timesheets with filters
 export async function GET(request: NextRequest) {
@@ -45,6 +46,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Parse pagination
+    const { page, limit, skip } = parsePaginationParams(request);
+
+    // Get total count for pagination
+    const total = await Timesheet.countDocuments(query);
+
     // Fetch timesheets with user populated
     const timesheets = await Timesheet.find(query)
       .populate("userId", "name email image teamIds vendorId")
@@ -55,7 +62,9 @@ export async function GET(request: NextRequest) {
           { path: "vendorId", select: "name" },
         ],
       })
-      .sort({ year: -1, month: -1, "userId.name": 1 });
+      .sort({ year: -1, month: -1, "userId.name": 1 })
+      .skip(skip)
+      .limit(limit);
 
     // Get all teams for reference
     const teams = await Team.find({}).select("name memberIds leaderId");
@@ -87,7 +96,10 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ data });
+    return NextResponse.json({
+      data,
+      pagination: createPaginationMeta(page, limit, total),
+    });
   } catch (error) {
     console.error("Error fetching all timesheets:", error);
     return NextResponse.json(

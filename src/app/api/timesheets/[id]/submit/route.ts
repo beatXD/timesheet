@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet } from "@/models";
+import { Timesheet, AuditLog } from "@/models";
+import { validateForSubmission } from "@/lib/validation/timesheet";
 
 // POST /api/timesheets/[id]/submit - Submit timesheet for approval
 export async function POST(
@@ -39,13 +40,43 @@ export async function POST(
       );
     }
 
+    // Validate timesheet entries
+    const validationResult = validateForSubmission(timesheet.entries, {
+      month: timesheet.month,
+      year: timesheet.year,
+    });
+
+    if (!validationResult.valid) {
+      return NextResponse.json(
+        {
+          error: "Timesheet validation failed",
+          validationErrors: validationResult.errors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const previousStatus = timesheet.status;
     timesheet.status = "submitted";
     timesheet.submittedAt = new Date();
     timesheet.rejectedReason = undefined;
 
     await timesheet.save();
 
-    return NextResponse.json({ data: timesheet });
+    // Log the submission
+    await AuditLog.logAction({
+      entityType: "timesheet",
+      entityId: timesheet._id,
+      action: "submit",
+      fromStatus: previousStatus,
+      toStatus: "submitted",
+      performedBy: session.user.id,
+    });
+
+    return NextResponse.json({
+      data: timesheet,
+      warnings: validationResult.warnings.length > 0 ? validationResult.warnings : undefined,
+    });
   } catch (error) {
     console.error("Error submitting timesheet:", error);
     return NextResponse.json(

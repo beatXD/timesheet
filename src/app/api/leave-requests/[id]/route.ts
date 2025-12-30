@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { LeaveRequest, Team, Timesheet } from "@/models";
+import { LeaveRequest, Team, Timesheet, LeaveBalance, LeaveSettings, AuditLog, User } from "@/models";
+import { sendLeaveStatusEmail } from "@/lib/email";
 import type { LeaveType } from "@/types";
+
+// Helper function to calculate working days between two dates
+function calculateWorkingDays(startDate: Date, endDate: Date): number {
+  let count = 0;
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    const dayOfWeek = current.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return count;
+}
 
 // GET /api/leave-requests/[id] - Get a specific leave request
 export async function GET(
@@ -172,18 +187,70 @@ export async function POST(
     }
 
     if (action === "approve") {
+      // Calculate days for balance deduction
+      const daysUsed = calculateWorkingDays(
+        new Date(leaveRequest.startDate),
+        new Date(leaveRequest.endDate)
+      );
+
+      // Update leave balance
+      const settings = await LeaveSettings.getSettings();
+      const year = new Date(leaveRequest.startDate).getFullYear();
+      const balance = await LeaveBalance.getOrCreateForUser(
+        leaveRequest.userId.toString(),
+        year,
+        settings.defaultQuotas
+      );
+
+      // Deduct from balance
+      const leaveTypeKey = leaveRequest.leaveType as "sick" | "personal" | "annual";
+      balance.quotas[leaveTypeKey].used += daysUsed;
+      await balance.save();
+
       // Update leave request status
       leaveRequest.status = "approved";
       leaveRequest.reviewedBy = session.user.id as any;
       leaveRequest.reviewedAt = new Date();
+      leaveRequest.daysApproved = daysUsed;
       await leaveRequest.save();
+
+      // Log the approval action
+      await AuditLog.logAction({
+        entityType: "leave_request",
+        entityId: leaveRequest._id,
+        action: "approve",
+        fromStatus: "pending",
+        toStatus: "approved",
+        performedBy: session.user.id,
+        metadata: { daysApproved: daysUsed, leaveType: leaveRequest.leaveType },
+      });
 
       // Auto-add to timesheet
       await addLeaveToTimesheet(leaveRequest);
 
+      // Send email notification
+      try {
+        const requestUser = await User.findById(leaveRequest.userId).lean();
+        if (requestUser?.email) {
+          await sendLeaveStatusEmail({
+            to: requestUser.email,
+            userName: requestUser.name || "User",
+            startDate: leaveRequest.startDate,
+            endDate: leaveRequest.endDate,
+            leaveType: leaveRequest.leaveType,
+            status: "approved",
+            reviewerName: session.user.name || "Manager",
+          });
+        }
+      } catch (emailError) {
+        console.error("Failed to send leave status email:", emailError);
+        // Don't fail the request if email fails
+      }
+
       return NextResponse.json({
         message: "Leave request approved",
         data: leaveRequest,
+        balanceDeducted: daysUsed,
       });
     } else {
       // Reject
@@ -199,6 +266,37 @@ export async function POST(
       leaveRequest.reviewedAt = new Date();
       leaveRequest.rejectionReason = rejectionReason;
       await leaveRequest.save();
+
+      // Log the rejection action
+      await AuditLog.logAction({
+        entityType: "leave_request",
+        entityId: leaveRequest._id,
+        action: "reject",
+        fromStatus: "pending",
+        toStatus: "rejected",
+        performedBy: session.user.id,
+        reason: rejectionReason,
+      });
+
+      // Send email notification
+      try {
+        const requestUser = await User.findById(leaveRequest.userId).lean();
+        if (requestUser?.email) {
+          await sendLeaveStatusEmail({
+            to: requestUser.email,
+            userName: requestUser.name || "User",
+            startDate: leaveRequest.startDate,
+            endDate: leaveRequest.endDate,
+            leaveType: leaveRequest.leaveType,
+            status: "rejected",
+            reviewerName: session.user.name || "Manager",
+            rejectionReason,
+          });
+        }
+      } catch (emailError) {
+        console.error("Failed to send leave status email:", emailError);
+        // Don't fail the request if email fails
+      }
 
       return NextResponse.json({
         message: "Leave request rejected",

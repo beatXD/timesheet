@@ -20,6 +20,7 @@ import {
   ClipboardList,
   UsersRound,
   FileSpreadsheet,
+  Settings2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -130,6 +131,12 @@ const navSections: NavSection[] = [
         href: "/admin/holidays",
         labelKey: "nav.holidays",
         icon: <Calendar className="w-5 h-5" />,
+        roles: ["admin"],
+      },
+      {
+        href: "/admin/leave-settings",
+        labelKey: "nav.leaveSettings",
+        icon: <Settings2 className="w-5 h-5" />,
         roles: ["admin"],
       },
     ],

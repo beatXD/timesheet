@@ -5,3 +5,6 @@ export { default as Project } from "./Project";
 export { default as Timesheet } from "./Timesheet";
 export { default as Holiday } from "./Holiday";
 export { default as LeaveRequest } from "./LeaveRequest";
+export { default as LeaveBalance } from "./LeaveBalance";
+export { default as LeaveSettings } from "./LeaveSettings";
+export { default as AuditLog } from "./AuditLog";

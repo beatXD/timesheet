@@ -139,8 +139,61 @@ export interface ILeaveRequest {
   reviewedBy?: Types.ObjectId;
   reviewedAt?: Date;
   rejectionReason?: string;
+  // Balance tracking fields
+  daysRequested?: number;
+  daysApproved?: number;
+  exceedsBalance?: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Leave Balance
+export interface ILeaveQuota {
+  total: number;
+  used: number;
+}
+
+export interface ILeaveBalance {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  year: number;
+  quotas: {
+    sick: ILeaveQuota;
+    personal: ILeaveQuota;
+    annual: ILeaveQuota;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Leave Settings
+export interface ILeaveSettings {
+  _id: Types.ObjectId;
+  defaultQuotas: {
+    sick: number;
+    personal: number;
+    annual: number;
+  };
+  resetMonth: number;
+  updatedBy?: Types.ObjectId;
+  updatedAt: Date;
+}
+
+// Audit Log
+export type AuditEntityType = "timesheet" | "leave_request";
+export type AuditAction = "create" | "submit" | "approve" | "reject" | "cancel" | "team_submit" | "final_approve";
+
+export interface IAuditLog {
+  _id: Types.ObjectId;
+  entityType: AuditEntityType;
+  entityId: Types.ObjectId;
+  action: AuditAction;
+  fromStatus?: string;
+  toStatus: string;
+  performedBy: Types.ObjectId;
+  reason?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: Date;
 }
 
 // API Response types

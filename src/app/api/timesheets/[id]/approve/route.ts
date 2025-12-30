@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, Team } from "@/models";
+import { Timesheet, Team, AuditLog, User } from "@/models";
+import { sendTimesheetStatusEmail } from "@/lib/email";
 
 // POST /api/timesheets/[id]/approve - Approve timesheet
 export async function POST(
@@ -57,11 +58,40 @@ export async function POST(
       }
     }
 
+    const previousStatus = timesheet.status;
     timesheet.status = "approved";
     timesheet.approvedAt = new Date();
     timesheet.approvedBy = session.user.id as any;
 
     await timesheet.save();
+
+    // Log the approval
+    await AuditLog.logAction({
+      entityType: "timesheet",
+      entityId: timesheet._id,
+      action: "approve",
+      fromStatus: previousStatus,
+      toStatus: "approved",
+      performedBy: session.user.id,
+    });
+
+    // Send email notification
+    try {
+      const timesheetUser = await User.findById(timesheet.userId).lean();
+      if (timesheetUser?.email) {
+        await sendTimesheetStatusEmail({
+          to: timesheetUser.email,
+          userName: timesheetUser.name || "User",
+          month: timesheet.month,
+          year: timesheet.year,
+          status: "approved",
+          reviewerName: session.user.name || "Manager",
+        });
+      }
+    } catch (emailError) {
+      console.error("Failed to send timesheet status email:", emailError);
+      // Don't fail the request if email fails
+    }
 
     return NextResponse.json({ data: timesheet });
   } catch (error) {

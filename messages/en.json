@@ -87,6 +87,7 @@
     "vendors": "Vendors",
     "projects": "Projects",
     "holidays": "Holidays",
+    "leaveSettings": "Leave Settings",
     "leaves": "Leave Records",
     "adminTimesheets": "Final Approval",
     "timesheetRecords": "Timesheet Records",
@@ -354,7 +355,57 @@
       "totalRecords": "Total Records",
       "allRecords": "All Records",
       "additionalHours": "Additional Hours"
+    },
+    "leaveSettings": {
+      "title": "Leave Settings",
+      "description": "Configure default leave quotas for the organization",
+      "defaultQuotas": "Default Annual Quotas",
+      "defaultQuotasDesc": "These defaults apply to new users each year",
+      "sickLeave": "Sick Leave",
+      "personalLeave": "Personal Leave",
+      "annualLeave": "Annual Leave",
+      "daysPerYear": "days/year",
+      "resetMonth": "Balance Reset Month",
+      "resetMonthDesc": "Month when leave balances reset annually",
+      "saveSettings": "Save Settings",
+      "settingsSaved": "Leave settings saved successfully"
     }
+  },
+  "leaveBalance": {
+    "title": "Leave Balance",
+    "yourBalance": "Your Leave Balance",
+    "remaining": "Remaining",
+    "used": "Used",
+    "total": "Total",
+    "days": "days",
+    "sick": "Sick Leave",
+    "personal": "Personal Leave",
+    "annual": "Annual Leave",
+    "balanceWarning": "Your {type} leave balance ({remaining} days) is less than requested ({requested} days).",
+    "requestSubmittedWithWarning": "Request submitted. Note: Balance may be insufficient.",
+    "balanceExceeded": "Balance Exceeded",
+    "sufficientBalance": "Sufficient Balance"
+  },
+  "auditLog": {
+    "title": "History",
+    "noHistory": "No history available",
+    "action": {
+      "create": "Created",
+      "submit": "Submitted",
+      "approve": "Approved",
+      "reject": "Rejected",
+      "cancel": "Cancelled",
+      "team_submit": "Team Submitted",
+      "final_approve": "Final Approved"
+    },
+    "by": "by",
+    "reason": "Reason"
+  },
+  "validation": {
+    "hoursNegative": "Hours cannot be negative",
+    "dateOutOfRange": "Date must be within the timesheet period",
+    "dateFuture": "Cannot log time for future dates",
+    "invalidData": "Invalid data provided"
   },
   "profile": {
     "title": "Profile",

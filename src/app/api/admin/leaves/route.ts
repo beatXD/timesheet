@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Timesheet, Team, User } from "@/models";
+import { createPaginationMeta } from "@/lib/pagination";
 
 interface LeaveRecord {
   date: Date;
@@ -128,13 +129,22 @@ export async function GET(request: NextRequest) {
     // Sort by date descending
     leaveRecords.sort((a, b) => b.date.getTime() - a.date.getTime());
 
-    // Calculate summary
+    // Calculate summary (before pagination)
     const summary = {
       sick: leaveRecords.filter((r) => r.leaveType === "sick").length,
       personal: leaveRecords.filter((r) => r.leaveType === "personal").length,
       annual: leaveRecords.filter((r) => r.leaveType === "annual").length,
       total: leaveRecords.length,
     };
+
+    // Apply pagination to records
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+    const page = pageParam ? Math.max(1, parseInt(pageParam)) : 1;
+    const limit = limitParam ? Math.min(100, Math.max(1, parseInt(limitParam))) : 20;
+    const skip = (page - 1) * limit;
+    const total = leaveRecords.length;
+    const paginatedRecords = leaveRecords.slice(skip, skip + limit);
 
     // Get list of users for filter dropdown (admin/leader only)
     let users: { _id: string; name: string; email: string }[] = [];
@@ -163,10 +173,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       data: {
-        records: leaveRecords,
+        records: paginatedRecords,
         summary,
         users,
       },
+      pagination: createPaginationMeta(page, limit, total),
     });
   } catch (error) {
     console.error("Error fetching leaves:", error);

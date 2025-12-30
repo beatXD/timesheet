@@ -20,6 +20,10 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
     reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
     reviewedAt: { type: Date },
     rejectionReason: { type: String },
+    // Balance tracking fields
+    daysRequested: { type: Number },
+    daysApproved: { type: Number },
+    exceedsBalance: { type: Boolean, default: false },
   },
   {
     timestamps: true,

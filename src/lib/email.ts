@@ -34,6 +34,219 @@ const leaveTypeLabels: Record<string, { en: string; th: string }> = {
   annual: { en: "Annual Leave", th: "ลาพักร้อน" },
 };
 
+interface LeaveStatusEmailParams {
+  to: string;
+  userName: string;
+  startDate: Date;
+  endDate: Date;
+  leaveType: string;
+  status: "approved" | "rejected";
+  reviewerName: string;
+  rejectionReason?: string;
+}
+
+interface TimesheetStatusEmailParams {
+  to: string;
+  userName: string;
+  month: number;
+  year: number;
+  status: "approved" | "rejected";
+  reviewerName: string;
+  rejectionReason?: string;
+}
+
+const monthNames = [
+  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+];
+
+export async function sendLeaveStatusEmail(params: LeaveStatusEmailParams) {
+  const { to, userName, startDate, endDate, leaveType, status, reviewerName, rejectionReason } = params;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const leaveLabel = leaveTypeLabels[leaveType] || { en: leaveType, th: leaveType };
+
+  const formatDate = (date: Date) => format(date, "dd MMMM yyyy", { locale: th });
+
+  const statusLabel = status === "approved" ? "อนุมัติแล้ว" : "ถูกปฏิเสธ";
+  const statusColor = status === "approved" ? "#10b981" : "#ef4444";
+
+  const subject = `[${APP_NAME}] คำขอลางาน${statusLabel}: ${leaveLabel.th}`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leave Request Status</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: ${statusColor}; padding: 30px; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">${status === "approved" ? "✅" : "❌"} คำขอลางาน${statusLabel}</h1>
+  </div>
+
+  <div style="background: #f8f9fa; padding: 30px; border: 1px solid #e9ecef; border-top: none; border-radius: 0 0 10px 10px;">
+    <p style="margin-top: 0;">สวัสดี <strong>${userName}</strong>,</p>
+
+    <p>คำขอลางานของคุณได้รับการ<strong>${statusLabel}</strong>โดย <strong>${reviewerName}</strong></p>
+
+    <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid ${statusColor}; margin: 20px 0;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #666; width: 120px;">ประเภทการลา:</td>
+          <td style="padding: 8px 0; font-weight: bold;">${leaveLabel.th}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666;">วันที่เริ่ม:</td>
+          <td style="padding: 8px 0; font-weight: bold;">${formatDate(start)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666;">วันที่สิ้นสุด:</td>
+          <td style="padding: 8px 0; font-weight: bold;">${formatDate(end)}</td>
+        </tr>
+        ${rejectionReason ? `
+        <tr>
+          <td style="padding: 8px 0; color: #666; vertical-align: top;">เหตุผล:</td>
+          <td style="padding: 8px 0; color: #ef4444;">${rejectionReason}</td>
+        </tr>
+        ` : ""}
+      </table>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
+
+    <p style="color: #666; font-size: 12px; margin-bottom: 0;">
+      อีเมลนี้ถูกส่งโดยอัตโนมัติจากระบบ ${APP_NAME}<br>
+      กรุณาอย่าตอบกลับอีเมลนี้
+    </p>
+  </div>
+</body>
+</html>
+  `;
+
+  const resend = getResendClient();
+  if (!resend) {
+    console.log("Email not sent: Resend client not configured");
+    return null;
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [to],
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error("Failed to send leave status email:", error);
+      throw new Error(error.message);
+    }
+
+    console.log("Leave status email sent successfully:", data?.id);
+    return data;
+  } catch (error) {
+    console.error("Error sending email:", error);
+    throw error;
+  }
+}
+
+export async function sendTimesheetStatusEmail(params: TimesheetStatusEmailParams) {
+  const { to, userName, month, year, status, reviewerName, rejectionReason } = params;
+
+  const statusLabel = status === "approved" ? "อนุมัติแล้ว" : "ถูกปฏิเสธ";
+  const statusColor = status === "approved" ? "#10b981" : "#ef4444";
+  const monthName = monthNames[month - 1];
+
+  const subject = `[${APP_NAME}] ไทม์ชีท${statusLabel}: ${monthName} ${year}`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timesheet Status</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: ${statusColor}; padding: 30px; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">${status === "approved" ? "✅" : "❌"} ไทม์ชีท${statusLabel}</h1>
+  </div>
+
+  <div style="background: #f8f9fa; padding: 30px; border: 1px solid #e9ecef; border-top: none; border-radius: 0 0 10px 10px;">
+    <p style="margin-top: 0;">สวัสดี <strong>${userName}</strong>,</p>
+
+    <p>ไทม์ชีทของคุณได้รับการ<strong>${statusLabel}</strong>โดย <strong>${reviewerName}</strong></p>
+
+    <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid ${statusColor}; margin: 20px 0;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #666; width: 100px;">เดือน:</td>
+          <td style="padding: 8px 0; font-weight: bold;">${monthName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666;">ปี:</td>
+          <td style="padding: 8px 0; font-weight: bold;">${year}</td>
+        </tr>
+        ${rejectionReason ? `
+        <tr>
+          <td style="padding: 8px 0; color: #666; vertical-align: top;">เหตุผล:</td>
+          <td style="padding: 8px 0; color: #ef4444;">${rejectionReason}</td>
+        </tr>
+        ` : ""}
+      </table>
+    </div>
+
+    ${status === "rejected" ? `
+    <p>กรุณาแก้ไขและส่งไทม์ชีทใหม่อีกครั้ง:</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${process.env.NEXTAUTH_URL || "http://localhost:3000"}/timesheet"
+         style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+        ดูไทม์ชีท
+      </a>
+    </div>
+    ` : ""}
+
+    <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
+
+    <p style="color: #666; font-size: 12px; margin-bottom: 0;">
+      อีเมลนี้ถูกส่งโดยอัตโนมัติจากระบบ ${APP_NAME}<br>
+      กรุณาอย่าตอบกลับอีเมลนี้
+    </p>
+  </div>
+</body>
+</html>
+  `;
+
+  const resend = getResendClient();
+  if (!resend) {
+    console.log("Email not sent: Resend client not configured");
+    return null;
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [to],
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error("Failed to send timesheet status email:", error);
+      throw new Error(error.message);
+    }
+
+    console.log("Timesheet status email sent successfully:", data?.id);
+    return data;
+  } catch (error) {
+    console.error("Error sending email:", error);
+    throw error;
+  }
+}
+
 export async function sendLeaveRequestEmail(params: LeaveRequestEmailParams) {
   const { to, leaderName, userName, startDate, endDate, leaveType, reason } =
     params;

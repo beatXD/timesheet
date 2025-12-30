@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models";
+import { parsePaginationParams, createPaginationMeta } from "@/lib/pagination";
 
 // GET /api/admin/users - List all users
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user || session.user.role !== "admin") {
@@ -13,13 +14,24 @@ export async function GET() {
 
     await connectDB();
 
+    // Parse pagination params
+    const { page, limit, skip } = parsePaginationParams(request);
+
+    // Get total count
+    const total = await User.countDocuments();
+
     const users = await User.find()
       .populate("teamIds", "name")
       .populate("vendorId", "name")
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
 
-    return NextResponse.json({ data: users });
+    return NextResponse.json({
+      data: users,
+      pagination: createPaginationMeta(page, limit, total),
+    });
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(
