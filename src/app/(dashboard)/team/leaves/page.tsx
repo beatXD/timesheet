@@ -140,7 +140,7 @@ export default function TeamLeavesPage() {
       redirect("/login");
     }
     if (session.user.role === "user") {
-      redirect("/dashboard");
+      redirect("/calendar");
     }
     if (session.user.role === "admin") {
       redirect("/admin/leave-requests");
@@ -167,7 +167,7 @@ export default function TeamLeavesPage() {
         // Redirect leader with no teams to dashboard
         if (myTeams.length === 0) {
           toast.error(t("team.noTeamsAssigned") || "You are not assigned to lead any team");
-          router.push("/dashboard");
+          router.push("/calendar");
           return;
         }
 

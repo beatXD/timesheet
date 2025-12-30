@@ -26,7 +26,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = searchParams.get("callbackUrl") || "/calendar";
   const error = searchParams.get("error");
 
   const [email, setEmail] = useState("");

@@ -109,7 +109,7 @@ export default function TeamCalendarPage() {
       redirect("/login");
     }
     if (session.user.role === "user") {
-      redirect("/dashboard");
+      redirect("/calendar");
     }
   }, [session, status]);
 

@@ -100,7 +100,7 @@ export default function TeamPage() {
 
   // Redirect regular user to dashboard
   if (status !== "loading" && session?.user?.role === "user") {
-    redirect("/dashboard");
+    redirect("/calendar");
   }
 
   const [teams, setTeams] = useState<Team[]>([]);
@@ -139,7 +139,7 @@ export default function TeamPage() {
         // Redirect leader with no teams to dashboard
         if (myTeams.length === 0) {
           toast.error(t("team.noTeamsAssigned") || "You are not assigned to lead any team");
-          redirect("/dashboard");
+          redirect("/calendar");
           return;
         }
 

@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { X, Briefcase } from "lucide-react";
+import { X } from "lucide-react";
 import { toast } from "sonner";
 
 interface LeaveRecord {
@@ -196,32 +196,32 @@ export default function LeavesPage() {
 
       {/* Leave Summary */}
       {data?.summary && data.summary.total > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t("leave.summary")}</CardTitle>
-            <Briefcase className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="flex items-center justify-between p-3 bg-rose-50 dark:bg-rose-500/10 rounded-lg">
-                <span className="text-sm text-muted-foreground">{t("leave.sick")}</span>
-                <span className="font-bold">{data.summary.sick} {t("leave.days")}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-500/10 rounded-lg">
-                <span className="text-sm text-muted-foreground">{t("leave.personal")}</span>
-                <span className="font-bold">{data.summary.personal} {t("leave.days")}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-sky-50 dark:bg-sky-500/10 rounded-lg">
-                <span className="text-sm text-muted-foreground">{t("leave.annual")}</span>
-                <span className="font-bold">{data.summary.annual} {t("leave.days")}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
-                <span className="text-sm font-medium">{t("leave.total")}</span>
-                <span className="font-bold text-primary">{data.summary.total} {t("leave.days")}</span>
-              </div>
+        <div className="grid gap-3 md:grid-cols-4">
+          <Card className="p-3 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t("leave.sick")}</span>
+              <span className="font-semibold">{data.summary.sick}</span>
             </div>
-          </CardContent>
-        </Card>
+          </Card>
+          <Card className="p-3 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t("leave.personal")}</span>
+              <span className="font-semibold">{data.summary.personal}</span>
+            </div>
+          </Card>
+          <Card className="p-3 bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t("leave.annual")}</span>
+              <span className="font-semibold">{data.summary.annual}</span>
+            </div>
+          </Card>
+          <Card className="p-3 bg-primary/10">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">{t("leave.total")}</span>
+              <span className="font-semibold text-primary">{data.summary.total}</span>
+            </div>
+          </Card>
+        </div>
       )}
 
       {/* Leave Records Table */}

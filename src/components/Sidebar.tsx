@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/store";
 import type { UserRole } from "@/types";
 import {
-  LayoutDashboard,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  LayoutDashboard, // TODO: Re-enable when dashboard is ready
   Clock,
   Building2,
   FolderKanban,
@@ -24,6 +25,7 @@ import {
   Settings2,
   History,
   BarChart3,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -44,11 +46,12 @@ const navSections: NavSection[] = [
   {
     titleKey: "nav.sections.overview",
     items: [
-      {
-        href: "/dashboard",
-        labelKey: "nav.dashboard",
-        icon: <LayoutDashboard className="w-5 h-5" />,
-      },
+      // TODO: Enable when dashboard is ready
+      // {
+      //   href: "/dashboard",
+      //   labelKey: "nav.dashboard",
+      //   icon: <LayoutDashboard className="w-5 h-5" />,
+      // },
       {
         href: "/admin/leaves",
         labelKey: "nav.leaves",
@@ -137,6 +140,12 @@ const navSections: NavSection[] = [
         href: "/admin/users",
         labelKey: "nav.users",
         icon: <UserCog className="w-5 h-5" />,
+        roles: ["admin"],
+      },
+      {
+        href: "/admin/teams",
+        labelKey: "nav.teams",
+        icon: <Users className="w-5 h-5" />,
         roles: ["admin"],
       },
       {

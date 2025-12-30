@@ -72,7 +72,7 @@ export default function RegisterPage() {
       if (signInResult?.error) {
         router.push("/login");
       } else {
-        router.push("/dashboard");
+        router.push("/calendar");
         router.refresh();
       }
     } catch {
@@ -84,7 +84,7 @@ export default function RegisterPage() {
 
   const handleOAuthLogin = (provider: string) => {
     setOauthLoading(provider);
-    signIn(provider, { callbackUrl: "/dashboard" });
+    signIn(provider, { callbackUrl: "/calendar" });
   };
 
   return (

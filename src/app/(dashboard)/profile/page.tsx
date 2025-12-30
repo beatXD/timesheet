@@ -14,7 +14,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, User, Key, Link2, Unlink, Calendar } from "lucide-react";
+import { Loader2, User, Key, Link2, Unlink } from "lucide-react";
 
 interface LinkedAccount {
   provider: string;
@@ -44,26 +43,10 @@ interface ProfileData {
   linkedAccounts: LinkedAccount[];
 }
 
-interface LeaveQuota {
-  total: number;
-  used: number;
-  remaining: number;
-}
-
-interface LeaveBalanceData {
-  year: number;
-  quotas: {
-    sick: LeaveQuota;
-    personal: LeaveQuota;
-    annual: LeaveQuota;
-  };
-}
-
 export default function ProfilePage() {
   const t = useTranslations();
   const { data: session, update } = useSession();
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [leaveBalance, setLeaveBalance] = useState<LeaveBalanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -75,7 +58,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchProfile();
-    fetchLeaveBalance();
   }, []);
 
   const fetchProfile = async () => {
@@ -90,18 +72,6 @@ export default function ProfilePage() {
       toast.error(t("errors.failedToFetch"));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchLeaveBalance = async () => {
-    try {
-      const res = await fetch("/api/leave-balance");
-      const data = await res.json();
-      if (res.ok) {
-        setLeaveBalance(data.data);
-      }
-    } catch {
-      // Silent fail for leave balance
     }
   };
 
@@ -249,75 +219,6 @@ export default function ProfilePage() {
           {t("profile.manageSettings")}
         </p>
       </div>
-
-      {/* Leave Balance Card */}
-      {leaveBalance && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              {t("profile.leaveBalance")}
-            </CardTitle>
-            <CardDescription>
-              {t("profile.leaveBalanceYear", { year: leaveBalance.year })}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              {/* Sick Leave */}
-              <div className="p-4 rounded-lg bg-rose-50 dark:bg-rose-500/10">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{t("leave.sick")}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {leaveBalance.quotas.sick.remaining}/{leaveBalance.quotas.sick.total}
-                  </span>
-                </div>
-                <Progress
-                  value={(leaveBalance.quotas.sick.remaining / leaveBalance.quotas.sick.total) * 100}
-                  className="h-2"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t("profile.used")}: {leaveBalance.quotas.sick.used} {t("leave.days")}
-                </p>
-              </div>
-
-              {/* Personal Leave */}
-              <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-500/10">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{t("leave.personal")}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {leaveBalance.quotas.personal.remaining}/{leaveBalance.quotas.personal.total}
-                  </span>
-                </div>
-                <Progress
-                  value={(leaveBalance.quotas.personal.remaining / leaveBalance.quotas.personal.total) * 100}
-                  className="h-2"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t("profile.used")}: {leaveBalance.quotas.personal.used} {t("leave.days")}
-                </p>
-              </div>
-
-              {/* Annual Leave */}
-              <div className="p-4 rounded-lg bg-sky-50 dark:bg-sky-500/10">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{t("leave.annual")}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {leaveBalance.quotas.annual.remaining}/{leaveBalance.quotas.annual.total}
-                  </span>
-                </div>
-                <Progress
-                  value={(leaveBalance.quotas.annual.remaining / leaveBalance.quotas.annual.total) * 100}
-                  className="h-2"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t("profile.used")}: {leaveBalance.quotas.annual.used} {t("leave.days")}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Profile Information */}

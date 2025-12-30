@@ -124,7 +124,7 @@ export default function AdminLeaveRequestsPage() {
       redirect("/login");
     }
     if (session.user.role !== "admin") {
-      redirect("/dashboard");
+      redirect("/calendar");
     }
   }, [session, status]);
 

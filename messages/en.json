@@ -227,7 +227,14 @@
       "rejected": "Rejected",
       "team_submitted": "Team Submitted",
       "final_approved": "Final Approved"
-    }
+    },
+    "currentMonth": "Current Month",
+    "notCreated": "Not created yet",
+    "totalHoursYear": "Total Hours This Year",
+    "completedThisYear": "Completed",
+    "approvedOrHigher": "Approved or higher status",
+    "pendingAction": "Needs Attention",
+    "allClear": "All clear!"
   },
   "team": {
     "title": "Approve Timesheets",

@@ -40,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, FileEdit, Eye, Filter, X } from "lucide-react";
+import { Plus, FileEdit, Eye, Filter, X, Clock, CalendarCheck, FileText, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { ITimesheet, TimesheetStatus } from "@/types";
 
@@ -89,6 +89,48 @@ export default function TimesheetListPage() {
       return true;
     });
   }, [timesheets, filterStatus, filterYear]);
+
+  // Summary stats
+  const stats = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const thisYear = now.getFullYear();
+
+    // Current month timesheet
+    const currentMonthTs = timesheets.find(
+      (ts) => ts.month === currentMonth && ts.year === thisYear
+    );
+
+    // This year's timesheets
+    const thisYearTimesheets = timesheets.filter((ts) => ts.year === thisYear);
+
+    // Total hours this year
+    const totalBaseHours = thisYearTimesheets.reduce(
+      (sum, ts) => sum + (ts.totalBaseHours || 0),
+      0
+    );
+    const totalAdditionalHours = thisYearTimesheets.reduce(
+      (sum, ts) => sum + (ts.totalAdditionalHours || 0),
+      0
+    );
+
+    // Count by status
+    const statusCounts = timesheets.reduce(
+      (acc, ts) => {
+        acc[ts.status] = (acc[ts.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    return {
+      currentMonthTs,
+      totalBaseHours,
+      totalAdditionalHours,
+      statusCounts,
+      thisYearCount: thisYearTimesheets.length,
+    };
+  }, [timesheets]);
 
   const clearFilters = () => {
     setFilterStatus("all");
@@ -219,6 +261,77 @@ export default function TimesheetListPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid gap-3 md:grid-cols-4">
+        {/* Current Month Status */}
+        <Card className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarCheck className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">{t("timesheet.currentMonth")}</span>
+            </div>
+            {stats.currentMonthTs ? (
+              <Badge className={statusColors[stats.currentMonthTs.status]}>
+                {t(`timesheet.status.${stats.currentMonthTs.status}`)}
+              </Badge>
+            ) : (
+              <span className="text-xs text-amber-500">{t("timesheet.notCreated")}</span>
+            )}
+          </div>
+        </Card>
+
+        {/* Total Hours This Year */}
+        <Card className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">{t("timesheet.totalHoursYear")}</span>
+            </div>
+            <span className="font-semibold">{stats.totalBaseHours + stats.totalAdditionalHours} {t("common.hours")}</span>
+          </div>
+        </Card>
+
+        {/* Completed Timesheets */}
+        <Card className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">{t("timesheet.completedThisYear")}</span>
+            </div>
+            <span className="font-semibold text-green-600">
+              {(stats.statusCounts["approved"] || 0) +
+               (stats.statusCounts["team_submitted"] || 0) +
+               (stats.statusCounts["final_approved"] || 0)}/{stats.thisYearCount}
+            </span>
+          </div>
+        </Card>
+
+        {/* Pending Action */}
+        <Card className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">{t("timesheet.pendingAction")}</span>
+            </div>
+            <div className="flex gap-1">
+              {(stats.statusCounts["draft"] || 0) > 0 && (
+                <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                  {stats.statusCounts["draft"]} {t("timesheet.status.draft")}
+                </Badge>
+              )}
+              {(stats.statusCounts["rejected"] || 0) > 0 && (
+                <Badge variant="destructive" className="text-xs px-1.5 py-0">
+                  {stats.statusCounts["rejected"]} {t("timesheet.status.rejected")}
+                </Badge>
+              )}
+              {(stats.statusCounts["draft"] || 0) === 0 && (stats.statusCounts["rejected"] || 0) === 0 && (
+                <span className="text-xs text-green-600">{t("timesheet.allClear")}</span>
+              )}
+            </div>
+          </div>
+        </Card>
       </div>
 
       <Card>

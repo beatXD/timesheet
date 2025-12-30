@@ -93,7 +93,7 @@ export default function TeamMembersPage() {
         // Redirect leader with no teams to dashboard
         if (session?.user?.role === "leader" && data.data.teams.length === 0) {
           toast.error(t("team.noTeamsAssigned") || "You are not assigned to lead any team");
-          router.push("/dashboard");
+          router.push("/calendar");
           return;
         }
       }

@@ -58,9 +58,9 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Redirect to dashboard if logged in and accessing login/register page
+  // Redirect to calendar if logged in and accessing login/register page
   if (token && (pathname === "/login" || pathname === "/register")) {
-    const response = NextResponse.redirect(new URL("/dashboard", request.url));
+    const response = NextResponse.redirect(new URL("/calendar", request.url));
     if (!localeCookie) {
       response.cookies.set("NEXT_LOCALE", locale, { path: "/" });
     }

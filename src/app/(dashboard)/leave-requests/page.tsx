@@ -38,6 +38,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -74,6 +75,21 @@ interface LeaveRequest {
   createdAt: string;
 }
 
+interface LeaveQuota {
+  total: number;
+  used: number;
+  remaining: number;
+}
+
+interface LeaveBalanceData {
+  year: number;
+  quotas: {
+    sick: LeaveQuota;
+    personal: LeaveQuota;
+    annual: LeaveQuota;
+  };
+}
+
 const leaveTypeColors: Record<string, string> = {
   sick: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
   personal:
@@ -95,6 +111,7 @@ export default function LeaveRequestsPage() {
   const dateLocale = locale === "th" ? th : enUS;
 
   const [myRequests, setMyRequests] = useState<LeaveRequest[]>([]);
+  const [leaveBalance, setLeaveBalance] = useState<LeaveBalanceData | null>(null);
   const [loading, setLoading] = useState(true);
 
   // New request dialog
@@ -122,9 +139,22 @@ export default function LeaveRequestsPage() {
     }
   }, [t]);
 
+  const fetchLeaveBalance = useCallback(async () => {
+    try {
+      const res = await fetch("/api/leave-balance");
+      const data = await res.json();
+      if (res.ok) {
+        setLeaveBalance(data.data);
+      }
+    } catch {
+      // Silent fail for leave balance
+    }
+  }, []);
+
   useEffect(() => {
     fetchRequests();
-  }, [fetchRequests]);
+    fetchLeaveBalance();
+  }, [fetchRequests, fetchLeaveBalance]);
 
   const handleSubmitRequest = async () => {
     if (!dateRange.from || !leaveType) {
@@ -155,6 +185,7 @@ export default function LeaveRequestsPage() {
       setIsNewDialogOpen(false);
       resetForm();
       fetchRequests();
+      fetchLeaveBalance();
     } catch (error) {
       toast.error(t("errors.failedToCreate"));
     } finally {
@@ -178,6 +209,7 @@ export default function LeaveRequestsPage() {
 
       toast.success(t("leaveRequest.success.cancelled"));
       fetchRequests();
+      fetchLeaveBalance();
     } catch (error) {
       toast.error(t("errors.failedToDelete"));
     }
@@ -222,6 +254,53 @@ export default function LeaveRequestsPage() {
           {t("leaveRequest.newRequest")}
         </Button>
       </div>
+
+      {/* Leave Balance Card */}
+      {leaveBalance && (
+        <div className="grid gap-3 md:grid-cols-3">
+          {/* Sick Leave */}
+          <Card className="p-3 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm font-medium">{t("leave.sick")}</span>
+              <span className="text-xs text-muted-foreground">
+                {leaveBalance.quotas.sick.remaining}/{leaveBalance.quotas.sick.total}
+              </span>
+            </div>
+            <Progress
+              value={(leaveBalance.quotas.sick.remaining / leaveBalance.quotas.sick.total) * 100}
+              className="h-1.5"
+            />
+          </Card>
+
+          {/* Personal Leave */}
+          <Card className="p-3 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm font-medium">{t("leave.personal")}</span>
+              <span className="text-xs text-muted-foreground">
+                {leaveBalance.quotas.personal.remaining}/{leaveBalance.quotas.personal.total}
+              </span>
+            </div>
+            <Progress
+              value={(leaveBalance.quotas.personal.remaining / leaveBalance.quotas.personal.total) * 100}
+              className="h-1.5"
+            />
+          </Card>
+
+          {/* Annual Leave */}
+          <Card className="p-3 bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm font-medium">{t("leave.annual")}</span>
+              <span className="text-xs text-muted-foreground">
+                {leaveBalance.quotas.annual.remaining}/{leaveBalance.quotas.annual.total}
+              </span>
+            </div>
+            <Progress
+              value={(leaveBalance.quotas.annual.remaining / leaveBalance.quotas.annual.total) * 100}
+              className="h-1.5"
+            />
+          </Card>
+        </div>
+      )}
 
       <Card>
         <CardHeader>

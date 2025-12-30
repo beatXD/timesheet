@@ -227,7 +227,14 @@
       "rejected": "ถูกปฏิเสธ",
       "team_submitted": "ทีมส่งแล้ว",
       "final_approved": "อนุมัติสุดท้าย"
-    }
+    },
+    "currentMonth": "เดือนปัจจุบัน",
+    "notCreated": "ยังไม่ได้สร้าง",
+    "totalHoursYear": "ชั่วโมงรวมปีนี้",
+    "completedThisYear": "เสร็จสมบูรณ์",
+    "approvedOrHigher": "อนุมัติแล้วหรือสูงกว่า",
+    "pendingAction": "ต้องดำเนินการ",
+    "allClear": "ไม่มีรายการค้าง"
   },
   "team": {
     "title": "อนุมัติไทม์ชีท",
