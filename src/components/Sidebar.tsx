@@ -44,6 +44,12 @@ const navSections: NavSection[] = [
         labelKey: "nav.dashboard",
         icon: <LayoutDashboard className="w-5 h-5" />,
       },
+      {
+        href: "/admin/leaves",
+        labelKey: "nav.leaves",
+        icon: <Briefcase className="w-5 h-5" />,
+        roles: ["admin"],
+      },
     ],
   },
   {
@@ -117,12 +123,6 @@ const navSections: NavSection[] = [
         href: "/admin/holidays",
         labelKey: "nav.holidays",
         icon: <Calendar className="w-5 h-5" />,
-        roles: ["admin"],
-      },
-      {
-        href: "/admin/leaves",
-        labelKey: "nav.leaves",
-        icon: <Briefcase className="w-5 h-5" />,
         roles: ["admin"],
       },
     ],
