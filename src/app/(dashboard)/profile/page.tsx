@@ -26,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, User, Key, Link2, Unlink, Check } from "lucide-react";
+import { Loader2, User, Key, Link2, Unlink } from "lucide-react";
 
 interface LinkedAccount {
   provider: string;
@@ -401,7 +401,7 @@ export default function ProfilePage() {
                   size="sm"
                   onClick={() => handleLinkAccount("google")}
                 >
-                  <Check className="w-4 h-4 mr-2" />
+                  <Link2 className="w-4 h-4 mr-2" />
                   Connect
                 </Button>
               )}
@@ -454,7 +454,7 @@ export default function ProfilePage() {
                   size="sm"
                   onClick={() => handleLinkAccount("github")}
                 >
-                  <Check className="w-4 h-4 mr-2" />
+                  <Link2 className="w-4 h-4 mr-2" />
                   Connect
                 </Button>
               )}

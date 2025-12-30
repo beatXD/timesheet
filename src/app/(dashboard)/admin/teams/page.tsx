@@ -45,6 +45,7 @@ interface User {
   name: string;
   email: string;
   image?: string;
+  role: "admin" | "leader" | "user";
 }
 
 interface Project {
@@ -306,7 +307,7 @@ export default function TeamsPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editTeam ? "Edit Team" : "Add Team"}</DialogTitle>
             <DialogDescription>
@@ -314,15 +315,37 @@ export default function TeamsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Name *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Team name"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Name *</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="Team name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Project</Label>
+                <Select
+                  value={formData.projectId}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, projectId: v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project._id} value={project._id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="grid gap-2">
               <Label>Leader *</Label>
@@ -336,72 +359,103 @@ export default function TeamsPage() {
                   <SelectValue placeholder="Select leader" />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.map((user) => (
-                    <SelectItem key={user._id} value={user._id}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
+                  {users
+                    .filter((user) => user.role === "leader" || user.role === "admin")
+                    .map((user) => (
+                      <SelectItem key={user._id} value={user._id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
               <Label>Members</Label>
-              <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
-                {users
-                  .filter((user) => user._id !== formData.leaderId)
-                  .map((user) => (
-                    <div key={user._id} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`member-${user._id}`}
-                        checked={formData.memberIds.includes(user._id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFormData({
-                              ...formData,
-                              memberIds: [...formData.memberIds, user._id],
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              memberIds: formData.memberIds.filter(
-                                (id) => id !== user._id
-                              ),
-                            });
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor={`member-${user._id}`}
-                        className="text-sm cursor-pointer flex-1"
-                      >
-                        {user.name}
-                      </label>
-                    </div>
-                  ))}
-                {users.filter((user) => user._id !== formData.leaderId).length === 0 && (
-                  <p className="text-sm text-muted-foreground">No users available</p>
-                )}
+              <div className="grid grid-cols-2 gap-4 h-56">
+                {/* Left column: Regular Users */}
+                <div className="flex flex-col gap-2 h-full">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Users</p>
+                  <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2">
+                    {users
+                      .filter((user) => (!user.role || user.role === "user") && user._id !== formData.leaderId)
+                      .map((user) => (
+                        <div key={user._id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`member-${user._id}`}
+                            checked={formData.memberIds.includes(user._id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData({
+                                  ...formData,
+                                  memberIds: [...formData.memberIds, user._id],
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  memberIds: formData.memberIds.filter(
+                                    (id) => id !== user._id
+                                  ),
+                                });
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`member-${user._id}`}
+                            className="text-sm cursor-pointer flex-1"
+                          >
+                            {user.name}
+                          </label>
+                        </div>
+                      ))}
+                    {users.filter((user) => (!user.role || user.role === "user") && user._id !== formData.leaderId).length === 0 && (
+                      <p className="text-sm text-muted-foreground">No users</p>
+                    )}
+                  </div>
+                </div>
+                {/* Right column: Leaders (can be members in other teams) */}
+                <div className="flex flex-col gap-2 h-full">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Leaders</p>
+                  <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2">
+                    {users
+                      .filter((user) => (user.role === "leader" || user.role === "admin") && user._id !== formData.leaderId)
+                      .map((user) => (
+                        <div key={user._id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`member-leader-${user._id}`}
+                            checked={formData.memberIds.includes(user._id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData({
+                                  ...formData,
+                                  memberIds: [...formData.memberIds, user._id],
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  memberIds: formData.memberIds.filter(
+                                    (id) => id !== user._id
+                                  ),
+                                });
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`member-leader-${user._id}`}
+                            className="text-sm cursor-pointer flex-1"
+                          >
+                            {user.name}
+                            <Badge variant="secondary" className="ml-2 text-xs">
+                              {user.role}
+                            </Badge>
+                          </label>
+                        </div>
+                      ))}
+                    {users.filter((user) => (user.role === "leader" || user.role === "admin") && user._id !== formData.leaderId).length === 0 && (
+                      <p className="text-sm text-muted-foreground">No leaders</p>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="grid gap-2">
-              <Label>Project</Label>
-              <Select
-                value={formData.projectId}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, projectId: v })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((project) => (
-                    <SelectItem key={project._id} value={project._id}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
           <DialogFooter>

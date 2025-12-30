@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Clock, FileCheck, FileX, Send, Calendar, TrendingUp, X } from "lucide-react";
+import { Clock, FileCheck, FileX, Send, Calendar, TrendingUp, X, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import type { TimesheetStatus } from "@/types";
 
@@ -41,6 +41,12 @@ interface DashboardData {
     base: number;
     additional: number;
     manDays: number;
+  };
+  leaveSummary: {
+    sick: number;
+    personal: number;
+    annual: number;
+    total: number;
   };
   recentTimesheets: Array<{
     _id: string;
@@ -342,6 +348,36 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Leave Summary */}
+      {data?.leaveSummary && data.leaveSummary.total > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">{t("leave.yearlyTotal")}</CardTitle>
+            <Briefcase className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="flex items-center justify-between p-3 bg-rose-50 dark:bg-rose-500/10 rounded-lg">
+                <span className="text-sm text-muted-foreground">{t("leave.sick")}</span>
+                <span className="font-bold">{data.leaveSummary.sick} {t("leave.days")}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-500/10 rounded-lg">
+                <span className="text-sm text-muted-foreground">{t("leave.personal")}</span>
+                <span className="font-bold">{data.leaveSummary.personal} {t("leave.days")}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-sky-50 dark:bg-sky-500/10 rounded-lg">
+                <span className="text-sm text-muted-foreground">{t("leave.annual")}</span>
+                <span className="font-bold">{data.leaveSummary.annual} {t("leave.days")}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
+                <span className="text-sm font-medium">{t("leave.total")}</span>
+                <span className="font-bold text-primary">{data.leaveSummary.total} {t("leave.days")}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent Timesheets */}
       <Card>

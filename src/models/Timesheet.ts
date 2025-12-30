@@ -1,5 +1,5 @@
 import mongoose, { Schema, Model } from "mongoose";
-import type { ITimesheet, ITimesheetEntry, EntryType, TimesheetStatus } from "@/types";
+import type { ITimesheet, ITimesheetEntry, EntryType, TimesheetStatus, LeaveType } from "@/types";
 
 const TimesheetEntrySchema = new Schema<ITimesheetEntry>(
   {
@@ -8,6 +8,10 @@ const TimesheetEntrySchema = new Schema<ITimesheetEntry>(
       type: String,
       enum: ["working", "weekend", "holiday", "leave"] as EntryType[],
       default: "working",
+    },
+    leaveType: {
+      type: String,
+      enum: ["sick", "personal", "annual"] as LeaveType[],
     },
     task: { type: String },
     timeIn: { type: String }, // HH:mm format

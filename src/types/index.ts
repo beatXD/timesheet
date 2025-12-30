@@ -6,6 +6,9 @@ export type UserRole = "admin" | "leader" | "user";
 // Timesheet Entry Types
 export type EntryType = "working" | "weekend" | "holiday" | "leave";
 
+// Leave Types
+export type LeaveType = "sick" | "personal" | "annual";
+
 // Timesheet Status
 export type TimesheetStatus = "draft" | "submitted" | "approved" | "rejected";
 
@@ -73,6 +76,7 @@ export interface IProject {
 export interface ITimesheetEntry {
   date: number; // day of month (1-31)
   type: EntryType;
+  leaveType?: LeaveType; // Used when type = "leave"
   task?: string;
   timeIn?: string; // HH:mm format
   timeOut?: string; // HH:mm format

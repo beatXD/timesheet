@@ -1,28 +1,145 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Types } from "mongoose";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Holiday } from "@/models";
 
-// Thai public holidays for seeding
-const thaiHolidays2025 = [
-  { date: "2025-01-01", name: "New Year's Day" },
-  { date: "2025-02-12", name: "Makha Bucha Day" },
-  { date: "2025-04-06", name: "Chakri Memorial Day" },
-  { date: "2025-04-13", name: "Songkran Festival" },
-  { date: "2025-04-14", name: "Songkran Festival" },
-  { date: "2025-04-15", name: "Songkran Festival" },
-  { date: "2025-05-01", name: "Labour Day" },
-  { date: "2025-05-04", name: "Coronation Day" },
-  { date: "2025-05-12", name: "Visakha Bucha Day" },
-  { date: "2025-06-03", name: "Queen Suthida's Birthday" },
-  { date: "2025-07-28", name: "King's Birthday" },
-  { date: "2025-08-12", name: "Queen Mother's Birthday" },
-  { date: "2025-10-13", name: "King Bhumibol Memorial Day" },
-  { date: "2025-10-23", name: "Chulalongkorn Day" },
-  { date: "2025-12-05", name: "King Bhumibol's Birthday" },
-  { date: "2025-12-10", name: "Constitution Day" },
-  { date: "2025-12-31", name: "New Year's Eve" },
+// Interface for Calendarific API response
+interface CalendarificHoliday {
+  name: string;
+  date: {
+    iso: string;
+  };
+  type: string[];
+  primary_type: string;
+}
+
+interface CalendarificResponse {
+  response: {
+    holidays: CalendarificHoliday[];
+  };
+}
+
+// Thai public holidays - fixed dates (same every year)
+const fixedThaiHolidays = [
+  { month: 1, day: 1, name: "New Year's Day", nameTh: "วันขึ้นปีใหม่" },
+  { month: 4, day: 6, name: "Chakri Memorial Day", nameTh: "วันจักรี" },
+  { month: 4, day: 13, name: "Songkran Festival", nameTh: "วันสงกรานต์" },
+  { month: 4, day: 14, name: "Songkran Festival", nameTh: "วันสงกรานต์" },
+  { month: 4, day: 15, name: "Songkran Festival", nameTh: "วันสงกรานต์" },
+  { month: 5, day: 1, name: "Labour Day", nameTh: "วันแรงงานแห่งชาติ" },
+  { month: 5, day: 4, name: "Coronation Day", nameTh: "วันฉัตรมงคล" },
+  { month: 6, day: 3, name: "Queen Suthida's Birthday", nameTh: "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสุทิดา" },
+  { month: 7, day: 28, name: "King Vajiralongkorn's Birthday", nameTh: "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว" },
+  { month: 8, day: 12, name: "Queen Sirikit's Birthday / Mother's Day", nameTh: "วันเฉลิมพระชนมพรรษาสมเด็จพระบรมราชชนนีพันปีหลวง / วันแม่แห่งชาติ" },
+  { month: 10, day: 13, name: "King Bhumibol Memorial Day", nameTh: "วันคล้ายวันสวรรคต ร.9" },
+  { month: 10, day: 23, name: "Chulalongkorn Day", nameTh: "วันปิยมหาราช" },
+  { month: 12, day: 5, name: "King Bhumibol's Birthday / Father's Day", nameTh: "วันคล้ายวันพระบรมราชสมภพ ร.9 / วันพ่อแห่งชาติ" },
+  { month: 12, day: 10, name: "Constitution Day", nameTh: "วันรัฐธรรมนูญ" },
+  { month: 12, day: 31, name: "New Year's Eve", nameTh: "วันสิ้นปี" },
 ];
+
+// Buddhist holidays - approximate dates (vary by lunar calendar)
+// These are approximations and should be verified/adjusted by admin each year
+const buddhistHolidaysApprox: Record<number, { name: string; nameTh: string; date: string }[]> = {
+  2024: [
+    { name: "Makha Bucha Day", nameTh: "วันมาฆบูชา", date: "2024-02-24" },
+    { name: "Visakha Bucha Day", nameTh: "วันวิสาขบูชา", date: "2024-05-22" },
+    { name: "Asanha Bucha Day", nameTh: "วันอาสาฬหบูชา", date: "2024-07-20" },
+    { name: "Buddhist Lent Day", nameTh: "วันเข้าพรรษา", date: "2024-07-21" },
+  ],
+  2025: [
+    { name: "Makha Bucha Day", nameTh: "วันมาฆบูชา", date: "2025-02-12" },
+    { name: "Visakha Bucha Day", nameTh: "วันวิสาขบูชา", date: "2025-05-11" },
+    { name: "Asanha Bucha Day", nameTh: "วันอาสาฬหบูชา", date: "2025-07-10" },
+    { name: "Buddhist Lent Day", nameTh: "วันเข้าพรรษา", date: "2025-07-11" },
+  ],
+  2026: [
+    { name: "Makha Bucha Day", nameTh: "วันมาฆบูชา", date: "2026-03-03" },
+    { name: "Visakha Bucha Day", nameTh: "วันวิสาขบูชา", date: "2026-05-31" },
+    { name: "Asanha Bucha Day", nameTh: "วันอาสาฬหบูชา", date: "2026-07-29" },
+    { name: "Buddhist Lent Day", nameTh: "วันเข้าพรรษา", date: "2026-07-30" },
+  ],
+  2027: [
+    { name: "Makha Bucha Day", nameTh: "วันมาฆบูชา", date: "2027-02-21" },
+    { name: "Visakha Bucha Day", nameTh: "วันวิสาขบูชา", date: "2027-05-20" },
+    { name: "Asanha Bucha Day", nameTh: "วันอาสาฬหบูชา", date: "2027-07-18" },
+    { name: "Buddhist Lent Day", nameTh: "วันเข้าพรรษา", date: "2027-07-19" },
+  ],
+  2028: [
+    { name: "Makha Bucha Day", nameTh: "วันมาฆบูชา", date: "2028-02-10" },
+    { name: "Visakha Bucha Day", nameTh: "วันวิสาขบูชา", date: "2028-05-08" },
+    { name: "Asanha Bucha Day", nameTh: "วันอาสาฬหบูชา", date: "2028-07-06" },
+    { name: "Buddhist Lent Day", nameTh: "วันเข้าพรรษา", date: "2028-07-07" },
+  ],
+};
+
+// Generate Thai holidays for a given year
+function generateThaiHolidays(year: number): { date: string; name: string }[] {
+  const holidays: { date: string; name: string }[] = [];
+
+  // Add fixed holidays
+  for (const h of fixedThaiHolidays) {
+    const dateStr = `${year}-${String(h.month).padStart(2, "0")}-${String(h.day).padStart(2, "0")}`;
+    holidays.push({ date: dateStr, name: h.name });
+  }
+
+  // Add Buddhist holidays (use approximations if available)
+  const buddhistHolidays = buddhistHolidaysApprox[year];
+  if (buddhistHolidays) {
+    for (const h of buddhistHolidays) {
+      holidays.push({ date: h.date, name: h.name });
+    }
+  } else {
+    // Fallback: use 2025 dates adjusted (not accurate but better than nothing)
+    console.warn(`Buddhist holidays for ${year} not defined, using approximations`);
+    const baseHolidays = buddhistHolidaysApprox[2025];
+    for (const h of baseHolidays) {
+      const baseDate = new Date(h.date);
+      const adjustedDate = new Date(year, baseDate.getMonth(), baseDate.getDate());
+      holidays.push({
+        date: adjustedDate.toISOString().split("T")[0],
+        name: h.name,
+      });
+    }
+  }
+
+  // Sort by date
+  holidays.sort((a, b) => a.date.localeCompare(b.date));
+
+  return holidays;
+}
+
+// Fetch holidays from Calendarific API
+async function fetchFromCalendarific(year: number): Promise<{ date: string; name: string }[] | null> {
+  const apiKey = process.env.CALENDARIFIC_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(
+      `https://calendarific.com/api/v2/holidays?api_key=${apiKey}&country=TH&year=${year}&type=national`,
+      { next: { revalidate: 86400 } } // Cache for 24 hours
+    );
+
+    if (!response.ok) {
+      console.error("Calendarific API error:", response.status);
+      return null;
+    }
+
+    const data: CalendarificResponse = await response.json();
+    const holidays = data.response.holidays.map((h) => ({
+      date: h.date.iso.split("T")[0],
+      name: h.name,
+    }));
+
+    return holidays;
+  } catch (error) {
+    console.error("Failed to fetch from Calendarific:", error);
+    return null;
+  }
+}
 
 // GET /api/admin/holidays - List holidays
 export async function GET(request: NextRequest) {
@@ -51,7 +168,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/admin/holidays - Create holiday or seed Thai holidays
+// POST /api/admin/holidays - Create holiday or seed holidays
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -63,23 +180,48 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Check if seeding Thai holidays
+    // Check if seeding holidays
     if (body.seed && body.year) {
-      const year = body.year;
-      const holidays = thaiHolidays2025.map((h) => ({
-        date: new Date(h.date.replace("2025", year.toString())),
+      const year = parseInt(body.year);
+
+      // Try to fetch from Calendarific first
+      let holidayData = await fetchFromCalendarific(year);
+
+      // Fallback to generated Thai holidays
+      if (!holidayData) {
+        holidayData = generateThaiHolidays(year);
+      }
+
+      const holidays = holidayData.map((h) => ({
+        date: new Date(h.date),
         name: h.name,
         year,
-        createdBy: session.user.id,
+        createdBy: new Types.ObjectId(session.user.id),
       }));
 
-      // Delete existing holidays for the year
-      await Holiday.deleteMany({ year });
+      // Delete existing holidays for the year (by date range for safety)
+      const startOfYear = new Date(year, 0, 1);
+      const endOfYear = new Date(year, 11, 31, 23, 59, 59);
+      await Holiday.deleteMany({
+        date: { $gte: startOfYear, $lte: endOfYear },
+      });
 
-      // Insert new holidays
-      await Holiday.insertMany(holidays);
+      // Insert new holidays using bulkWrite with upsert to handle any edge cases
+      const bulkOps = holidays.map((h) => ({
+        updateOne: {
+          filter: { date: h.date },
+          update: { $set: h },
+          upsert: true,
+        },
+      }));
+      await Holiday.bulkWrite(bulkOps);
 
-      return NextResponse.json({ message: `Seeded ${holidays.length} holidays for ${year}` });
+      const source = process.env.CALENDARIFIC_API_KEY ? "Calendarific API" : "Thai holidays database";
+      return NextResponse.json({
+        message: `Imported ${holidays.length} holidays for ${year} from ${source}`,
+        count: holidays.length,
+        source,
+      });
     }
 
     // Create single holiday

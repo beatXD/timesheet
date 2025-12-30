@@ -95,13 +95,14 @@ export default function HolidaysPage() {
         body: JSON.stringify({ seed: true, year: parseInt(selectedYear) }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
         toast.error(data.error || "Failed to seed");
         return;
       }
 
-      toast.success("Thai holidays seeded successfully");
+      toast.success(`Imported ${data.count} holidays for ${selectedYear}`);
       fetchHolidays();
     } catch (error) {
       toast.error("Failed to seed holidays");

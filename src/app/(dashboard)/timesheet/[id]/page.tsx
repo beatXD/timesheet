@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { th, enUS } from "date-fns/locale";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -46,7 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "sonner";
-import type { ITimesheet, ITimesheetEntry, EntryType, TimesheetStatus } from "@/types";
+import type { ITimesheet, ITimesheetEntry, EntryType, TimesheetStatus, LeaveType } from "@/types";
 
 const statusColors: Record<TimesheetStatus, string> = {
   draft: "bg-slate-100 text-slate-800 dark:bg-slate-500/20 dark:text-slate-300",
@@ -55,12 +56,8 @@ const statusColors: Record<TimesheetStatus, string> = {
   rejected: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300",
 };
 
-const typeOptions: { value: EntryType; label: string }[] = [
-  { value: "working", label: "Working Day" },
-  { value: "weekend", label: "Weekend" },
-  { value: "holiday", label: "Holiday" },
-  { value: "leave", label: "Leave" },
-];
+const typeOptions: EntryType[] = ["working", "weekend", "holiday", "leave"];
+const leaveTypeOptions: LeaveType[] = ["sick", "personal", "annual"];
 
 const typeColors: Record<EntryType, string> = {
   working: "",
@@ -72,6 +69,9 @@ const typeColors: Record<EntryType, string> = {
 export default function TimesheetDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const t = useTranslations();
+  const locale = useLocale();
+  const dateLocale = locale === "th" ? th : enUS;
   const [timesheet, setTimesheet] = useState<ITimesheet | null>(null);
   const [entries, setEntries] = useState<ITimesheetEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,6 +121,11 @@ export default function TimesheetDetailPage() {
       newEntries[index].baseHours = 0;
       newEntries[index].timeIn = "";
       newEntries[index].timeOut = "";
+    }
+
+    // Reset leaveType if type is not leave
+    if (field === "type" && value !== "leave") {
+      newEntries[index].leaveType = undefined;
     }
 
     setEntries(newEntries);
@@ -188,6 +193,14 @@ export default function TimesheetDetailPage() {
   );
   const totalManDays = totalBaseHours / 8;
 
+  // Leave summary calculations
+  const leaveSummary = {
+    sick: entries.filter((e) => e.type === "leave" && e.leaveType === "sick").length,
+    personal: entries.filter((e) => e.type === "leave" && e.leaveType === "personal").length,
+    annual: entries.filter((e) => e.type === "leave" && e.leaveType === "annual").length,
+  };
+  const totalLeaveDays = leaveSummary.sick + leaveSummary.personal + leaveSummary.annual;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -199,9 +212,9 @@ export default function TimesheetDetailPage() {
   if (!timesheet) {
     return (
       <div className="text-center py-8">
-        <p className="text-muted-foreground">Timesheet not found</p>
+        <p className="text-muted-foreground">{t("timesheet.notFound")}</p>
         <Button variant="link" onClick={() => router.push("/timesheet")}>
-          Back to list
+          {t("common.backToList")}
         </Button>
       </div>
     );
@@ -217,12 +230,12 @@ export default function TimesheetDetailPage() {
           <div>
             <h1 className="text-2xl font-bold">
               {format(new Date(timesheet.year, timesheet.month - 1), "MMMM yyyy", {
-                locale: th,
+                locale: dateLocale,
               })}
             </h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge className={statusColors[timesheet.status]}>
-                {timesheet.status.charAt(0).toUpperCase() + timesheet.status.slice(1)}
+                {t(`timesheet.status.${timesheet.status}`)}
               </Badge>
               {timesheet.status === "rejected" && timesheet.rejectedReason && (
                 <span className="text-sm text-red-600 flex items-center gap-1">
@@ -240,20 +253,20 @@ export default function TimesheetDetailPage() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
                 <Download className="w-4 h-4 mr-2" />
-                Export
+                {t("common.export")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem asChild>
                 <a href={`/api/timesheets/${params.id}/export/excel`} download>
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
-                  Export to Excel
+                  {t("timesheet.exportToExcel")}
                 </a>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <a href={`/api/timesheets/${params.id}/export/pdf`} download>
                   <FileText className="w-4 h-4 mr-2" />
-                  Export to PDF
+                  {t("timesheet.exportToPdf")}
                 </a>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -263,11 +276,11 @@ export default function TimesheetDetailPage() {
             <>
               <Button variant="outline" onClick={saveTimesheet} disabled={saving}>
                 <Save className="w-4 h-4 mr-2" />
-                {saving ? "Saving..." : "Save"}
+                {saving ? t("common.saving") : t("common.save")}
               </Button>
               <Button onClick={() => setShowSubmitDialog(true)}>
                 <Send className="w-4 h-4 mr-2" />
-                Submit
+                {t("timesheet.submit")}
               </Button>
             </>
           )}
@@ -278,7 +291,7 @@ export default function TimesheetDetailPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Total Base Hours</CardTitle>
+            <CardTitle className="text-sm">{t("timesheet.totalBaseHours")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalBaseHours}</div>
@@ -286,7 +299,7 @@ export default function TimesheetDetailPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Total Additional Hours</CardTitle>
+            <CardTitle className="text-sm">{t("timesheet.totalAdditionalHours")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalAdditionalHours}</div>
@@ -294,7 +307,7 @@ export default function TimesheetDetailPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Total Man-Days</CardTitle>
+            <CardTitle className="text-sm">{t("timesheet.totalManDays")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalManDays.toFixed(2)}</div>
@@ -302,25 +315,55 @@ export default function TimesheetDetailPage() {
         </Card>
       </div>
 
+      {/* Leave Summary */}
+      {totalLeaveDays > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">{t("leave.summary")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <span className="text-sm text-muted-foreground">{t("leave.sick")}</span>
+                <span className="font-bold">{leaveSummary.sick} {t("leave.days")}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <span className="text-sm text-muted-foreground">{t("leave.personal")}</span>
+                <span className="font-bold">{leaveSummary.personal} {t("leave.days")}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <span className="text-sm text-muted-foreground">{t("leave.annual")}</span>
+                <span className="font-bold">{leaveSummary.annual} {t("leave.days")}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
+                <span className="text-sm font-medium">{t("leave.total")}</span>
+                <span className="font-bold text-primary">{totalLeaveDays} {t("leave.days")}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Entries Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Daily Entries</CardTitle>
-          <CardDescription>Fill in your daily work details</CardDescription>
+          <CardTitle>{t("timesheet.dailyEntries")}</CardTitle>
+          <CardDescription>{t("timesheet.fillDetails")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-16">Date</TableHead>
-                  <TableHead className="w-32">Type</TableHead>
-                  <TableHead className="min-w-[300px]">Task</TableHead>
-                  <TableHead className="w-24">Time In</TableHead>
-                  <TableHead className="w-24">Time Out</TableHead>
-                  <TableHead className="w-24">Base Hrs</TableHead>
-                  <TableHead className="w-24">Add. Hrs</TableHead>
-                  <TableHead className="w-40">Remark</TableHead>
+                  <TableHead className="w-16">{t("timesheet.date")}</TableHead>
+                  <TableHead className="w-32">{t("timesheet.type")}</TableHead>
+                  <TableHead className="w-32">{t("leave.leaveType")}</TableHead>
+                  <TableHead className="min-w-[300px]">{t("timesheet.task")}</TableHead>
+                  <TableHead className="w-24">{t("timesheet.timeIn")}</TableHead>
+                  <TableHead className="w-24">{t("timesheet.timeOut")}</TableHead>
+                  <TableHead className="w-24">{t("timesheet.baseHrs")}</TableHead>
+                  <TableHead className="w-24">{t("timesheet.addHrs")}</TableHead>
+                  <TableHead className="w-40">{t("timesheet.remark")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -330,7 +373,7 @@ export default function TimesheetDetailPage() {
                     timesheet.month - 1,
                     entry.date
                   );
-                  const dayName = format(date, "EEE");
+                  const dayName = format(date, "EEE", { locale: dateLocale });
 
                   return (
                     <TableRow
@@ -353,13 +396,35 @@ export default function TimesheetDetailPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {typeOptions.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
+                            {typeOptions.map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {t(`timesheet.${type}`)}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                      </TableCell>
+                      <TableCell>
+                        {entry.type === "leave" ? (
+                          <Select
+                            value={entry.leaveType || ""}
+                            onValueChange={(v) => updateEntry(index, "leaveType", v)}
+                            disabled={!isEditable}
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue placeholder={t("leave.selectType")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {leaveTypeOptions.map((leaveType) => (
+                                <SelectItem key={leaveType} value={leaveType}>
+                                  {t(`leave.${leaveType}`)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Textarea
@@ -371,7 +436,7 @@ export default function TimesheetDetailPage() {
                           className="min-h-[60px] text-sm"
                           placeholder={
                             entry.type === "working"
-                              ? "Describe your work..."
+                              ? t("timesheet.describeWork")
                               : ""
                           }
                         />
@@ -442,7 +507,7 @@ export default function TimesheetDetailPage() {
                           className="h-8"
                           placeholder={
                             entry.type === "holiday" || entry.type === "leave"
-                              ? "Reason..."
+                              ? t("timesheet.reason")
                               : ""
                           }
                         />
@@ -460,20 +525,19 @@ export default function TimesheetDetailPage() {
       <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Submit Timesheet</DialogTitle>
+            <DialogTitle>{t("timesheet.submitTimesheet")}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to submit this timesheet for approval? You
-              won&apos;t be able to edit it after submission.
+              {t("timesheet.confirmSubmit")} {t("timesheet.confirmSubmitDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-muted-foreground">Total Base Hours:</span>
+                <span className="text-muted-foreground">{t("timesheet.totalBaseHours")}:</span>
                 <span className="ml-2 font-medium">{totalBaseHours}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Total Man-Days:</span>
+                <span className="text-muted-foreground">{t("timesheet.totalManDays")}:</span>
                 <span className="ml-2 font-medium">
                   {totalManDays.toFixed(2)}
                 </span>
@@ -485,10 +549,10 @@ export default function TimesheetDetailPage() {
               variant="outline"
               onClick={() => setShowSubmitDialog(false)}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={submitTimesheet} disabled={submitting}>
-              {submitting ? "Submitting..." : "Submit"}
+              {submitting ? t("timesheet.submitting") : t("timesheet.submit")}
             </Button>
           </DialogFooter>
         </DialogContent>

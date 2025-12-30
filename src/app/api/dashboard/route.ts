@@ -106,6 +106,32 @@ export async function GET(request: NextRequest) {
       0
     );
 
+    // Calculate leave summary from all timesheets (not just approved)
+    const allTimesheets = await Timesheet.find({
+      ...userFilter,
+      ...dateFilter,
+    }).lean();
+
+    const leaveSummary = {
+      sick: 0,
+      personal: 0,
+      annual: 0,
+      total: 0,
+    };
+
+    allTimesheets.forEach((ts) => {
+      if (ts.entries) {
+        ts.entries.forEach((entry: { type?: string; leaveType?: string }) => {
+          if (entry.type === "leave" && entry.leaveType) {
+            if (entry.leaveType === "sick") leaveSummary.sick++;
+            else if (entry.leaveType === "personal") leaveSummary.personal++;
+            else if (entry.leaveType === "annual") leaveSummary.annual++;
+          }
+        });
+      }
+    });
+    leaveSummary.total = leaveSummary.sick + leaveSummary.personal + leaveSummary.annual;
+
     // Get recent timesheets (with date filter)
     const recentTimesheets = await Timesheet.find({ ...userFilter, ...dateFilter })
       .sort({ updatedAt: -1 })
@@ -126,6 +152,7 @@ export async function GET(request: NextRequest) {
           additional: totalAdditionalHours,
           manDays: totalBaseHours / 8,
         },
+        leaveSummary,
         recentTimesheets,
       },
     });

@@ -27,17 +27,29 @@ export async function GET() {
     }
 
     // Get linked accounts from MongoDB
+    // NextAuth stores accounts with userId pointing to its own users collection
+    // We need to find the NextAuth user by email first
     const client = (await import("@/lib/mongodb-client")).default;
     const db = (await client).db();
-    const accounts = await db
-      .collection("accounts")
-      .find({ userId: user._id })
-      .toArray();
 
-    const linkedAccounts = accounts.map((acc) => ({
-      provider: acc.provider,
-      providerAccountId: acc.providerAccountId,
-    }));
+    // Find NextAuth user by email
+    const nextAuthUser = await db
+      .collection("users")
+      .findOne({ email: user.email });
+
+    let linkedAccounts: { provider: string; providerAccountId: string }[] = [];
+
+    if (nextAuthUser) {
+      const accounts = await db
+        .collection("accounts")
+        .find({ userId: nextAuthUser._id })
+        .toArray();
+
+      linkedAccounts = accounts.map((acc) => ({
+        provider: acc.provider,
+        providerAccountId: acc.providerAccountId,
+      }));
+    }
 
     return NextResponse.json({
       data: {

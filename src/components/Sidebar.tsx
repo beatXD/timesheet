@@ -15,6 +15,7 @@ import {
   Calendar,
   UserCog,
   ChevronLeft,
+  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -44,6 +45,11 @@ const navSections: NavSection[] = [
         href: "/timesheet",
         labelKey: "nav.timesheet",
         icon: <Clock className="w-5 h-5" />,
+      },
+      {
+        href: "/admin/leaves",
+        labelKey: "nav.leaves",
+        icon: <Briefcase className="w-5 h-5" />,
       },
     ],
   },

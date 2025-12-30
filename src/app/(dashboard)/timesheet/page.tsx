@@ -4,7 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { th, enUS } from "date-fns/locale";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -50,15 +51,11 @@ const statusColors: Record<TimesheetStatus, string> = {
   rejected: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
 };
 
-const statusLabels: Record<TimesheetStatus, string> = {
-  draft: "Draft",
-  submitted: "Submitted",
-  approved: "Approved",
-  rejected: "Rejected",
-};
-
 export default function TimesheetListPage() {
   const router = useRouter();
+  const t = useTranslations();
+  const locale = useLocale();
+  const dateLocale = locale === "th" ? th : enUS;
   const [timesheets, setTimesheets] = useState<ITimesheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -142,7 +139,7 @@ export default function TimesheetListPage() {
   };
 
   const getMonthName = (month: number, year: number) => {
-    return format(new Date(year, month - 1), "MMMM yyyy", { locale: th });
+    return format(new Date(year, month - 1), "MMMM yyyy", { locale: dateLocale });
   };
 
   if (loading) {
@@ -157,27 +154,27 @@ export default function TimesheetListPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Timesheet</h1>
-          <p className="text-muted-foreground">Manage your monthly timesheets</p>
+          <h1 className="text-2xl font-bold">{t("timesheet.title")}</h1>
+          <p className="text-muted-foreground">{t("timesheet.description")}</p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
-              New Timesheet
+              {t("timesheet.new")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create New Timesheet</DialogTitle>
+              <DialogTitle>{t("timesheet.createNew")}</DialogTitle>
               <DialogDescription>
-                Select the month and year for your new timesheet
+                {t("timesheet.selectMonthYear")}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label>Month</Label>
+                <Label>{t("timesheet.month")}</Label>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                   <SelectTrigger>
                     <SelectValue />
@@ -185,14 +182,14 @@ export default function TimesheetListPage() {
                   <SelectContent>
                     {months.map((m) => (
                       <SelectItem key={m} value={m.toString()}>
-                        {format(new Date(2024, m - 1), "MMMM")}
+                        {format(new Date(2024, m - 1), "MMMM", { locale: dateLocale })}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label>Year</Label>
+                <Label>{t("timesheet.year")}</Label>
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
                   <SelectTrigger>
                     <SelectValue />
@@ -212,10 +209,10 @@ export default function TimesheetListPage() {
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button onClick={createTimesheet} disabled={creating}>
-                {creating ? "Creating..." : "Create"}
+                {creating ? t("common.creating") : t("common.create")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -226,31 +223,31 @@ export default function TimesheetListPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Your Timesheets</CardTitle>
+              <CardTitle>{t("timesheet.yourTimesheets")}</CardTitle>
               <CardDescription>
-                View and manage your submitted timesheets
+                {t("timesheet.viewManage")}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-muted-foreground" />
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder={t("common.status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="submitted">Submitted</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="all">{t("common.allStatus")}</SelectItem>
+                  <SelectItem value="draft">{t("timesheet.status.draft")}</SelectItem>
+                  <SelectItem value="submitted">{t("timesheet.status.submitted")}</SelectItem>
+                  <SelectItem value="approved">{t("timesheet.status.approved")}</SelectItem>
+                  <SelectItem value="rejected">{t("timesheet.status.rejected")}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filterYear} onValueChange={setFilterYear}>
                 <SelectTrigger className="w-28">
-                  <SelectValue placeholder="Year" />
+                  <SelectValue placeholder={t("common.year")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
+                  <SelectItem value="all">{t("common.allYears")}</SelectItem>
                   {years.map((y) => (
                     <SelectItem key={y} value={y.toString()}>
                       {y}
@@ -270,19 +267,19 @@ export default function TimesheetListPage() {
           {filteredTimesheets.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {hasActiveFilters
-                ? "No timesheets match the current filters."
-                : "No timesheets yet. Create your first timesheet to get started."}
+                ? t("timesheet.noTimesheetsMatch")
+                : t("timesheet.noTimesheetsYet")}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Base Hours</TableHead>
-                  <TableHead>Additional Hours</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("common.period")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("timesheet.baseHours")}</TableHead>
+                  <TableHead>{t("timesheet.additionalHours")}</TableHead>
+                  <TableHead>{t("common.submitted")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -293,11 +290,11 @@ export default function TimesheetListPage() {
                     </TableCell>
                     <TableCell>
                       <Badge className={statusColors[ts.status]}>
-                        {statusLabels[ts.status]}
+                        {t(`timesheet.status.${ts.status}`)}
                       </Badge>
                     </TableCell>
-                    <TableCell>{ts.totalBaseHours} hrs</TableCell>
-                    <TableCell>{ts.totalAdditionalHours} hrs</TableCell>
+                    <TableCell>{ts.totalBaseHours} {t("common.hours")}</TableCell>
+                    <TableCell>{ts.totalAdditionalHours} {t("common.hours")}</TableCell>
                     <TableCell>
                       {ts.submittedAt
                         ? format(new Date(ts.submittedAt), "dd/MM/yyyy")
@@ -309,12 +306,12 @@ export default function TimesheetListPage() {
                           {ts.status === "draft" || ts.status === "rejected" ? (
                             <>
                               <FileEdit className="w-4 h-4 mr-1" />
-                              Edit
+                              {t("common.edit")}
                             </>
                           ) : (
                             <>
                               <Eye className="w-4 h-4 mr-1" />
-                              View
+                              {t("common.view")}
                             </>
                           )}
                         </Button>
