@@ -59,10 +59,10 @@ interface DashboardData {
 }
 
 const statusColors: Record<TimesheetStatus, string> = {
-  draft: "bg-gray-100 text-gray-800",
-  submitted: "bg-blue-100 text-blue-800",
-  approved: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
+  draft: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",
+  submitted: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+  approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  rejected: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
 };
 
 export default function DashboardPage() {
@@ -170,7 +170,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
       </div>
     );
   }
@@ -180,7 +180,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("dashboard.title")}</h1>
-          <p className="text-gray-500">{t("dashboard.overview")}</p>
+          <p className="text-muted-foreground">{t("dashboard.overview")}</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={filterYear} onValueChange={setFilterYear}>
@@ -251,50 +251,50 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">{t("timesheet.status.draft")}</CardTitle>
-            <Clock className="w-4 h-4 text-gray-500" />
+            <Clock className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data?.counts.draft || 0}</div>
-            <p className="text-xs text-gray-500">{t("dashboard.timesheetsInDraft")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.timesheetsInDraft")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">{t("timesheet.status.submitted")}</CardTitle>
-            <Send className="w-4 h-4 text-blue-500" />
+            <Send className="w-4 h-4 text-blue-500 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {data?.counts.submitted || 0}
             </div>
-            <p className="text-xs text-gray-500">{t("dashboard.pendingApproval")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.pendingApproval")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">{t("timesheet.status.approved")}</CardTitle>
-            <FileCheck className="w-4 h-4 text-green-500" />
+            <FileCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {data?.counts.approved || 0}
             </div>
-            <p className="text-xs text-gray-500">{t("dashboard.thisYear")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.thisYear")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">{t("timesheet.status.rejected")}</CardTitle>
-            <FileX className="w-4 h-4 text-red-500" />
+            <FileX className="w-4 h-4 text-rose-500 dark:text-rose-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {data?.counts.rejected || 0}
             </div>
-            <p className="text-xs text-gray-500">{t("dashboard.needRevision")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.needRevision")}</p>
           </CardContent>
         </Card>
       </div>
@@ -306,11 +306,11 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">
               {t("dashboard.totalBaseHours")}
             </CardTitle>
-            <Calendar className="w-4 h-4 text-gray-500" />
+            <Calendar className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data?.hours.base || 0}</div>
-            <p className="text-xs text-gray-500">{t("dashboard.approvedThisYear")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.approvedThisYear")}</p>
           </CardContent>
         </Card>
 
@@ -319,26 +319,26 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">
               {t("dashboard.additionalHours")}
             </CardTitle>
-            <TrendingUp className="w-4 h-4 text-gray-500" />
+            <TrendingUp className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {data?.hours.additional || 0}
             </div>
-            <p className="text-xs text-gray-500">{t("dashboard.approvedThisYear")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.approvedThisYear")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">{t("dashboard.totalManDays")}</CardTitle>
-            <Calendar className="w-4 h-4 text-gray-500" />
+            <Calendar className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {data?.hours.manDays.toFixed(1) || 0}
             </div>
-            <p className="text-xs text-gray-500">{t("dashboard.approvedThisYear")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.approvedThisYear")}</p>
           </CardContent>
         </Card>
       </div>
@@ -356,7 +356,7 @@ export default function DashboardPage() {
                 <Link
                   key={ts._id}
                   href={`/timesheet/${ts._id}`}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
@@ -372,7 +372,7 @@ export default function DashboardPage() {
                     </Avatar>
                     <div>
                       <p className="font-medium">{ts.userId.name}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         {getMonthName(ts.month, ts.year)} - {ts.totalBaseHours}{" "}
                         {t("common.hours")}
                       </p>
@@ -382,7 +382,7 @@ export default function DashboardPage() {
                     <Badge className={statusColors[ts.status]}>
                       {getStatusLabel(ts.status)}
                     </Badge>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {format(new Date(ts.updatedAt), "dd/MM/yyyy")}
                     </span>
                   </div>
@@ -390,7 +390,7 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <p className="text-center text-gray-500 py-8">
+            <p className="text-center text-muted-foreground py-8">
               {t("dashboard.noTimesheets")}
             </p>
           )}

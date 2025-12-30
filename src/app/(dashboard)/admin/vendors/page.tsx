@@ -147,7 +147,7 @@ export default function VendorsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
       </div>
     );
   }
@@ -157,7 +157,7 @@ export default function VendorsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Vendors</h1>
-          <p className="text-gray-500">Manage vendor companies</p>
+          <p className="text-muted-foreground">Manage vendor companies</p>
         </div>
         <Button onClick={openCreateDialog}>
           <Plus className="w-4 h-4 mr-2" />
@@ -174,7 +174,7 @@ export default function VendorsPage() {
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search vendors..."
                   value={searchQuery}
@@ -192,7 +192,7 @@ export default function VendorsPage() {
         </CardHeader>
         <CardContent>
           {filteredVendors.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               {searchQuery ? "No vendors match the search." : "No vendors yet. Add your first vendor."}
             </div>
           ) : (

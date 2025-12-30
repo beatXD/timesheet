@@ -90,7 +90,7 @@ export function Sidebar({ userRole }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-white border-r transition-all duration-300",
+        "fixed left-0 top-0 z-40 h-screen bg-background border-r transition-all duration-300",
         isOpen ? "w-64" : "w-16"
       )}
     >
@@ -126,8 +126,8 @@ export function Sidebar({ userRole }: SidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
                 isActive
-                  ? "bg-gray-100 text-gray-900"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 !isOpen && "justify-center"
               )}
               title={!isOpen ? label : undefined}

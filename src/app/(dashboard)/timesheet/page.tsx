@@ -44,10 +44,10 @@ import { toast } from "sonner";
 import type { ITimesheet, TimesheetStatus } from "@/types";
 
 const statusColors: Record<TimesheetStatus, string> = {
-  draft: "bg-gray-100 text-gray-800",
-  submitted: "bg-blue-100 text-blue-800",
-  approved: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
+  draft: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",
+  submitted: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+  approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  rejected: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
 };
 
 const statusLabels: Record<TimesheetStatus, string> = {
@@ -148,7 +148,7 @@ export default function TimesheetListPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
       </div>
     );
   }
@@ -158,7 +158,7 @@ export default function TimesheetListPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Timesheet</h1>
-          <p className="text-gray-500">Manage your monthly timesheets</p>
+          <p className="text-muted-foreground">Manage your monthly timesheets</p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -232,7 +232,7 @@ export default function TimesheetListPage() {
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500" />
+              <Filter className="w-4 h-4 text-muted-foreground" />
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger className="w-32">
                   <SelectValue placeholder="Status" />
@@ -268,7 +268,7 @@ export default function TimesheetListPage() {
         </CardHeader>
         <CardContent>
           {filteredTimesheets.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               {hasActiveFilters
                 ? "No timesheets match the current filters."
                 : "No timesheets yet. Create your first timesheet to get started."}

@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 function LoginForm() {
   const router = useRouter();
@@ -72,7 +73,7 @@ function LoginForm() {
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
-          <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
+          <div className="p-3 text-sm text-rose-600 bg-rose-50 dark:bg-rose-500/10 dark:text-rose-400 rounded-md border border-rose-200 dark:border-rose-500/20">
             {error === "CredentialsSignin"
               ? t("errors.invalidCredentials")
               : t("errors.generic")}
@@ -116,7 +117,7 @@ function LoginForm() {
             <Separator className="w-full" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-muted-foreground">
+            <span className="bg-background px-2 text-muted-foreground">
               {t("auth.orContinueWith")}
             </span>
           </div>
@@ -201,8 +202,9 @@ function LoginFormFallback() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 relative">
-      <div className="absolute top-4 right-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <ThemeToggle />
         <LanguageSwitcher />
       </div>
       <Suspense fallback={<LoginFormFallback />}>

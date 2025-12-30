@@ -49,10 +49,10 @@ import { toast } from "sonner";
 import type { ITimesheet, ITimesheetEntry, EntryType, TimesheetStatus } from "@/types";
 
 const statusColors: Record<TimesheetStatus, string> = {
-  draft: "bg-gray-100 text-gray-800",
-  submitted: "bg-blue-100 text-blue-800",
-  approved: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
+  draft: "bg-slate-100 text-slate-800 dark:bg-slate-500/20 dark:text-slate-300",
+  submitted: "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300",
+  approved: "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300",
+  rejected: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300",
 };
 
 const typeOptions: { value: EntryType; label: string }[] = [
@@ -64,9 +64,9 @@ const typeOptions: { value: EntryType; label: string }[] = [
 
 const typeColors: Record<EntryType, string> = {
   working: "",
-  weekend: "bg-gray-50",
-  holiday: "bg-yellow-50",
-  leave: "bg-blue-50",
+  weekend: "bg-muted/50",
+  holiday: "bg-yellow-50 dark:bg-yellow-500/10",
+  leave: "bg-blue-50 dark:bg-blue-500/10",
 };
 
 export default function TimesheetDetailPage() {
@@ -191,7 +191,7 @@ export default function TimesheetDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
       </div>
     );
   }
@@ -199,7 +199,7 @@ export default function TimesheetDetailPage() {
   if (!timesheet) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">Timesheet not found</p>
+        <p className="text-muted-foreground">Timesheet not found</p>
         <Button variant="link" onClick={() => router.push("/timesheet")}>
           Back to list
         </Button>
@@ -339,7 +339,7 @@ export default function TimesheetDetailPage() {
                     >
                       <TableCell className="font-medium">
                         {entry.date}
-                        <span className="text-gray-500 ml-1 text-xs">
+                        <span className="text-muted-foreground ml-1 text-xs">
                           {dayName}
                         </span>
                       </TableCell>
@@ -469,11 +469,11 @@ export default function TimesheetDetailPage() {
           <div className="py-4">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-500">Total Base Hours:</span>
+                <span className="text-muted-foreground">Total Base Hours:</span>
                 <span className="ml-2 font-medium">{totalBaseHours}</span>
               </div>
               <div>
-                <span className="text-gray-500">Total Man-Days:</span>
+                <span className="text-muted-foreground">Total Man-Days:</span>
                 <span className="ml-2 font-medium">
                   {totalManDays.toFixed(2)}
                 </span>

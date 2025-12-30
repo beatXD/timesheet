@@ -187,7 +187,7 @@ export default function TeamsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
       </div>
     );
   }
@@ -197,7 +197,7 @@ export default function TeamsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Teams</h1>
-          <p className="text-gray-500">Manage teams and members</p>
+          <p className="text-muted-foreground">Manage teams and members</p>
         </div>
         <Button onClick={openCreateDialog}>
           <Plus className="w-4 h-4 mr-2" />
@@ -214,7 +214,7 @@ export default function TeamsPage() {
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search teams..."
                   value={searchQuery}
@@ -232,7 +232,7 @@ export default function TeamsPage() {
         </CardHeader>
         <CardContent>
           {filteredTeams.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               {searchQuery ? "No teams match the search." : "No teams yet. Add your first team."}
             </div>
           ) : (
@@ -274,7 +274,7 @@ export default function TeamsPage() {
                           </Badge>
                         )}
                         {team.memberIds.length === 0 && (
-                          <span className="text-gray-400">No members</span>
+                          <span className="text-muted-foreground">No members</span>
                         )}
                       </div>
                     </TableCell>
@@ -379,7 +379,7 @@ export default function TeamsPage() {
                     </div>
                   ))}
                 {users.filter((user) => user._id !== formData.leaderId).length === 0 && (
-                  <p className="text-sm text-gray-500">No users available</p>
+                  <p className="text-sm text-muted-foreground">No users available</p>
                 )}
               </div>
             </div>

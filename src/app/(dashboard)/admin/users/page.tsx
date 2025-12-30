@@ -62,9 +62,9 @@ interface User {
 }
 
 const roleColors: Record<UserRole, string> = {
-  admin: "bg-red-100 text-red-800",
-  leader: "bg-blue-100 text-blue-800",
-  user: "bg-gray-100 text-gray-800",
+  admin: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300",
+  leader: "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300",
+  user: "bg-slate-100 text-slate-800 dark:bg-slate-500/20 dark:text-slate-300",
 };
 
 export default function UsersPage() {
@@ -171,7 +171,7 @@ export default function UsersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
       </div>
     );
   }
@@ -180,7 +180,7 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Users</h1>
-        <p className="text-gray-500">Manage user roles and assignments</p>
+        <p className="text-muted-foreground">Manage user roles and assignments</p>
       </div>
 
       <Card>
@@ -194,7 +194,7 @@ export default function UsersPage() {
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search users..."
                   value={searchQuery}
@@ -237,7 +237,7 @@ export default function UsersPage() {
         </CardHeader>
         <CardContent>
           {filteredUsers.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               {hasActiveFilters
                 ? "No users match the current filters."
                 : "No users found."}
@@ -272,7 +272,7 @@ export default function UsersPage() {
                       </Avatar>
                       <div>
                         <p className="font-medium">{user.name}</p>
-                        <p className="text-xs text-gray-500">{user.email}</p>
+                        <p className="text-xs text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
                   </TableCell>

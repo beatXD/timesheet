@@ -82,37 +82,49 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Soft Dracula Theme - เบากว่า Dracula ดั้งเดิม นวลตา */
+  /* Background: เทาอมม่วงอ่อน ไม่เข้มเกินไป */
+  --background: #1e1f29;
+  --foreground: #e4e4e8;
+  /* Card: สีอ่อนกว่า background นิดหน่อย */
+  --card: #262833;
+  --card-foreground: #e4e4e8;
+  --popover: #262833;
+  --popover-foreground: #e4e4e8;
+  /* Primary: ม่วงนุ่มนวล */
+  --primary: #a78bda;
+  --primary-foreground: #1e1f29;
+  /* Secondary: เทาอมม่วง */
+  --secondary: #32343f;
+  --secondary-foreground: #e4e4e8;
+  /* Muted: สำหรับ secondary text */
+  --muted: #32343f;
+  --muted-foreground: #8b8fa3;
+  /* Accent */
+  --accent: #32343f;
+  --accent-foreground: #e4e4e8;
+  /* Destructive: แดงนุ่มนวล */
+  --destructive: #e06c75;
+  /* Border: เทาอ่อน */
+  --border: #3e4150;
+  --input: #32343f;
+  /* Ring: ม่วงอ่อน */
+  --ring: #a78bda;
+  /* Chart colors: สีนุ่มนวล */
+  --chart-1: #a78bda;  /* Purple - soft */
+  --chart-2: #7ec699;  /* Green - soft */
+  --chart-3: #7ec8e3;  /* Cyan - soft */
+  --chart-4: #e895b5;  /* Pink - soft */
+  --chart-5: #e5a864;  /* Orange - soft */
+  /* Sidebar: เข้มกว่า background นิดหน่อย */
+  --sidebar: #191a23;
+  --sidebar-foreground: #e4e4e8;
+  --sidebar-primary: #a78bda;
+  --sidebar-primary-foreground: #1e1f29;
+  --sidebar-accent: #32343f;
+  --sidebar-accent-foreground: #e4e4e8;
+  --sidebar-border: #3e4150;
+  --sidebar-ring: #a78bda;
 }
 
 @layer base {

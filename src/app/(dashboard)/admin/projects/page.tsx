@@ -163,7 +163,7 @@ export default function ProjectsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
       </div>
     );
   }
@@ -173,7 +173,7 @@ export default function ProjectsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Projects</h1>
-          <p className="text-gray-500">Manage projects</p>
+          <p className="text-muted-foreground">Manage projects</p>
         </div>
         <Button onClick={openCreateDialog}>
           <Plus className="w-4 h-4 mr-2" />
@@ -190,7 +190,7 @@ export default function ProjectsPage() {
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search projects..."
                   value={searchQuery}
@@ -208,7 +208,7 @@ export default function ProjectsPage() {
         </CardHeader>
         <CardContent>
           {filteredProjects.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               {hasActiveFilters
                 ? "No projects match the current filters."
                 : "No projects yet. Add your first project."}

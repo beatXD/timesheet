@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { LogOut, User } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { UserRole } from "@/types";
 
 interface HeaderProps {
@@ -28,9 +29,9 @@ interface HeaderProps {
 }
 
 const roleColors: Record<UserRole, string> = {
-  admin: "bg-red-100 text-red-800",
-  leader: "bg-blue-100 text-blue-800",
-  user: "bg-gray-100 text-gray-800",
+  admin: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+  leader: "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300",
+  user: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",
 };
 
 export function Header({ user }: HeaderProps) {
@@ -43,7 +44,8 @@ export function Header({ user }: HeaderProps) {
     .slice(0, 2);
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white border-b flex items-center justify-end px-6 gap-4">
+    <header className="sticky top-0 z-30 h-16 bg-background border-b flex items-center justify-end px-6 gap-4">
+      <ThemeToggle />
       <LanguageSwitcher />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -64,7 +66,7 @@ export function Header({ user }: HeaderProps) {
           <DropdownMenuLabel>
             <div className="flex flex-col">
               <span>{user.name}</span>
-              <span className="text-xs text-gray-500">{user.email}</span>
+              <span className="text-xs text-muted-foreground">{user.email}</span>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

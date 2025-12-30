@@ -24,9 +24,9 @@ export default async function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Sidebar userRole={user.role} />
-      <div className="transition-all duration-300 ml-64">
+      <div className="transition-all duration-300 ml-64 bg-background">
         <Header user={user} />
         <main className="p-6">{children}</main>
       </div>
