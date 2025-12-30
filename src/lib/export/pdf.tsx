@@ -8,13 +8,14 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { format } from "date-fns";
-import type { ITimesheet, ITimesheetEntry, IUser, IVendor, IProject } from "@/types";
+import type { ITimesheet, ITimesheetEntry, IUser, IVendor, IProject, ITeam } from "@/types";
 
 interface TimesheetExportData {
   timesheet: ITimesheet;
   user: IUser;
   vendor?: IVendor;
   project?: IProject;
+  team?: ITeam;
 }
 
 const styles = StyleSheet.create({
@@ -70,12 +71,12 @@ const styles = StyleSheet.create({
   },
   col1: { width: 30, paddingHorizontal: 2 },
   col2: { width: 60, paddingHorizontal: 2 },
-  col3: { width: 200, paddingHorizontal: 2 },
+  col3: { width: 160, paddingHorizontal: 2 },
   col4: { width: 40, paddingHorizontal: 2 },
   col5: { width: 40, paddingHorizontal: 2 },
   col6: { width: 40, paddingHorizontal: 2, textAlign: "center" },
   col7: { width: 40, paddingHorizontal: 2, textAlign: "center" },
-  col8: { width: 70, paddingHorizontal: 2 },
+  col8: { width: 110, paddingHorizontal: 2 },
   headerCell: {
     fontWeight: "bold",
     fontSize: 8,
@@ -121,12 +122,17 @@ const entryTypeLabels: Record<string, string> = {
 };
 
 const TimesheetPDF = ({ data }: { data: TimesheetExportData }) => {
-  const { timesheet, user, vendor, project } = data;
+  const { timesheet, user, vendor, project, team } = data;
   const monthYear = format(
     new Date(timesheet.year, timesheet.month - 1),
     "MMMM yyyy"
   );
   const manDays = timesheet.totalBaseHours / 8;
+
+  // Build project/team display string
+  const projectTeamDisplay = [project?.name, team?.name]
+    .filter(Boolean)
+    .join(" / ") || "-";
 
   return (
     <Document>
@@ -144,7 +150,7 @@ const TimesheetPDF = ({ data }: { data: TimesheetExportData }) => {
           </View>
           <View style={styles.headerRow}>
             <Text style={styles.headerLabel}>Project / Team:</Text>
-            <Text style={styles.headerValue}>{project?.name || "-"}</Text>
+            <Text style={styles.headerValue}>{projectTeamDisplay}</Text>
           </View>
           <View style={styles.headerRow}>
             <Text style={styles.headerLabel}>Contract Role:</Text>
@@ -198,7 +204,7 @@ const TimesheetPDF = ({ data }: { data: TimesheetExportData }) => {
                   {entry.additionalHours || 0}
                 </Text>
                 <Text style={[styles.col8, styles.cell]}>
-                  {(entry.remark || "").slice(0, 30)}
+                  {(entry.remark || "").slice(0, 50)}
                 </Text>
               </View>
             );

@@ -55,15 +55,23 @@ export async function GET(
     const vendor = user.vendorId
       ? await Vendor.findById(user.vendorId).lean()
       : undefined;
-    const project = user.teamIds && user.teamIds.length > 0
-      ? await Project.findOne({ _id: { $in: user.teamIds } }).lean()
-      : undefined;
+
+    // Find user's team and its associated project
+    let team = null;
+    let project = null;
+    if (user.teamIds && user.teamIds.length > 0) {
+      team = await Team.findById(user.teamIds[0]).lean();
+      if (team?.projectId) {
+        project = await Project.findById(team.projectId).lean();
+      }
+    }
 
     const buffer = await generateTimesheetExcel({
       timesheet: timesheet as any,
       user: user as any,
       vendor: vendor as any,
       project: project as any,
+      team: team as any,
     });
 
     const monthYear = format(

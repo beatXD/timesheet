@@ -1,12 +1,13 @@
 import ExcelJS from "exceljs";
 import { format } from "date-fns";
-import type { ITimesheet, ITimesheetEntry, IUser, IVendor, IProject } from "@/types";
+import type { ITimesheet, ITimesheetEntry, IUser, IVendor, IProject, ITeam } from "@/types";
 
 interface TimesheetExportData {
   timesheet: ITimesheet;
   user: IUser;
   vendor?: IVendor;
   project?: IProject;
+  team?: ITeam;
 }
 
 const entryTypeLabels: Record<string, string> = {
@@ -17,7 +18,12 @@ const entryTypeLabels: Record<string, string> = {
 };
 
 export async function generateTimesheetExcel(data: TimesheetExportData): Promise<Buffer> {
-  const { timesheet, user, vendor, project } = data;
+  const { timesheet, user, vendor, project, team } = data;
+
+  // Build project/team display string
+  const projectTeamDisplay = [project?.name, team?.name]
+    .filter(Boolean)
+    .join(" / ") || "-";
 
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Timesheet");
@@ -48,7 +54,7 @@ export async function generateTimesheetExcel(data: TimesheetExportData): Promise
 
   // Resource info
   worksheet.addRow(["Resource name:", user.name]);
-  worksheet.addRow(["Project / Team:", project?.name || "-"]);
+  worksheet.addRow(["Project / Team:", projectTeamDisplay]);
   worksheet.addRow(["Contract Role:", user.contractRole || "-"]);
   worksheet.addRow([]);
 
