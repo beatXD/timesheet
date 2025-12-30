@@ -21,6 +21,8 @@ import {
   UsersRound,
   FileSpreadsheet,
   Settings2,
+  History,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -56,6 +58,18 @@ const navSections: NavSection[] = [
         href: "/admin/timesheets/records",
         labelKey: "nav.timesheetRecords",
         icon: <FileSpreadsheet className="w-5 h-5" />,
+        roles: ["admin"],
+      },
+      {
+        href: "/admin/reports",
+        labelKey: "nav.reports",
+        icon: <BarChart3 className="w-5 h-5" />,
+        roles: ["admin"],
+      },
+      {
+        href: "/admin/audit-logs",
+        labelKey: "nav.auditLogs",
+        icon: <History className="w-5 h-5" />,
         roles: ["admin"],
       },
     ],
