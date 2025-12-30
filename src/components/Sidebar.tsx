@@ -73,6 +73,12 @@ const navSections: NavSection[] = [
         icon: <History className="w-5 h-5" />,
         roles: ["admin"],
       },
+      {
+        href: "/team/calendar",
+        labelKey: "nav.teamCalendar",
+        icon: <CalendarDays className="w-5 h-5" />,
+        roles: ["admin", "leader"],
+      },
     ],
   },
   {
@@ -104,12 +110,6 @@ const navSections: NavSection[] = [
         href: "/team/leaves",
         labelKey: "nav.teamLeaves",
         icon: <CalendarCheck className="w-5 h-5" />,
-        roles: ["admin", "leader"],
-      },
-      {
-        href: "/team/calendar",
-        labelKey: "nav.teamCalendar",
-        icon: <CalendarDays className="w-5 h-5" />,
         roles: ["admin", "leader"],
       },
     ],
