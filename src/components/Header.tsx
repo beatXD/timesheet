@@ -49,24 +49,27 @@ export function Header({ user }: HeaderProps) {
       <LanguageSwitcher />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium">{user.name}</p>
-              <Badge variant="secondary" className={roleColors[user.role]}>
-                {user.role}
-              </Badge>
-            </div>
-            <Avatar>
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <Avatar className="h-8 w-8">
               <AvatarImage src={user.image} alt={user.name} />
-              <AvatarFallback>{initials}</AvatarFallback>
+              <AvatarFallback className="text-xs">{initials}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>
-            <div className="flex flex-col">
-              <span>{user.name}</span>
-              <span className="text-xs text-muted-foreground">{user.email}</span>
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={user.image} alt={user.name} />
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium leading-none">{user.name}</p>
+                <p className="text-xs text-muted-foreground">{user.email}</p>
+                <Badge variant="secondary" className={`${roleColors[user.role]} text-xs w-fit`}>
+                  {t(`roles.${user.role}`)}
+                </Badge>
+              </div>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

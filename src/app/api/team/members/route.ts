@@ -21,6 +21,7 @@ export async function GET() {
     // Get teams where user is leader
     const teams = await Team.find({ leaderId: session.user.id })
       .populate("memberIds", "name email image role")
+      .populate("leaderId", "name email image role")
       .populate("projectId", "name")
       .lean();
 

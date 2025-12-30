@@ -49,16 +49,17 @@ export async function GET(request: NextRequest) {
       // Regular users can only see their own requests
       filter.userId = session.user.id;
     } else if (session.user.role === "leader" && scope === "team") {
-      // Leaders can see their team members' requests
+      // Leaders can see their own and their team members' requests
       const teams = await Team.find({ leaderId: session.user.id });
       if (teams.length > 0) {
         const allMemberIds = teams.flatMap((t) =>
           t.memberIds.map((id: { toString: () => string }) => id.toString())
         );
-        filter.userId = { $in: allMemberIds };
+        // Include leader's own ID in the filter
+        filter.userId = { $in: [...allMemberIds, session.user.id] };
       } else {
-        // If not leading any team, return empty
-        return NextResponse.json({ data: [] });
+        // If not leading any team, show only own requests
+        filter.userId = session.user.id;
       }
     }
     // Admin with scope "team" can see all

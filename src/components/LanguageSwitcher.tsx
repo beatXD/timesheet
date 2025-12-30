@@ -29,7 +29,7 @@ export function LanguageSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" disabled={isPending}>
           <Globe className="w-4 h-4 mr-1" />
-          {localeNames[locale]}
+          {locale.toUpperCase()}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

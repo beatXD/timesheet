@@ -54,12 +54,14 @@ interface Team {
   _id: string;
   name: string;
   memberIds: User[];
+  leaderId?: User;
   projectId?: { _id: string; name: string };
 }
 
 interface MemberWithTeam extends User {
   teamId: string;
   teamName: string;
+  isLeader?: boolean;
 }
 
 export default function TeamMembersPage() {
@@ -108,15 +110,26 @@ export default function TeamMembersPage() {
     fetchData();
   }, [fetchData]);
 
-  // Flatten members with team info
+  // Flatten members with team info (including leader)
   const allMembers = useMemo(() => {
     const members: MemberWithTeam[] = [];
     teams.forEach((team) => {
+      // Add leader first
+      if (team.leaderId) {
+        members.push({
+          ...team.leaderId,
+          teamId: team._id,
+          teamName: team.name,
+          isLeader: true,
+        });
+      }
+      // Add team members
       team.memberIds.forEach((member) => {
         members.push({
           ...member,
           teamId: team._id,
           teamName: team.name,
+          isLeader: false,
         });
       });
     });
@@ -332,7 +345,14 @@ export default function TeamMembersPage() {
                             .slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
-                      <p className="font-medium">{member.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{member.name}</p>
+                        {member.isLeader && (
+                          <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
+                            {t("roles.leader")}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -342,14 +362,16 @@ export default function TeamMembersPage() {
                     {member.email}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() => removeMember(member.teamId, member._id)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                    {!member.isLeader && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => removeMember(member.teamId, member._id)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
