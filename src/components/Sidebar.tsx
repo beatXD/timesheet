@@ -83,16 +83,19 @@ const navSections: NavSection[] = [
   },
   {
     titleKey: "nav.sections.main",
+    roles: ["user", "leader"],
     items: [
       {
         href: "/timesheet",
         labelKey: "nav.timesheet",
         icon: <Clock className="w-5 h-5" />,
+        roles: ["user", "leader"],
       },
       {
         href: "/leave-requests",
         labelKey: "nav.leaveRequests",
         icon: <CalendarPlus className="w-5 h-5" />,
+        roles: ["user", "leader"],
       },
     ],
   },
