@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SessionProvider } from "@/components/SessionProvider";
+import { Analytics } from "@/components/Analytics";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -43,6 +44,7 @@ export default async function RootLayout({
           >
             <NextIntlClientProvider messages={messages}>
               {children}
+              <Analytics />
             </NextIntlClientProvider>
           </ThemeProvider>
         </SessionProvider>
