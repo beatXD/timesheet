@@ -104,31 +104,31 @@ const navSections: NavSection[] = [
   },
   {
     titleKey: "nav.sections.teamManagement",
-    roles: ["user", "leader"],
+    roles: ["leader"],
     items: [
       {
         href: "/team/calendar",
         labelKey: "nav.teamCalendar",
         icon: <CalendarDays className="w-5 h-5" />,
-        roles: ["user", "leader"],
+        roles: ["leader"],
       },
       {
         href: "/team",
         labelKey: "nav.teamTimesheets",
         icon: <ClipboardList className="w-5 h-5" />,
-        roles: ["user", "leader"],
+        roles: ["leader"],
       },
       {
         href: "/team/leaves",
         labelKey: "nav.teamLeaves",
         icon: <CalendarCheck className="w-5 h-5" />,
-        roles: ["user", "leader"],
+        roles: ["leader"],
       },
       {
         href: "/team/members",
         labelKey: "nav.teamMembers",
         icon: <UsersRound className="w-5 h-5" />,
-        roles: ["user", "leader"],
+        roles: ["leader"],
       },
     ],
   },

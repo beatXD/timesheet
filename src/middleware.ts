@@ -5,7 +5,7 @@ import { defaultLocale, locales, type Locale } from "./i18n/config";
 
 // Role-based path access control
 const adminPaths = ["/admin"];
-// Team paths accessible by all authenticated users (user, leader, admin)
+const leaderPaths = ["/team"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -85,8 +85,15 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // Team paths - accessible by all authenticated users (user, leader, admin)
-    // Individual API routes control what actions each role can perform
+    // Leader/Admin paths - only leaders and admins can access team management
+    const isLeaderPath = leaderPaths.some(p => pathname.startsWith(p));
+    if (isLeaderPath && !["admin", "leader"].includes(userRole)) {
+      const response = NextResponse.redirect(new URL("/unauthorized", request.url));
+      if (!localeCookie) {
+        response.cookies.set("NEXT_LOCALE", locale, { path: "/" });
+      }
+      return response;
+    }
   }
 
   const response = NextResponse.next();
