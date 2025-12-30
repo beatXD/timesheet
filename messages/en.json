@@ -55,7 +55,12 @@
     "projects": "Projects",
     "holidays": "Holidays",
     "profile": "Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "sections": {
+      "main": "Main",
+      "teamManagement": "Team Management",
+      "administration": "Administration"
+    }
   },
   "dashboard": {
     "title": "Dashboard",

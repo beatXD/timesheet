@@ -55,7 +55,12 @@
     "projects": "โปรเจกต์",
     "holidays": "วันหยุด",
     "profile": "โปรไฟล์",
-    "settings": "ตั้งค่า"
+    "settings": "ตั้งค่า",
+    "sections": {
+      "main": "หลัก",
+      "teamManagement": "จัดการทีม",
+      "administration": "จัดการระบบ"
+    }
   },
   "dashboard": {
     "title": "แดชบอร์ด",
