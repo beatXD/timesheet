@@ -86,6 +86,7 @@
     "dashboard": "แดชบอร์ด",
     "timesheet": "ไทม์ชีท",
     "team": "อนุมัติไทม์ชีท",
+    "teamTimesheets": "ไทม์ชีททีม",
     "admin": "ผู้ดูแลระบบ",
     "users": "ผู้ใช้",
     "teams": "ทีม",
@@ -101,15 +102,15 @@
     "leaveRequests": "คำขอลางาน",
     "teamLeaves": "การลาของทีม",
     "teamCalendar": "ปฏิทินทีม",
+    "myCalendar": "ปฏิทินของฉัน",
     "teamMembers": "สมาชิกทีม",
     "profile": "โปรไฟล์",
     "settings": "ตั้งค่า",
     "sections": {
       "overview": "ภาพรวม",
-      "main": "หลัก",
-      "approval": "อนุมัติ",
-      "myTeam": "ทีมของฉัน",
-      "admin": "ผู้ดูแลระบบ",
+      "myWork": "งานของฉัน",
+      "teamManagement": "จัดการทีม",
+      "teamReports": "รายงานทีม",
       "settings": "ตั้งค่า"
     }
   },
@@ -382,6 +383,12 @@
       "totalRecords": "จำนวนทั้งหมด",
       "allRecords": "ทั้งหมด",
       "additionalHours": "ชั่วโมงเพิ่มเติม"
+    },
+    "leaveRequests": {
+      "title": "คำขอลา",
+      "description": "ดูคำขอลาทั้งหมดขององค์กร",
+      "totalRequests": "คำขอทั้งหมด",
+      "allRequests": "ทั้งหมด"
     },
     "auditLogs": {
       "title": "ประวัติการเปลี่ยนแปลง",
@@ -662,7 +669,9 @@
     "title": "การลาของทีม",
     "description": "ตรวจสอบและอนุมัติคำขอลาของทีม",
     "teamRequests": "คำขอลาของทีม",
-    "reviewApprove": "ตรวจสอบและอนุมัติคำขอลาจากสมาชิกในทีม"
+    "reviewApprove": "ตรวจสอบและอนุมัติคำขอลาจากสมาชิกในทีม",
+    "viewRecords": "ดูประวัติการลาจากทุกทีม",
+    "viewAllRequests": "ดูคำขอลาทั้งหมดจากทุกทีม"
   },
   "teamCalendar": {
     "title": "ปฏิทินทีม",
@@ -679,6 +688,12 @@
       "fri": "ศ.",
       "sat": "ส."
     }
+  },
+  "myCalendar": {
+    "title": "ปฏิทินของฉัน",
+    "description": "ดูวันหยุดและตารางการลาของคุณ",
+    "today": "วันนี้",
+    "holiday": "วันหยุด"
   },
   "teamOverview": {
     "selectTeam": "เลือกทีมเพื่อดูรายละเอียด",

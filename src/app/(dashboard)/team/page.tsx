@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { th, enUS } from "date-fns/locale";
 import { useTranslations, useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,10 +33,10 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Eye, Check, X, Search, ArrowLeft } from "lucide-react";
+import { Eye, Check, X, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { TimesheetStatus } from "@/types";
-import { TeamStatsGrid, TeamTimesheetStats, TeamSubmissionSummary } from "@/components/team";
+import { TeamSubmissionSummary } from "@/components/team";
 
 interface TeamMember {
   _id: string;
@@ -91,58 +91,33 @@ export default function TeamPage() {
   const t = useTranslations();
   const locale = useLocale();
   const dateLocale = locale === "th" ? th : enUS;
-  const { data: session } = useSession();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
 
-  const isAdmin = session?.user?.role === "admin";
-  const selectedTeamId = searchParams.get("team");
-  const showOverview = isAdmin && !selectedTeamId;
+  // Redirect admin to their dedicated page
+  if (status !== "loading" && session?.user?.role === "admin") {
+    redirect("/admin/timesheets/records");
+  }
+
+  // Redirect regular user to dashboard
+  if (status !== "loading" && session?.user?.role === "user") {
+    redirect("/dashboard");
+  }
 
   const [teams, setTeams] = useState<Team[]>([]);
-  const [teamStats, setTeamStats] = useState<TeamTimesheetStats[]>([]);
   const [timesheets, setTimesheets] = useState<TeamTimesheet[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(true);
 
   // Filter states
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
   const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth.toString());
-  const [filterTeam, setFilterTeam] = useState<string>(selectedTeamId || "all");
+  const [filterTeam, setFilterTeam] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
-
-  // Update filterTeam when selectedTeamId changes
-  useEffect(() => {
-    if (selectedTeamId) {
-      setFilterTeam(selectedTeamId);
-    }
-  }, [selectedTeamId]);
-
-  // Fetch team stats for admin overview
-  const fetchTeamStats = useCallback(async () => {
-    if (!isAdmin) return;
-
-    setStatsLoading(true);
-    try {
-      const res = await fetch(
-        `/api/team/stats?type=timesheets&year=${filterYear}&month=${filterMonth}`
-      );
-      const data = await res.json();
-      if (data.data) {
-        setTeamStats(data.data);
-      }
-    } catch (error) {
-      toast.error(t("errors.fetchFailed"));
-    } finally {
-      setStatsLoading(false);
-    }
-  }, [isAdmin, filterYear, filterMonth, t]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -157,15 +132,14 @@ export default function TeamPage() {
 
       if (teamsData.data) {
         const myTeams = teamsData.data.filter(
-          (team: Team) =>
-            team.leaderId?._id === session?.user?.id || session?.user?.role === "admin"
+          (team: Team) => team.leaderId?._id === session?.user?.id
         );
         setTeams(myTeams);
 
         // Redirect leader with no teams to dashboard
-        if (session?.user?.role === "leader" && myTeams.length === 0) {
+        if (myTeams.length === 0) {
           toast.error(t("team.noTeamsAssigned") || "You are not assigned to lead any team");
-          router.push("/dashboard");
+          redirect("/dashboard");
           return;
         }
 
@@ -185,21 +159,18 @@ export default function TeamPage() {
           setTimesheets(timesheetsWithTeam);
         }
       }
-    } catch (error) {
+    } catch {
       toast.error(t("errors.fetchFailed"));
     } finally {
       setLoading(false);
     }
-  }, [filterYear, filterMonth, session?.user?.id, session?.user?.role, t]);
+  }, [filterYear, filterMonth, session?.user?.id, t]);
 
   useEffect(() => {
-    if (session?.user) {
+    if (session?.user && session.user.role === "leader") {
       fetchData();
-      if (isAdmin) {
-        fetchTeamStats();
-      }
     }
-  }, [fetchData, fetchTeamStats, session?.user, isAdmin]);
+  }, [fetchData, session?.user]);
 
   const approveTimesheet = async (id: string) => {
     try {
@@ -215,8 +186,7 @@ export default function TeamPage() {
 
       toast.success(t("success.timesheetApproved"));
       fetchData();
-      if (isAdmin) fetchTeamStats();
-    } catch (error) {
+    } catch {
       toast.error(t("errors.failedToApprove"));
     }
   };
@@ -240,35 +210,16 @@ export default function TeamPage() {
 
       toast.success(t("success.timesheetRejected"));
       fetchData();
-      if (isAdmin) fetchTeamStats();
-    } catch (error) {
+    } catch {
       toast.error(t("errors.failedToReject"));
     }
   };
 
-  const handleTeamClick = (teamId: string) => {
-    router.push(`/team?team=${teamId}`);
-  };
-
-  const handleBackToOverview = () => {
-    router.push("/team");
-    setFilterTeam("all");
-  };
-
-  // Get selected team name
-  const selectedTeamName = useMemo(() => {
-    if (!selectedTeamId) return null;
-    const team = teams.find((t) => t._id === selectedTeamId);
-    return team?.name;
-  }, [selectedTeamId, teams]);
-
   // Filter timesheets
   const filteredTimesheets = useMemo(() => {
     return timesheets.filter((ts) => {
-      // Team filter - for admin drill-down, filter by selected team
-      if (selectedTeamId && ts.teamId !== selectedTeamId) return false;
-      // Team filter - for regular filter dropdown
-      if (!selectedTeamId && filterTeam !== "all" && ts.teamId !== filterTeam) return false;
+      // Team filter
+      if (filterTeam !== "all" && ts.teamId !== filterTeam) return false;
       // Status filter
       if (filterStatus !== "all" && ts.status !== filterStatus) return false;
       // Search filter
@@ -283,15 +234,13 @@ export default function TeamPage() {
       }
       return true;
     });
-  }, [timesheets, filterTeam, filterStatus, searchQuery, selectedTeamId]);
+  }, [timesheets, filterTeam, filterStatus, searchQuery]);
 
   // Count pending
   const pendingCount = timesheets.filter((ts) => ts.status === "submitted").length;
 
   // Calculate submission stats for leader view
   const submissionStats = useMemo(() => {
-    if (isAdmin) return null;
-
     // Get all unique team members from leader's teams (including leader)
     const allMembers: TeamMember[] = [];
     const memberIdSet = new Set<string>();
@@ -336,72 +285,23 @@ export default function TeamPage() {
       submittedCount: submittedUserIds.size,
       notSubmittedMembers,
     };
-  }, [isAdmin, teams, timesheets]);
+  }, [teams, timesheets]);
 
-  // Admin Overview Mode
-  if (showOverview) {
+  // Show loading state
+  if (status === "loading" || !session) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{t("team.title")}</h1>
-            <p className="text-muted-foreground">{t("teamOverview.selectTeam")}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Select value={filterMonth} onValueChange={setFilterMonth}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder={t("common.month")} />
-              </SelectTrigger>
-              <SelectContent>
-                {months.map((m) => (
-                  <SelectItem key={m} value={m.toString()}>
-                    {format(new Date(2024, m - 1), "MMMM", { locale: dateLocale })}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterYear} onValueChange={setFilterYear}>
-              <SelectTrigger className="w-24">
-                <SelectValue placeholder={t("common.year")} />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((y) => (
-                  <SelectItem key={y} value={y.toString()}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <TeamStatsGrid
-          teams={teamStats}
-          variant="timesheets"
-          loading={statsLoading}
-          onTeamClick={handleTeamClick}
-        />
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
       </div>
     );
   }
 
-  // Detail View (for both admin drill-down and leader)
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {isAdmin && selectedTeamId && (
-            <Button variant="ghost" size="sm" onClick={handleBackToOverview}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t("teamOverview.backToOverview")}
-            </Button>
-          )}
-          <div>
-            <h1 className="text-2xl font-bold">
-              {selectedTeamName ? selectedTeamName : t("team.title")}
-            </h1>
-            <p className="text-muted-foreground">{t("team.reviewApprove")}</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold">{t("team.title")}</h1>
+          <p className="text-muted-foreground">{t("team.reviewApprove")}</p>
         </div>
         {pendingCount > 0 && (
           <Badge variant="destructive" className="text-sm px-3 py-1">
@@ -410,15 +310,13 @@ export default function TeamPage() {
         )}
       </div>
 
-      {/* Submission Summary for Leader */}
-      {!isAdmin && submissionStats && (
-        <TeamSubmissionSummary
-          totalMembers={submissionStats.totalMembers}
-          submittedCount={submissionStats.submittedCount}
-          notSubmittedMembers={submissionStats.notSubmittedMembers}
-          loading={loading}
-        />
-      )}
+      {/* Submission Summary */}
+      <TeamSubmissionSummary
+        totalMembers={submissionStats.totalMembers}
+        submittedCount={submissionStats.submittedCount}
+        notSubmittedMembers={submissionStats.notSubmittedMembers}
+        loading={loading}
+      />
 
       <Card>
         <CardHeader>
@@ -439,7 +337,7 @@ export default function TeamPage() {
                   className="pl-8 w-40"
                 />
               </div>
-              {!selectedTeamId && (
+              {teams.length > 1 && (
                 <Select value={filterTeam} onValueChange={setFilterTeam}>
                   <SelectTrigger className="w-36">
                     <SelectValue placeholder={t("common.team")} />
@@ -502,7 +400,7 @@ export default function TeamPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("team.member")}</TableHead>
-                  {!selectedTeamId && <TableHead>{t("common.team")}</TableHead>}
+                  {teams.length > 1 && <TableHead>{t("common.team")}</TableHead>}
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead>{t("team.baseHours")}</TableHead>
                   <TableHead>{t("common.submitted")}</TableHead>
@@ -533,7 +431,7 @@ export default function TeamPage() {
                         </div>
                       </div>
                     </TableCell>
-                    {!selectedTeamId && (
+                    {teams.length > 1 && (
                       <TableCell>
                         <Badge variant="outline">{ts.teamName || "-"}</Badge>
                       </TableCell>
@@ -584,7 +482,7 @@ export default function TeamPage() {
                 ))}
                 {filteredTimesheets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={selectedTeamId ? 5 : 6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={teams.length > 1 ? 6 : 5} className="text-center py-8 text-muted-foreground">
                       {t("team.noTimesheetsFound")}
                     </TableCell>
                   </TableRow>

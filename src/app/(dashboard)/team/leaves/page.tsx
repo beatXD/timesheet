@@ -5,7 +5,7 @@ import { format, differenceInDays } from "date-fns";
 import { th, enUS } from "date-fns/locale";
 import { useTranslations, useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,9 +43,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X, Search, ArrowLeft, CheckCheck, XCircle } from "lucide-react";
+import { Check, X, Search, CheckCheck, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { TeamStatsGrid, TeamLeaveStats } from "@/components/team";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface LeaveRequestUser {
@@ -111,21 +110,14 @@ export default function TeamLeavesPage() {
   const dateLocale = locale === "th" ? th : enUS;
   const { data: session, status } = useSession();
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const isAdmin = session?.user?.role === "admin";
-  const selectedTeamId = searchParams.get("team");
-  const showOverview = isAdmin && !selectedTeamId;
 
   const [teams, setTeams] = useState<Team[]>([]);
-  const [teamStats, setTeamStats] = useState<TeamLeaveStats[]>([]);
   const [teamRequests, setTeamRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(true);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [teamFilter, setTeamFilter] = useState<string>(selectedTeamId || "all");
+  const [teamFilter, setTeamFilter] = useState<string>("all");
   const [leaveTypeFilter, setLeaveTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -141,7 +133,7 @@ export default function TeamLeavesPage() {
   const [isBulkRejectDialogOpen, setIsBulkRejectDialogOpen] = useState(false);
   const [bulkRejectionReason, setBulkRejectionReason] = useState("");
 
-  // Check access
+  // Check access - leader only (admin uses /admin/leave-requests)
   useEffect(() => {
     if (status === "loading") return;
     if (!session?.user) {
@@ -150,32 +142,10 @@ export default function TeamLeavesPage() {
     if (session.user.role === "user") {
       redirect("/dashboard");
     }
+    if (session.user.role === "admin") {
+      redirect("/admin/leave-requests");
+    }
   }, [session, status]);
-
-  // Update teamFilter when selectedTeamId changes
-  useEffect(() => {
-    if (selectedTeamId) {
-      setTeamFilter(selectedTeamId);
-    }
-  }, [selectedTeamId]);
-
-  // Fetch team stats for admin overview
-  const fetchTeamStats = useCallback(async () => {
-    if (!isAdmin) return;
-
-    setStatsLoading(true);
-    try {
-      const res = await fetch("/api/team/stats?type=leaves");
-      const data = await res.json();
-      if (data.data) {
-        setTeamStats(data.data);
-      }
-    } catch (error) {
-      toast.error(t("errors.fetchFailed"));
-    } finally {
-      setStatsLoading(false);
-    }
-  }, [isAdmin, t]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -190,13 +160,12 @@ export default function TeamLeavesPage() {
 
       if (teamsData.data) {
         const myTeams = teamsData.data.filter(
-          (team: Team) =>
-            team.leaderId?._id === session?.user?.id || session?.user?.role === "admin"
+          (team: Team) => team.leaderId?._id === session?.user?.id
         );
         setTeams(myTeams);
 
         // Redirect leader with no teams to dashboard
-        if (session?.user?.role === "leader" && myTeams.length === 0) {
+        if (myTeams.length === 0) {
           toast.error(t("team.noTeamsAssigned") || "You are not assigned to lead any team");
           router.push("/dashboard");
           return;
@@ -218,21 +187,18 @@ export default function TeamLeavesPage() {
           setTeamRequests(requestsWithTeam);
         }
       }
-    } catch (error) {
+    } catch {
       toast.error(t("errors.fetchFailed"));
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, session?.user?.role, t]);
+  }, [session?.user?.id, t, router]);
 
   useEffect(() => {
-    if (session?.user?.role === "leader" || session?.user?.role === "admin") {
+    if (session?.user?.role === "leader") {
       fetchData();
-      if (isAdmin) {
-        fetchTeamStats();
-      }
     }
-  }, [session, fetchData, fetchTeamStats, isAdmin]);
+  }, [session, fetchData]);
 
   const handleApprove = async (request: LeaveRequest) => {
     try {
@@ -250,8 +216,7 @@ export default function TeamLeavesPage() {
 
       toast.success(t("leaveRequest.success.approved"));
       fetchData();
-      if (isAdmin) fetchTeamStats();
-    } catch (error) {
+    } catch {
       toast.error(t("errors.failedToApprove"));
     }
   };
@@ -284,7 +249,6 @@ export default function TeamLeavesPage() {
       toast.success(t("leaveRequest.success.rejected"));
       setIsRejectDialogOpen(false);
       fetchData();
-      if (isAdmin) fetchTeamStats();
     } catch {
       toast.error(t("errors.failedToReject"));
     }
@@ -338,7 +302,6 @@ export default function TeamLeavesPage() {
 
       setSelectedIds(new Set());
       fetchData();
-      if (isAdmin) fetchTeamStats();
     } catch {
       toast.error(t("errors.failedToApprove"));
     } finally {
@@ -378,21 +341,11 @@ export default function TeamLeavesPage() {
       setIsBulkRejectDialogOpen(false);
       setBulkRejectionReason("");
       fetchData();
-      if (isAdmin) fetchTeamStats();
     } catch {
       toast.error(t("errors.failedToReject"));
     } finally {
       setBulkProcessing(false);
     }
-  };
-
-  const handleTeamClick = (teamId: string) => {
-    router.push(`/team/leaves?team=${teamId}`);
-  };
-
-  const handleBackToOverview = () => {
-    router.push("/team/leaves");
-    setTeamFilter("all");
   };
 
   const formatDateRange = (start: string, end: string) => {
@@ -414,20 +367,10 @@ export default function TeamLeavesPage() {
     return differenceInDays(new Date(end), new Date(start)) + 1;
   };
 
-  // Get selected team name
-  const selectedTeamName = useMemo(() => {
-    if (!selectedTeamId) return null;
-    const team = teams.find((t) => t._id === selectedTeamId);
-    return team?.name;
-  }, [selectedTeamId, teams]);
-
   // Filter requests
   const filteredRequests = useMemo(() => {
     return teamRequests.filter((req) => {
-      // Team filter - for admin drill-down, filter by selected team
-      if (selectedTeamId && req.teamId !== selectedTeamId) return false;
-      // Team filter - for regular filter dropdown
-      if (!selectedTeamId && teamFilter !== "all" && req.teamId !== teamFilter) return false;
+      if (teamFilter !== "all" && req.teamId !== teamFilter) return false;
       if (statusFilter !== "all" && req.status !== statusFilter) return false;
       if (leaveTypeFilter !== "all" && req.leaveType !== leaveTypeFilter) return false;
       if (searchQuery) {
@@ -441,7 +384,7 @@ export default function TeamLeavesPage() {
       }
       return true;
     });
-  }, [teamRequests, teamFilter, statusFilter, leaveTypeFilter, searchQuery, selectedTeamId]);
+  }, [teamRequests, teamFilter, statusFilter, leaveTypeFilter, searchQuery]);
 
   // Pending filtered requests for bulk selection
   const pendingFilteredRequests = useMemo(() => {
@@ -458,44 +401,12 @@ export default function TeamLeavesPage() {
     );
   }
 
-  // Admin Overview Mode
-  if (showOverview) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{t("teamLeave.title")}</h1>
-            <p className="text-muted-foreground">{t("teamOverview.selectTeam")}</p>
-          </div>
-        </div>
-
-        <TeamStatsGrid
-          teams={teamStats}
-          variant="leaves"
-          loading={statsLoading}
-          onTeamClick={handleTeamClick}
-        />
-      </div>
-    );
-  }
-
-  // Detail View (for both admin drill-down and leader)
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {isAdmin && selectedTeamId && (
-            <Button variant="ghost" size="sm" onClick={handleBackToOverview}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t("teamOverview.backToOverview")}
-            </Button>
-          )}
-          <div>
-            <h1 className="text-2xl font-bold">
-              {selectedTeamName ? selectedTeamName : t("teamLeave.title")}
-            </h1>
-            <p className="text-muted-foreground">{t("teamLeave.description")}</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold">{t("teamLeave.title")}</h1>
+          <p className="text-muted-foreground">{t("teamLeave.description")}</p>
         </div>
         {pendingCount > 0 && (
           <Badge variant="destructive" className="text-sm px-3 py-1">
@@ -521,7 +432,7 @@ export default function TeamLeavesPage() {
                   className="pl-8 w-40"
                 />
               </div>
-              {!selectedTeamId && (
+              {teams.length > 1 && (
                 <Select value={teamFilter} onValueChange={setTeamFilter}>
                   <SelectTrigger className="w-36">
                     <SelectValue placeholder={t("common.team")} />
@@ -613,15 +524,13 @@ export default function TeamLeavesPage() {
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
                   <TableHead>{t("common.user")}</TableHead>
-                  {!selectedTeamId && <TableHead>{t("common.team")}</TableHead>}
+                  {teams.length > 1 && <TableHead>{t("common.team")}</TableHead>}
                   <TableHead>{t("leaveRequest.dateRange")}</TableHead>
                   <TableHead>{t("leaveRequest.days")}</TableHead>
                   <TableHead>{t("leave.leaveType")}</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead>{t("timesheet.remark")}</TableHead>
-                  <TableHead className="text-right">
-                    {t("common.actions")}
-                  </TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -658,7 +567,7 @@ export default function TeamLeavesPage() {
                         </div>
                       </div>
                     </TableCell>
-                    {!selectedTeamId && (
+                    {teams.length > 1 && (
                       <TableCell>
                         <Badge variant="outline">{request.teamName || "-"}</Badge>
                       </TableCell>
@@ -718,7 +627,7 @@ export default function TeamLeavesPage() {
                 {filteredRequests.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={selectedTeamId ? 8 : 9}
+                      colSpan={teams.length > 1 ? 9 : 8}
                       className="text-center py-8 text-muted-foreground"
                     >
                       {t("leaveRequest.noRequests")}

@@ -86,6 +86,7 @@
     "dashboard": "Dashboard",
     "timesheet": "Timesheet",
     "team": "Approve Timesheets",
+    "teamTimesheets": "Team Timesheets",
     "admin": "Admin",
     "users": "Users",
     "teams": "Teams",
@@ -101,15 +102,15 @@
     "leaveRequests": "Leave Requests",
     "teamLeaves": "Team Leaves",
     "teamCalendar": "Team Calendar",
+    "myCalendar": "My Calendar",
     "teamMembers": "Team Members",
     "profile": "Profile",
     "settings": "Settings",
     "sections": {
       "overview": "Overview",
-      "main": "Main",
-      "approval": "Approval",
-      "myTeam": "My Team",
-      "admin": "Admin",
+      "myWork": "My Work",
+      "teamManagement": "Team Management",
+      "teamReports": "Team Reports",
       "settings": "Settings"
     }
   },
@@ -232,6 +233,7 @@
     "title": "Approve Timesheets",
     "description": "Review and approve team member timesheets",
     "reviewApprove": "Review and approve timesheets before submitting to admin",
+    "viewRecords": "View timesheet records from all teams",
     "timesheets": "Timesheets",
     "pending": "Pending",
     "pendingApproval": "Pending Approval",
@@ -382,6 +384,12 @@
       "totalRecords": "Total Records",
       "allRecords": "All Records",
       "additionalHours": "Additional Hours"
+    },
+    "leaveRequests": {
+      "title": "Leave Requests",
+      "description": "View all leave requests across the organization",
+      "totalRequests": "Total Requests",
+      "allRequests": "All Requests"
     },
     "auditLogs": {
       "title": "Audit Logs",
@@ -662,7 +670,9 @@
     "title": "Team Leaves",
     "description": "Review and approve team leave requests",
     "teamRequests": "Team Leave Requests",
-    "reviewApprove": "Review and approve leave requests from your team members"
+    "reviewApprove": "Review and approve leave requests from your team members",
+    "viewRecords": "View leave records from all teams",
+    "viewAllRequests": "View all leave requests from teams"
   },
   "teamCalendar": {
     "title": "Team Calendar",
@@ -679,6 +689,12 @@
       "fri": "Fri",
       "sat": "Sat"
     }
+  },
+  "myCalendar": {
+    "title": "My Calendar",
+    "description": "View your holidays and leave schedule",
+    "today": "Today",
+    "holiday": "Holiday"
   },
   "teamOverview": {
     "selectTeam": "Select a team to view details",

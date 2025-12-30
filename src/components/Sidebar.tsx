@@ -73,18 +73,18 @@ const navSections: NavSection[] = [
         icon: <History className="w-5 h-5" />,
         roles: ["admin"],
       },
-      {
-        href: "/team/calendar",
-        labelKey: "nav.teamCalendar",
-        icon: <CalendarDays className="w-5 h-5" />,
-        roles: ["admin", "leader"],
-      },
     ],
   },
   {
-    titleKey: "nav.sections.main",
+    titleKey: "nav.sections.myWork",
     roles: ["user", "leader"],
     items: [
+      {
+        href: "/calendar",
+        labelKey: "nav.myCalendar",
+        icon: <CalendarDays className="w-5 h-5" />,
+        roles: ["user", "leader"],
+      },
       {
         href: "/timesheet",
         labelKey: "nav.timesheet",
@@ -100,32 +100,50 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    titleKey: "nav.sections.approval",
-    roles: ["admin", "leader"],
+    titleKey: "nav.sections.teamManagement",
+    roles: ["leader"],
     items: [
       {
+        href: "/team/calendar",
+        labelKey: "nav.teamCalendar",
+        icon: <CalendarDays className="w-5 h-5" />,
+        roles: ["leader"],
+      },
+      {
         href: "/team",
-        labelKey: "nav.team",
+        labelKey: "nav.teamTimesheets",
         icon: <ClipboardList className="w-5 h-5" />,
-        roles: ["admin", "leader"],
+        roles: ["leader"],
       },
       {
         href: "/team/leaves",
         labelKey: "nav.teamLeaves",
         icon: <CalendarCheck className="w-5 h-5" />,
-        roles: ["admin", "leader"],
+        roles: ["leader"],
       },
-    ],
-  },
-  {
-    titleKey: "nav.sections.myTeam",
-    roles: ["leader"],
-    items: [
       {
         href: "/team/members",
         labelKey: "nav.teamMembers",
         icon: <UsersRound className="w-5 h-5" />,
         roles: ["leader"],
+      },
+    ],
+  },
+  {
+    titleKey: "nav.sections.teamReports",
+    roles: ["admin"],
+    items: [
+      {
+        href: "/team/calendar",
+        labelKey: "nav.teamCalendar",
+        icon: <CalendarDays className="w-5 h-5" />,
+        roles: ["admin"],
+      },
+      {
+        href: "/admin/leave-requests",
+        labelKey: "nav.teamLeaves",
+        icon: <CalendarCheck className="w-5 h-5" />,
+        roles: ["admin"],
       },
     ],
   },
