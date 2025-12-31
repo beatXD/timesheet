@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { LeaveBalance, LeaveSettings, User } from "@/models";
+import { LeaveBalance, LeaveSettings, LeaveRequest, User } from "@/models";
+
+// Helper function to calculate working days between two dates
+function calculateWorkingDays(startDate: Date, endDate: Date): number {
+  let count = 0;
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    const dayOfWeek = current.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return count;
+}
 
 // GET /api/leave-balance/[userId] - Get specific user's leave balance (admin/leader only)
 export async function GET(
@@ -34,12 +48,33 @@ export async function GET(
     // Get default quotas from settings
     const settings = await LeaveSettings.getSettings();
 
-    // Get or create balance for the user and year
+    // Get or create balance for the user and year (for total quotas)
     const balance = await LeaveBalance.getOrCreateForUser(
       userId,
       year,
       settings.defaultQuotas
     );
+
+    // Calculate used days from approved leave requests (source of truth)
+    const yearStart = new Date(`${year}-01-01`);
+    const yearEnd = new Date(`${year}-12-31`);
+
+    const approvedRequests = await LeaveRequest.find({
+      userId,
+      status: "approved",
+      startDate: { $gte: yearStart, $lte: yearEnd },
+    }).lean();
+
+    // Calculate used days by leave type
+    const usedDays = { sick: 0, personal: 0, annual: 0 };
+    for (const request of approvedRequests) {
+      const leaveType = request.leaveType as "sick" | "personal" | "annual";
+      const days = calculateWorkingDays(
+        new Date(request.startDate),
+        new Date(request.endDate)
+      );
+      usedDays[leaveType] += days;
+    }
 
     // Calculate remaining for each type
     const balanceData = {
@@ -55,18 +90,18 @@ export async function GET(
       quotas: {
         sick: {
           total: balance.quotas.sick.total,
-          used: balance.quotas.sick.used,
-          remaining: balance.quotas.sick.total - balance.quotas.sick.used,
+          used: usedDays.sick,
+          remaining: balance.quotas.sick.total - usedDays.sick,
         },
         personal: {
           total: balance.quotas.personal.total,
-          used: balance.quotas.personal.used,
-          remaining: balance.quotas.personal.total - balance.quotas.personal.used,
+          used: usedDays.personal,
+          remaining: balance.quotas.personal.total - usedDays.personal,
         },
         annual: {
           total: balance.quotas.annual.total,
-          used: balance.quotas.annual.used,
-          remaining: balance.quotas.annual.total - balance.quotas.annual.used,
+          used: usedDays.annual,
+          remaining: balance.quotas.annual.total - usedDays.annual,
         },
       },
     };

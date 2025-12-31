@@ -18,6 +18,8 @@ import { LogOut, User } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useSidebarStore } from "@/store";
+import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 
 interface HeaderProps {
@@ -37,6 +39,7 @@ const roleColors: Record<UserRole, string> = {
 
 export function Header({ user }: HeaderProps) {
   const t = useTranslations();
+  const { isOpen } = useSidebarStore();
   const initials = user.name
     .split(" ")
     .map((n) => n[0])
@@ -45,7 +48,12 @@ export function Header({ user }: HeaderProps) {
     .slice(0, 2);
 
   return (
-    <header className="fixed top-0 left-64 right-0 z-30 h-16 bg-background border-b flex items-center justify-end px-6 gap-4">
+    <header
+      className={cn(
+        "fixed top-0 right-0 z-30 h-16 bg-background border-b flex items-center justify-end px-6 gap-4 transition-all duration-300",
+        isOpen ? "left-64" : "left-16"
+      )}
+    >
       <ThemeToggle />
       <LanguageSwitcher />
       <NotificationBell />

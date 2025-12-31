@@ -1,10 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle2, Users } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CheckCircle2, AlertCircle, ChevronDown } from "lucide-react";
 
 interface TeamMember {
   _id: string;
@@ -30,63 +34,72 @@ export function TeamSubmissionSummary({
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center h-24">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-foreground" />
-        </CardContent>
-      </Card>
+      <div className="h-8 w-48 bg-muted animate-pulse rounded-md" />
     );
   }
 
   const allSubmitted = submittedCount === totalMembers && totalMembers > 0;
   const hasNotSubmitted = notSubmittedMembers.length > 0;
+  const percentage = totalMembers > 0 ? Math.round((submittedCount / totalMembers) * 100) : 0;
 
   return (
-    <Card className={allSubmitted ? "border-green-200 dark:border-green-800" : hasNotSubmitted ? "border-amber-200 dark:border-amber-800" : ""}>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Users className="w-4 h-4" />
-          {t("teamSubmission.title")}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Summary Stats */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            {allSubmitted ? (
-              <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
-            ) : (
-              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            )}
-            <span className="text-2xl font-bold">
-              {submittedCount}/{totalMembers}
-            </span>
-            <span className="text-muted-foreground">
-              {t("teamSubmission.submitted")}
-            </span>
-          </div>
-          {allSubmitted && (
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800">
-              {t("teamSubmission.allSubmitted")}
-            </Badge>
-          )}
+    <div className="flex items-center gap-3">
+      {/* Progress indicator */}
+      <div className="flex items-center gap-2">
+        {allSubmitted ? (
+          <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+        ) : (
+          <AlertCircle className="w-4 h-4 text-amber-500" />
+        )}
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-semibold">
+            {submittedCount}/{totalMembers}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {t("teamSubmission.submitted")}
+          </span>
         </div>
+      </div>
 
-        {/* Not Submitted List */}
-        {hasNotSubmitted && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">
-              {t("teamSubmission.notSubmitted")}:
+      {/* Progress bar */}
+      <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div
+          className={`h-full transition-all ${
+            allSubmitted
+              ? "bg-green-500"
+              : percentage >= 50
+              ? "bg-amber-500"
+              : "bg-red-500"
+          }`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+
+      {/* Not submitted popover */}
+      {hasNotSubmitted && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Badge
+              variant="outline"
+              className="cursor-pointer hover:bg-muted gap-1 text-xs py-0.5 border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400"
+            >
+              {notSubmittedMembers.length} {t("teamSubmission.notSubmitted")}
+              <ChevronDown className="w-3 h-3" />
+            </Badge>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-64 p-2">
+            <p className="text-xs font-medium text-muted-foreground mb-2 px-1">
+              {t("teamSubmission.notSubmitted")}
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-1 max-h-48 overflow-y-auto">
               {notSubmittedMembers.map((member) => (
                 <div
                   key={member._id}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800"
+                  className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted"
                 >
                   <Avatar className="h-5 w-5">
                     <AvatarImage src={member.image} />
-                    <AvatarFallback className="text-[10px]">
+                    <AvatarFallback className="text-[9px]">
                       {member.name
                         .split(" ")
                         .map((n) => n[0])
@@ -95,15 +108,22 @@ export function TeamSubmissionSummary({
                         .slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm text-amber-800 dark:text-amber-200">
-                    {member.name}
-                  </span>
+                  <span className="text-sm truncate">{member.name}</span>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          </PopoverContent>
+        </Popover>
+      )}
+
+      {allSubmitted && (
+        <Badge
+          variant="outline"
+          className="text-xs py-0.5 border-green-300 text-green-700 dark:border-green-700 dark:text-green-400"
+        >
+          {t("teamSubmission.allSubmitted")}
+        </Badge>
+      )}
+    </div>
   );
 }

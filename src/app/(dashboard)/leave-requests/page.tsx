@@ -50,6 +50,8 @@ import {
   Calendar as CalendarIcon,
   Trash2,
   Clock,
+  Filter,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -105,6 +107,14 @@ const statusColors: Record<string, string> = {
   rejected: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
 };
 
+// Get default year (next year if December, current year otherwise)
+function getDefaultYear() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  return currentMonth === 11 ? currentYear + 1 : currentYear;
+}
+
 export default function LeaveRequestsPage() {
   const t = useTranslations();
   const locale = useLocale();
@@ -113,6 +123,20 @@ export default function LeaveRequestsPage() {
   const [myRequests, setMyRequests] = useState<LeaveRequest[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalanceData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Filter states
+  const [filterYear, setFilterYear] = useState<string>(String(getDefaultYear()));
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 3 }, (_, i) => currentYear + i);
+
+  const hasActiveFilters = filterStatus !== "all" || filterYear !== String(getDefaultYear());
+
+  const clearFilters = () => {
+    setFilterYear(String(getDefaultYear()));
+    setFilterStatus("all");
+  };
 
   // New request dialog
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
@@ -124,24 +148,25 @@ export default function LeaveRequestsPage() {
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchRequests = useCallback(async () => {
+  const fetchRequests = useCallback(async (year: string, status: string) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/leave-requests?scope=own");
+      const statusParam = status !== "all" ? `&status=${status}` : "";
+      const res = await fetch(`/api/leave-requests?scope=own&year=${year}${statusParam}`);
       const data = await res.json();
       if (data.data) {
         setMyRequests(data.data);
       }
-    } catch (error) {
+    } catch {
       toast.error(t("errors.fetchFailed"));
     } finally {
       setLoading(false);
     }
   }, [t]);
 
-  const fetchLeaveBalance = useCallback(async () => {
+  const fetchLeaveBalance = useCallback(async (year: string) => {
     try {
-      const res = await fetch("/api/leave-balance");
+      const res = await fetch(`/api/leave-balance?year=${year}`);
       const data = await res.json();
       if (res.ok) {
         setLeaveBalance(data.data);
@@ -152,9 +177,9 @@ export default function LeaveRequestsPage() {
   }, []);
 
   useEffect(() => {
-    fetchRequests();
-    fetchLeaveBalance();
-  }, [fetchRequests, fetchLeaveBalance]);
+    fetchRequests(filterYear, filterStatus);
+    fetchLeaveBalance(filterYear);
+  }, [filterYear, filterStatus, fetchRequests, fetchLeaveBalance]);
 
   const handleSubmitRequest = async () => {
     if (!dateRange.from || !leaveType) {
@@ -184,8 +209,8 @@ export default function LeaveRequestsPage() {
       toast.success(t("leaveRequest.success.created"));
       setIsNewDialogOpen(false);
       resetForm();
-      fetchRequests();
-      fetchLeaveBalance();
+      fetchRequests(filterYear, filterStatus);
+      fetchLeaveBalance(filterYear);
     } catch (error) {
       toast.error(t("errors.failedToCreate"));
     } finally {
@@ -208,8 +233,8 @@ export default function LeaveRequestsPage() {
       }
 
       toast.success(t("leaveRequest.success.cancelled"));
-      fetchRequests();
-      fetchLeaveBalance();
+      fetchRequests(filterYear, filterStatus);
+      fetchLeaveBalance(filterYear);
     } catch (error) {
       toast.error(t("errors.failedToDelete"));
     }
@@ -257,7 +282,11 @@ export default function LeaveRequestsPage() {
 
       {/* Leave Balance Card */}
       {leaveBalance && (
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="space-y-2">
+          <div className="text-sm text-muted-foreground">
+            {t("leave.balanceForYear", { year: leaveBalance.year })}
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
           {/* Sick Leave */}
           <Card className="p-3 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20">
             <div className="flex items-center justify-between mb-1.5">
@@ -299,13 +328,49 @@ export default function LeaveRequestsPage() {
               className="h-1.5"
             />
           </Card>
+          </div>
         </div>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>{t("leaveRequest.myRequests")}</CardTitle>
-          <CardDescription>{t("leaveRequest.myRequestsDesc")}</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>{t("leaveRequest.myRequests")}</CardTitle>
+              <CardDescription>{t("leaveRequest.myRequestsDesc")}</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder={t("common.status")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("common.allStatus")}</SelectItem>
+                  <SelectItem value="pending">{t("leaveRequest.status.pending")}</SelectItem>
+                  <SelectItem value="approved">{t("leaveRequest.status.approved")}</SelectItem>
+                  <SelectItem value="rejected">{t("leaveRequest.status.rejected")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterYear} onValueChange={setFilterYear}>
+                <SelectTrigger className="w-28">
+                  <SelectValue placeholder={t("common.year")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((y) => (
+                    <SelectItem key={y} value={y.toString()}>
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -377,7 +442,9 @@ export default function LeaveRequestsPage() {
                       colSpan={6}
                       className="text-center py-8 text-muted-foreground"
                     >
-                      {t("leaveRequest.noRequests")}
+                      {hasActiveFilters
+                        ? t("leaveRequest.noRequestsMatch")
+                        : t("leaveRequest.noRequests")}
                     </TableCell>
                   </TableRow>
                 )}

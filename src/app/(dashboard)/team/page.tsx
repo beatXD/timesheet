@@ -33,7 +33,13 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Eye, Check, X, Search } from "lucide-react";
+import {
+  Eye,
+  Check,
+  X,
+  Search,
+  Filter,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { TimesheetStatus } from "@/types";
 import { TeamSubmissionSummary } from "@/components/team";
@@ -79,12 +85,12 @@ interface TeamTimesheet {
 }
 
 const statusColors: Record<TimesheetStatus, string> = {
-  draft: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",
-  submitted: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
-  approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-  rejected: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
-  team_submitted: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
-  final_approved: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
+  draft: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+  submitted: "bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300",
+  approved: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300",
+  rejected: "bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-300",
+  team_submitted: "bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300",
+  final_approved: "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300",
 };
 
 export default function TeamPage() {
@@ -118,6 +124,21 @@ export default function TeamPage() {
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
+
+  const hasActiveFilters =
+    filterYear !== currentYear.toString() ||
+    filterMonth !== currentMonth.toString() ||
+    filterTeam !== "all" ||
+    filterStatus !== "all" ||
+    searchQuery !== "";
+
+  const clearFilters = () => {
+    setFilterYear(currentYear.toString());
+    setFilterMonth(currentMonth.toString());
+    setFilterTeam("all");
+    setFilterStatus("all");
+    setSearchQuery("");
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -297,49 +318,52 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("team.title")}</h1>
           <p className="text-muted-foreground">{t("team.reviewApprove")}</p>
         </div>
-        {pendingCount > 0 && (
-          <Badge variant="destructive" className="text-sm px-3 py-1">
-            {pendingCount} {t("team.pending")}
-          </Badge>
-        )}
+        <div className="flex items-center gap-3">
+          <TeamSubmissionSummary
+            totalMembers={submissionStats.totalMembers}
+            submittedCount={submissionStats.submittedCount}
+            notSubmittedMembers={submissionStats.notSubmittedMembers}
+            loading={loading}
+          />
+          {pendingCount > 0 && (
+            <Badge variant="destructive" className="text-sm px-3 py-1">
+              {pendingCount} {t("team.pending")}
+            </Badge>
+          )}
+        </div>
       </div>
-
-      {/* Submission Summary */}
-      <TeamSubmissionSummary
-        totalMembers={submissionStats.totalMembers}
-        submittedCount={submissionStats.submittedCount}
-        notSubmittedMembers={submissionStats.notSubmittedMembers}
-        loading={loading}
-      />
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center justify-between">
             <div>
               <CardTitle>{t("team.timesheets")}</CardTitle>
               <CardDescription>
                 {format(new Date(parseInt(filterYear), parseInt(filterMonth) - 1), "MMMM yyyy", { locale: dateLocale })}
+                {" • "}
+                {filteredTimesheets.length} {t("common.records")}
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder={t("common.search")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 w-40"
+                  className="pl-8 w-36"
                 />
               </div>
               {teams.length > 1 && (
                 <Select value={filterTeam} onValueChange={setFilterTeam}>
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-32">
                     <SelectValue placeholder={t("common.team")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -353,7 +377,7 @@ export default function TeamPage() {
                 </Select>
               )}
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-32">
                   <SelectValue placeholder={t("common.status")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -364,8 +388,8 @@ export default function TeamPage() {
                 </SelectContent>
               </Select>
               <Select value={filterMonth} onValueChange={setFilterMonth}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder={t("common.month")} />
+                <SelectTrigger className="w-28">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {months.map((m) => (
@@ -377,7 +401,7 @@ export default function TeamPage() {
               </Select>
               <Select value={filterYear} onValueChange={setFilterYear}>
                 <SelectTrigger className="w-24">
-                  <SelectValue placeholder={t("common.year")} />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {years.map((y) => (
@@ -387,34 +411,39 @@ export default function TeamPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {loading ? (
             <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-foreground"></div>
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>{t("team.member")}</TableHead>
-                  {teams.length > 1 && <TableHead>{t("common.team")}</TableHead>}
-                  <TableHead>{t("common.status")}</TableHead>
-                  <TableHead>{t("team.baseHours")}</TableHead>
-                  <TableHead>{t("common.submitted")}</TableHead>
-                  <TableHead className="text-right">{t("common.actions")}</TableHead>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs font-medium">{t("team.member")}</TableHead>
+                  {teams.length > 1 && <TableHead className="text-xs font-medium">{t("common.team")}</TableHead>}
+                  <TableHead className="text-xs font-medium">{t("common.status")}</TableHead>
+                  <TableHead className="text-xs font-medium">{t("team.baseHours")}</TableHead>
+                  <TableHead className="text-xs font-medium">{t("common.submitted")}</TableHead>
+                  <TableHead className="text-xs font-medium text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTimesheets.map((ts) => (
-                  <TableRow key={ts._id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
+                  <TableRow key={ts._id} className="group">
+                    <TableCell className="py-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
                           <AvatarImage src={ts.userId.image} />
-                          <AvatarFallback>
+                          <AvatarFallback className="text-[10px]">
                             {ts.userId.name
                               .split(" ")
                               .map((n) => n[0])
@@ -423,37 +452,41 @@ export default function TeamPage() {
                               .slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="font-medium">{ts.userId.name}</p>
-                          <p className="text-xs text-muted-foreground">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{ts.userId.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">
                             {ts.userId.email}
                           </p>
                         </div>
                       </div>
                     </TableCell>
                     {teams.length > 1 && (
-                      <TableCell>
-                        <Badge variant="outline">{ts.teamName || "-"}</Badge>
+                      <TableCell className="py-2">
+                        <span className="text-xs text-muted-foreground">{ts.teamName || "-"}</span>
                       </TableCell>
                     )}
-                    <TableCell>
-                      <Badge className={statusColors[ts.status]}>
+                    <TableCell className="py-2">
+                      <Badge className={`text-[10px] px-1.5 py-0 font-normal ${statusColors[ts.status]}`}>
                         {t(`timesheet.status.${ts.status}`)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      {ts.totalBaseHours} {t("common.hours")}
+                    <TableCell className="py-2">
+                      <span className="text-xs tabular-nums">
+                        {ts.totalBaseHours}h
+                      </span>
                     </TableCell>
-                    <TableCell>
-                      {ts.submittedAt
-                        ? format(new Date(ts.submittedAt), "dd/MM/yyyy HH:mm")
-                        : "-"}
+                    <TableCell className="py-2">
+                      <span className="text-xs text-muted-foreground">
+                        {ts.submittedAt
+                          ? format(new Date(ts.submittedAt), "d/M/yy HH:mm")
+                          : "-"}
+                      </span>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                    <TableCell className="py-2 text-right">
+                      <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Link href={`/timesheet/${ts._id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                            <Eye className="w-3.5 h-3.5" />
                           </Button>
                         </Link>
                         {ts.status === "submitted" && (
@@ -461,18 +494,18 @@ export default function TeamPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-green-600 hover:text-green-700"
+                              className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
                               onClick={() => approveTimesheet(ts._id)}
                             >
-                              <Check className="w-4 h-4" />
+                              <Check className="w-3.5 h-3.5" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-red-600 hover:text-red-700"
+                              className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                               onClick={() => rejectTimesheet(ts._id)}
                             >
-                              <X className="w-4 h-4" />
+                              <X className="w-3.5 h-3.5" />
                             </Button>
                           </>
                         )}
@@ -482,7 +515,7 @@ export default function TeamPage() {
                 ))}
                 {filteredTimesheets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={teams.length > 1 ? 6 : 5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={teams.length > 1 ? 6 : 5} className="text-center py-8 text-muted-foreground text-sm">
                       {t("team.noTimesheetsFound")}
                     </TableCell>
                   </TableRow>

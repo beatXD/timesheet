@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get("status");
+    const yearParam = searchParams.get("year");
     // Default scope: admin sees all, others see own
     const defaultScope = session.user.role === "admin" ? "all" : "own";
     const scope = searchParams.get("scope") || defaultScope;
@@ -43,6 +44,14 @@ export async function GET(request: NextRequest) {
 
     if (status && status !== "all") {
       filter.status = status;
+    }
+
+    // Filter by year if provided
+    if (yearParam) {
+      const year = parseInt(yearParam, 10);
+      const yearStart = new Date(`${year}-01-01`);
+      const yearEnd = new Date(`${year}-12-31T23:59:59.999Z`);
+      filter.startDate = { $gte: yearStart, $lte: yearEnd };
     }
 
     // Role-based filtering
@@ -173,15 +182,37 @@ export async function POST(request: NextRequest) {
     // Check leave balance
     const requestedDays = calculateWorkingDays(start, end);
     const settings = await LeaveSettings.getSettings();
+    const requestYear = start.getFullYear();
     const balance = await LeaveBalance.getOrCreateForUser(
       session.user.id,
-      start.getFullYear(),
+      requestYear,
       settings.defaultQuotas
     );
 
+    // Calculate used days from approved leave requests (source of truth)
+    const yearStart = new Date(`${requestYear}-01-01`);
+    const yearEnd = new Date(`${requestYear}-12-31`);
+
+    const approvedRequests = await LeaveRequest.find({
+      userId: session.user.id,
+      status: "approved",
+      startDate: { $gte: yearStart, $lte: yearEnd },
+    }).lean();
+
+    // Calculate used days by leave type
+    const usedDays = { sick: 0, personal: 0, annual: 0 };
+    for (const request of approvedRequests) {
+      const reqLeaveType = request.leaveType as "sick" | "personal" | "annual";
+      const days = calculateWorkingDays(
+        new Date(request.startDate),
+        new Date(request.endDate)
+      );
+      usedDays[reqLeaveType] += days;
+    }
+
     // Get remaining balance for this leave type
     const leaveTypeKey = leaveType as "sick" | "personal" | "annual";
-    const remaining = balance.quotas[leaveTypeKey].total - balance.quotas[leaveTypeKey].used;
+    const remaining = balance.quotas[leaveTypeKey].total - usedDays[leaveTypeKey];
 
     // Block if exceeds balance
     if (requestedDays > remaining) {

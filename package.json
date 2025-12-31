@@ -14,6 +14,7 @@
     "test:coverage": "jest --coverage",
     "seed": "npx tsx scripts/seed.ts",
     "reset": "npx tsx scripts/reset.ts",
+    "recalculate-leave": "npx tsx scripts/recalculate-leave-balance.ts",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",

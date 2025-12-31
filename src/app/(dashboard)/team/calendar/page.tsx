@@ -343,55 +343,54 @@ export default function TeamCalendarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("teamCalendar.title")}</h1>
           <p className="text-muted-foreground">{t("teamCalendar.description")}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={teamFilter} onValueChange={setTeamFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder={t("common.team")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("common.allTeams")}</SelectItem>
-              {teams.map((team) => (
-                <SelectItem key={team._id} value={team._id}>
-                  {team.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4">
-        <div className="flex items-center gap-2">
-          <div className={cn("w-3 h-3 rounded-full", leaveTypeColors.sick.dot)} />
-          <span className="text-sm">{t("leave.type.sick")}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className={cn("w-3 h-3 rounded-full", leaveTypeColors.personal.dot)} />
-          <span className="text-sm">{t("leave.type.personal")}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className={cn("w-3 h-3 rounded-full", leaveTypeColors.annual.dot)} />
-          <span className="text-sm">{t("leave.type.annual")}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500" />
-          <span className="text-sm">{t("teamCalendar.holiday")}</span>
         </div>
       </div>
 
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">
-              {format(currentMonth, "MMMM yyyy", { locale: dateLocale })}
-            </CardTitle>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <CardTitle className="text-xl">
+                {format(currentMonth, "MMMM yyyy", { locale: dateLocale })}
+              </CardTitle>
+              {/* Legend */}
+              <div className="hidden md:flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <div className={cn("w-2.5 h-2.5 rounded-full", leaveTypeColors.sick.dot)} />
+                  <span className="text-xs text-muted-foreground">{t("leave.type.sick")}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className={cn("w-2.5 h-2.5 rounded-full", leaveTypeColors.personal.dot)} />
+                  <span className="text-xs text-muted-foreground">{t("leave.type.personal")}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className={cn("w-2.5 h-2.5 rounded-full", leaveTypeColors.annual.dot)} />
+                  <span className="text-xs text-muted-foreground">{t("leave.type.annual")}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                  <span className="text-xs text-muted-foreground">{t("teamCalendar.holiday")}</span>
+                </div>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
+              <Select value={teamFilter} onValueChange={setTeamFilter}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder={t("common.team")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("common.allTeams")}</SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team._id} value={team._id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button variant="outline" size="sm" onClick={goToToday}>
                 <Calendar className="w-4 h-4 mr-1" />
                 {t("teamCalendar.today")}

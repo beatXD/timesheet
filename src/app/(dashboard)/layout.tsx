@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
+import { MainContent } from "@/components/MainContent";
 import { Toaster } from "@/components/ui/sonner";
 import type { UserRole } from "@/types";
 
@@ -26,10 +27,10 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-background">
       <Sidebar userRole={user.role} />
-      <div className="transition-all duration-300 ml-64 bg-background">
+      <MainContent>
         <Header user={user} />
         <main className="p-6 mt-16">{children}</main>
-      </div>
+      </MainContent>
       <Toaster position="top-right" />
     </div>
   );
