@@ -61,6 +61,7 @@ export default function ProfilePage() {
   // GitHub integration state
   const [githubStatus, setGithubStatus] = useState<IGitHubStatus | null>(null);
   const [repoManagerOpen, setRepoManagerOpen] = useState(false);
+  const [upgradingGitHub, setUpgradingGitHub] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -182,6 +183,29 @@ export default function ProfilePage() {
       fetchProfile();
     } catch {
       toast.error(t("errors.generic"));
+    }
+  };
+
+  const handleUpgradeGitHubAccess = async () => {
+    setUpgradingGitHub(true);
+    try {
+      // First disconnect GitHub to clear old token
+      const res = await fetch("/api/profile/accounts?provider=github", {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error);
+        setUpgradingGitHub(false);
+        return;
+      }
+
+      // Then redirect to sign in with GitHub (will request new scopes)
+      signIn("github", { callbackUrl: "/profile" });
+    } catch {
+      toast.error(t("errors.generic"));
+      setUpgradingGitHub(false);
     }
   };
 
@@ -533,15 +557,14 @@ export default function ProfilePage() {
                   </Button>
                 ) : (
                   <Button
-                    onClick={() =>
-                      signIn("github", {
-                        callbackUrl: "/profile",
-                      }, {
-                        prompt: "consent",
-                      })
-                    }
+                    onClick={handleUpgradeGitHubAccess}
+                    disabled={upgradingGitHub}
                   >
-                    <GitBranch className="w-4 h-4 mr-2" />
+                    {upgradingGitHub ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <GitBranch className="w-4 h-4 mr-2" />
+                    )}
                     {t("github.upgradeAccess")}
                   </Button>
                 )}
