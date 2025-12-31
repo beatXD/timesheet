@@ -6,6 +6,7 @@ import type { LeaveType } from "@/types";
 import { parsePaginationParams, createPaginationMeta } from "@/lib/pagination";
 import { sendLeaveRequestEmail } from "@/lib/email";
 import { createLeaveRequestSchema, validateRequest } from "@/lib/validation/schemas";
+import { notifyPendingApproval } from "@/lib/notifications";
 
 // Helper function to calculate working days between two dates
 function calculateWorkingDays(startDate: Date, endDate: Date): number {
@@ -235,6 +236,7 @@ export async function POST(request: NextRequest) {
       );
 
       const currentUser = await User.findById(session.user.id).lean();
+      const leaderIds: string[] = [];
 
       for (const team of teams) {
         const leader = team.leaderId as unknown as {
@@ -242,6 +244,9 @@ export async function POST(request: NextRequest) {
           name: string;
           email: string;
         };
+        if (leader?._id) {
+          leaderIds.push(leader._id.toString());
+        }
         if (leader?.email) {
           try {
             await sendLeaveRequestEmail({
@@ -256,6 +261,19 @@ export async function POST(request: NextRequest) {
           } catch (emailError) {
             console.error("Failed to send email to leader:", emailError);
           }
+        }
+      }
+
+      // Send in-app notification to leaders
+      if (leaderIds.length > 0) {
+        try {
+          await notifyPendingApproval(
+            leaderIds,
+            currentUser?.name || session.user.name || "User",
+            "leave"
+          );
+        } catch (notifyError) {
+          console.error("Failed to send notification:", notifyError);
         }
       }
     }

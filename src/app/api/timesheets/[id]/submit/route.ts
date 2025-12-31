@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, AuditLog } from "@/models";
+import { Timesheet, Team, User, AuditLog } from "@/models";
 import { validateForSubmission } from "@/lib/validation/timesheet";
+import { notifyPendingApproval } from "@/lib/notifications";
 
 // POST /api/timesheets/[id]/submit - Submit timesheet for approval
 export async function POST(
@@ -82,6 +83,27 @@ export async function POST(
       toStatus: timesheet.status,
       performedBy: session.user.id,
     });
+
+    // Notify leaders if regular user submits timesheet
+    if (!isLeader) {
+      try {
+        const teams = await Team.find({ memberIds: session.user.id });
+        const leaderIds = teams
+          .map((t) => t.leaderId?.toString())
+          .filter((id): id is string => !!id);
+
+        if (leaderIds.length > 0) {
+          const currentUser = await User.findById(session.user.id).lean();
+          await notifyPendingApproval(
+            leaderIds,
+            currentUser?.name || session.user.name || "User",
+            "timesheet"
+          );
+        }
+      } catch (notifyError) {
+        console.error("Failed to send notification:", notifyError);
+      }
+    }
 
     return NextResponse.json({
       data: timesheet,
