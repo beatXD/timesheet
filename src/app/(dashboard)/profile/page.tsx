@@ -26,7 +26,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, User, Key, Link2, Unlink } from "lucide-react";
+import { Loader2, User, Key, Link2, Unlink, GitBranch, Settings2 } from "lucide-react";
+import { RepoManager } from "@/components/github";
+import type { IGitHubStatus } from "@/types";
 
 interface LinkedAccount {
   provider: string;
@@ -56,9 +58,26 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // GitHub integration state
+  const [githubStatus, setGithubStatus] = useState<IGitHubStatus | null>(null);
+  const [repoManagerOpen, setRepoManagerOpen] = useState(false);
+
   useEffect(() => {
     fetchProfile();
+    fetchGitHubStatus();
   }, []);
+
+  const fetchGitHubStatus = async () => {
+    try {
+      const res = await fetch("/api/github/status");
+      const data = await res.json();
+      if (res.ok) {
+        setGithubStatus(data.data);
+      }
+    } catch {
+      // Silently fail - GitHub integration is optional
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -457,6 +476,87 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* GitHub Integration - Only show if GitHub is connected */}
+      {isAccountLinked("github") && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GitBranch className="w-5 h-5" />
+              {t("github.integration")}
+            </CardTitle>
+            <CardDescription>
+              {t("github.integrationDesc")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Status */}
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  {getProviderIcon("github")}
+                  <div>
+                    <p className="font-medium">
+                      {githubStatus?.username
+                        ? `@${githubStatus.username}`
+                        : "GitHub"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {githubStatus?.hasRepoScope
+                        ? t("github.repoScopeGranted")
+                        : t("github.repoScopeRequired")}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {githubStatus?.hasRepoScope ? (
+                    <Badge variant="default" className="bg-green-600">
+                      {t("github.fullAccess")}
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">
+                      {t("github.basicAccess")}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-2">
+                {githubStatus?.hasRepoScope ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => setRepoManagerOpen(true)}
+                  >
+                    <Settings2 className="w-4 h-4 mr-2" />
+                    {t("github.manageRepos")}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() =>
+                      signIn("github", {
+                        callbackUrl: "/profile",
+                      })
+                    }
+                  >
+                    <GitBranch className="w-4 h-4 mr-2" />
+                    {t("github.upgradeAccess")}
+                  </Button>
+                )}
+              </div>
+
+              {!githubStatus?.hasRepoScope && (
+                <p className="text-sm text-muted-foreground">
+                  {t("github.upgradeAccessDesc")}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Repo Manager Dialog */}
+      <RepoManager open={repoManagerOpen} onOpenChange={setRepoManagerOpen} />
     </div>
   );
 }

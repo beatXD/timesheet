@@ -245,3 +245,35 @@ export interface SessionUser {
   image?: string;
   role: UserRole;
 }
+
+// GitHub Integration Types
+export interface IGitHubRepository {
+  owner: string;
+  name: string;
+  fullName: string; // "owner/name"
+  isPrivate: boolean;
+  enabled: boolean;
+}
+
+export interface IGitHubRepoSettings {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  repositories: IGitHubRepository[];
+  lastSyncedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IGitHubCommit {
+  sha: string;
+  message: string;
+  date: Date;
+  repo: string; // "owner/name"
+  url: string;
+}
+
+export interface IGitHubStatus {
+  connected: boolean;
+  hasRepoScope: boolean;
+  username?: string;
+}

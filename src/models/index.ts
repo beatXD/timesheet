@@ -10,3 +10,4 @@ export { default as LeaveSettings } from "./LeaveSettings";
 export { default as AuditLog } from "./AuditLog";
 export { default as TimesheetTemplate } from "./TimesheetTemplate";
 export { default as Notification } from "./Notification";
+export { default as GitHubRepoSettings } from "./GitHubRepoSettings";
