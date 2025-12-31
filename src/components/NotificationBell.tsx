@@ -2,10 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { formatDistanceToNow } from "date-fns";
 import { th, enUS } from "date-fns/locale";
-import { Bell, Check, CheckCheck, Trash2, X } from "lucide-react";
+import {
+  Bell,
+  Check,
+  CheckCheck,
+  Trash2,
+  FileText,
+  Users,
+  Info,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -13,25 +21,34 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 import type { INotification, NotificationCategory } from "@/types";
 
-const categoryIcons: Record<NotificationCategory, string> = {
-  approval: "📋",
-  team: "👥",
-  system: "📢",
-};
-
-const categoryColors: Record<NotificationCategory, string> = {
-  approval: "bg-blue-100 dark:bg-blue-900/30",
-  team: "bg-green-100 dark:bg-green-900/30",
-  system: "bg-amber-100 dark:bg-amber-900/30",
+const categoryConfig: Record<
+  NotificationCategory,
+  { icon: typeof Bell; color: string; bg: string }
+> = {
+  approval: {
+    icon: FileText,
+    color: "text-blue-600 dark:text-blue-400",
+    bg: "bg-blue-50 dark:bg-blue-950/50",
+  },
+  team: {
+    icon: Users,
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-950/50",
+  },
+  system: {
+    icon: Info,
+    color: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-950/50",
+  },
 };
 
 export function NotificationBell() {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
@@ -54,122 +71,132 @@ export function NotificationBell() {
   };
 
   const formatTime = (date: Date) => {
-    const locale = t("locale") === "th" ? th : enUS;
-    return formatDistanceToNow(new Date(date), { addSuffix: true, locale });
+    const dateLocale = locale === "th" ? th : enUS;
+    return formatDistanceToNow(new Date(date), { addSuffix: true, locale: dateLocale });
   };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className="relative h-9 w-9">
+          <Bell className="h-[18px] w-[18px]" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
-              {unreadCount > 99 ? "99+" : unreadCount}
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-semibold text-white ring-2 ring-background">
+              {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h4 className="font-semibold">{t("notifications.title")}</h4>
+      <PopoverContent className="w-[340px] p-0" align="end" sideOffset={8}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2.5 border-b bg-muted/30">
+          <h4 className="text-sm font-semibold">{t("notifications.title")}</h4>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-auto py-1 px-2 text-xs"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
               onClick={markAllAsRead}
             >
-              <CheckCheck className="h-3 w-3 mr-1" />
+              <CheckCheck className="h-3.5 w-3.5 mr-1" />
               {t("notifications.markAllRead")}
             </Button>
           )}
         </div>
 
-        <ScrollArea className="h-[400px]">
+        {/* Content */}
+        <ScrollArea className="h-[320px]">
           {isLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-              <Bell className="h-12 w-12 mb-2 opacity-20" />
-              <p>{t("notifications.empty")}</p>
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Bell className="h-8 w-8 mb-2 opacity-30" />
+              <p className="text-sm">{t("notifications.empty")}</p>
             </div>
           ) : (
-            <div className="divide-y">
-              {notifications.map((notification) => (
-                <div
-                  key={notification._id.toString()}
-                  className={cn(
-                    "group relative p-4 hover:bg-muted/50 cursor-pointer transition-colors",
-                    !notification.read && "bg-primary/5"
-                  )}
-                >
+            <div>
+              {notifications.map((notification, index) => {
+                const config = categoryConfig[notification.category];
+                const Icon = config.icon;
+
+                return (
                   <div
+                    key={notification._id.toString()}
+                    className={cn(
+                      "group relative flex gap-2.5 px-3 py-2.5 cursor-pointer transition-colors",
+                      "hover:bg-muted/50",
+                      !notification.read && "bg-primary/[0.03]",
+                      index !== notifications.length - 1 && "border-b border-border/50"
+                    )}
                     onClick={() => handleNotificationClick(notification)}
-                    className="flex gap-3"
                   >
+                    {/* Icon */}
                     <div
                       className={cn(
-                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg",
-                        categoryColors[notification.category]
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+                        config.bg
                       )}
                     >
-                      {categoryIcons[notification.category]}
+                      <Icon className={cn("h-4 w-4", config.color)} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 pr-6">
+                      <div className="flex items-center gap-1.5">
                         <p
                           className={cn(
                             "text-sm font-medium truncate",
-                            !notification.read && "text-primary"
+                            !notification.read
+                              ? "text-foreground"
+                              : "text-muted-foreground"
                           )}
                         >
                           {notification.title}
                         </p>
                         {!notification.read && (
-                          <span className="flex h-2 w-2 shrink-0 rounded-full bg-primary" />
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                         {notification.message}
                       </p>
-                      <p className="text-[10px] text-muted-foreground mt-1">
+                      <p className="text-[10px] text-muted-foreground/70 mt-1">
                         {formatTime(notification.createdAt)}
                       </p>
                     </div>
-                  </div>
 
-                  {/* Action buttons on hover */}
-                  <div className="absolute right-2 top-2 hidden group-hover:flex gap-1">
-                    {!notification.read && (
+                    {/* Actions */}
+                    <div className="absolute right-1.5 top-1.5 hidden group-hover:flex items-center gap-0.5">
+                      {!notification.read && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAsRead(notification._id.toString());
+                          }}
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
-                          markAsRead(notification._id.toString());
+                          deleteNotification(notification._id.toString());
                         }}
                       >
-                        <Check className="h-3 w-3" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-destructive hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteNotification(notification._id.toString());
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ScrollArea>
