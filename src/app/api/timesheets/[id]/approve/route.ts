@@ -47,8 +47,8 @@ export async function POST(
 
       if (!isOwnTimesheet) {
         const teams = await Team.find({ leaderId: session.user.id });
-        const allMemberIds = teams.flatMap((t) =>
-          t.memberIds.map((id: { toString: () => string }) => id.toString())
+        const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
+          t.memberIds.map((id) => id.toString())
         );
         if (!allMemberIds.includes(timesheet.userId.toString())) {
           return NextResponse.json(

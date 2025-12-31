@@ -179,7 +179,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold">{t("admin.users.title")}</h1>
         <p className="text-muted-foreground">{t("admin.users.description")}</p>

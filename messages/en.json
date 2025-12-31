@@ -51,7 +51,13 @@
     "total": "Total",
     "startDate": "Start Date",
     "endDate": "End Date",
-    "clearFilters": "Clear Filters"
+    "clearFilters": "Clear Filters",
+    "records": "records",
+    "language": "Language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
   },
   "auth": {
     "login": "Login",

@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
       ...team.memberIds.map((id: { toString: () => string }) => id.toString()),
     ];
 
-    const timesheets = await Timesheet.find({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const timesheets: any[] = await Timesheet.find({
       userId: { $in: allMemberIds },
       month,
       year,

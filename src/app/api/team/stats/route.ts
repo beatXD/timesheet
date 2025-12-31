@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
       : new Date().getMonth() + 1;
 
     // Get all teams with leader and members
-    const teams = await Team.find()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const teams: any[] = await Team.find()
       .populate("leaderId", "_id name email")
       .populate("memberIds", "_id name email")
       .lean();
@@ -46,7 +47,8 @@ export async function GET(request: NextRequest) {
           ].filter((id): id is string => Boolean(id));
 
           // Get timesheets for this team's members for the specified month/year
-          const timesheets = await Timesheet.find({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const timesheets: any[] = await Timesheet.find({
             userId: { $in: allMemberIds },
             year,
             month,
@@ -98,7 +100,8 @@ export async function GET(request: NextRequest) {
           ].filter((id): id is string => Boolean(id));
 
           // Get leave requests for this team's members
-          const leaveRequests = await LeaveRequest.find({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const leaveRequests: any[] = await LeaveRequest.find({
             userId: { $in: allMemberIds },
           }).lean();
 

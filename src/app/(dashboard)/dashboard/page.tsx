@@ -210,12 +210,12 @@ export default function DashboardPage() {
   const hasTimesheet = currentMonth?.timesheet !== null;
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto">
       {/* Hero Section - Current Month */}
-      <section className="space-y-4">
+      <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="text-2xl font-bold tracking-tight">
               {t("dashboard.title")}
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -226,8 +226,8 @@ export default function DashboardPage() {
 
         {/* Current Month Timesheet Card */}
         <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-muted/30">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex-1 space-y-4">
                 <div className="flex items-center gap-3">
                   <div
@@ -298,9 +298,9 @@ export default function DashboardPage() {
 
       {/* Team Summary - Leader Only */}
       {userRole === "leader" && data?.teamSummary && (
-        <section className="space-y-4">
+        <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">{t("dashboard.teamSummary")}</h2>
+            <h2 className="text-lg font-semibold">{t("dashboard.teamSummary")}</h2>
             <Button variant="ghost" size="sm" onClick={() => router.push("/team")}>
               {t("dashboard.viewAll")}
               <ChevronRight className="w-4 h-4 ml-1" />
@@ -308,8 +308,8 @@ export default function DashboardPage() {
           </div>
 
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
                     <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -361,18 +361,18 @@ export default function DashboardPage() {
 
       {/* Org Overview - Admin Only */}
       {userRole === "admin" && data?.orgOverview && (
-        <section className="space-y-4">
+        <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">{t("dashboard.orgOverview")}</h2>
+            <h2 className="text-lg font-semibold">{t("dashboard.orgOverview")}</h2>
             <Button variant="ghost" size="sm" onClick={() => router.push("/team")}>
               {t("dashboard.viewAll")}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
                     <Users className="w-4 h-4 text-slate-600 dark:text-slate-400" />
@@ -388,7 +388,7 @@ export default function DashboardPage() {
             </Card>
 
             <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
                     <Building2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
@@ -404,7 +404,7 @@ export default function DashboardPage() {
             </Card>
 
             <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -420,7 +420,7 @@ export default function DashboardPage() {
             </Card>
 
             <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
                     <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -493,9 +493,9 @@ export default function DashboardPage() {
       )}
 
       {/* Yearly Stats */}
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">{t("dashboard.yearlyStats")}</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">{t("dashboard.yearlyStats")}</h2>
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -563,16 +563,16 @@ export default function DashboardPage() {
 
       {/* Charts Section */}
       {data?.charts && (
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold">{t("dashboard.charts.title")}</h2>
-          <div className="grid gap-6 lg:grid-cols-2">
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">{t("dashboard.charts.title")}</h2>
+          <div className="grid gap-4 lg:grid-cols-2">
             {/* Monthly Hours Chart */}
             <Card className="border-0 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-base">{t("dashboard.charts.monthlyHours")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[280px]">
+                <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={data.charts.monthlyHours.map((d) => ({
@@ -620,7 +620,7 @@ export default function DashboardPage() {
                 <CardTitle className="text-base">{t("dashboard.charts.monthlyLeave")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[280px]">
+                <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={data.charts.monthlyLeave.map((d) => ({
@@ -682,9 +682,9 @@ export default function DashboardPage() {
       )}
 
       {/* Recent Activity */}
-      <section className="space-y-4">
+      <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">{t("dashboard.recentActivity")}</h2>
+          <h2 className="text-lg font-semibold">{t("dashboard.recentActivity")}</h2>
           <Button variant="ghost" size="sm" onClick={() => router.push("/timesheet")}>
             {t("dashboard.viewAll")}
             <ChevronRight className="w-4 h-4 ml-1" />

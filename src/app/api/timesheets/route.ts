@@ -96,7 +96,8 @@ export async function POST(request: NextRequest) {
 
     // Get holidays for this month
     const monthStart = startOfMonth(new Date(year, month - 1));
-    const holidays = await Holiday.find({ year }).lean();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+    const holidays: any[] = await Holiday.find({ year }).lean();
 
     // Generate entries for each day of the month
     const daysInMonth = getDaysInMonth(new Date(year, month - 1));

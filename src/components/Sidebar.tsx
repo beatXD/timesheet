@@ -55,25 +55,25 @@ const navSections: NavSection[] = [
       {
         href: "/admin/leaves",
         labelKey: "nav.leaves",
-        icon: <Briefcase className="w-5 h-5" />,
+        icon: <Briefcase className="w-4 h-4" />,
         roles: ["admin"],
       },
       {
         href: "/admin/timesheets/records",
         labelKey: "nav.timesheetRecords",
-        icon: <FileSpreadsheet className="w-5 h-5" />,
+        icon: <FileSpreadsheet className="w-4 h-4" />,
         roles: ["admin"],
       },
       {
         href: "/admin/reports",
         labelKey: "nav.reports",
-        icon: <BarChart3 className="w-5 h-5" />,
+        icon: <BarChart3 className="w-4 h-4" />,
         roles: ["admin"],
       },
       {
         href: "/admin/audit-logs",
         labelKey: "nav.auditLogs",
-        icon: <History className="w-5 h-5" />,
+        icon: <History className="w-4 h-4" />,
         roles: ["admin"],
       },
     ],
@@ -85,19 +85,19 @@ const navSections: NavSection[] = [
       {
         href: "/calendar",
         labelKey: "nav.myCalendar",
-        icon: <CalendarDays className="w-5 h-5" />,
+        icon: <CalendarDays className="w-4 h-4" />,
         roles: ["user", "leader"],
       },
       {
         href: "/timesheet",
         labelKey: "nav.timesheet",
-        icon: <Clock className="w-5 h-5" />,
+        icon: <Clock className="w-4 h-4" />,
         roles: ["user", "leader"],
       },
       {
         href: "/leave-requests",
         labelKey: "nav.leaveRequests",
-        icon: <CalendarPlus className="w-5 h-5" />,
+        icon: <CalendarPlus className="w-4 h-4" />,
         roles: ["user", "leader"],
       },
     ],
@@ -109,25 +109,25 @@ const navSections: NavSection[] = [
       {
         href: "/team/calendar",
         labelKey: "nav.teamCalendar",
-        icon: <CalendarDays className="w-5 h-5" />,
+        icon: <CalendarDays className="w-4 h-4" />,
         roles: ["leader"],
       },
       {
         href: "/team",
         labelKey: "nav.teamTimesheets",
-        icon: <ClipboardList className="w-5 h-5" />,
+        icon: <ClipboardList className="w-4 h-4" />,
         roles: ["leader"],
       },
       {
         href: "/team/leaves",
         labelKey: "nav.teamLeaves",
-        icon: <CalendarCheck className="w-5 h-5" />,
+        icon: <CalendarCheck className="w-4 h-4" />,
         roles: ["leader"],
       },
       {
         href: "/team/members",
         labelKey: "nav.teamMembers",
-        icon: <UsersRound className="w-5 h-5" />,
+        icon: <UsersRound className="w-4 h-4" />,
         roles: ["leader"],
       },
     ],
@@ -139,37 +139,37 @@ const navSections: NavSection[] = [
       {
         href: "/admin/users",
         labelKey: "nav.users",
-        icon: <UserCog className="w-5 h-5" />,
+        icon: <UserCog className="w-4 h-4" />,
         roles: ["admin"],
       },
       {
         href: "/admin/teams",
         labelKey: "nav.teams",
-        icon: <Users className="w-5 h-5" />,
+        icon: <Users className="w-4 h-4" />,
         roles: ["admin"],
       },
       {
         href: "/admin/vendors",
         labelKey: "nav.vendors",
-        icon: <Building2 className="w-5 h-5" />,
+        icon: <Building2 className="w-4 h-4" />,
         roles: ["admin"],
       },
       {
         href: "/admin/projects",
         labelKey: "nav.projects",
-        icon: <FolderKanban className="w-5 h-5" />,
+        icon: <FolderKanban className="w-4 h-4" />,
         roles: ["admin"],
       },
       {
         href: "/admin/holidays",
         labelKey: "nav.holidays",
-        icon: <Calendar className="w-5 h-5" />,
+        icon: <Calendar className="w-4 h-4" />,
         roles: ["admin"],
       },
       {
         href: "/admin/leave-settings",
         labelKey: "nav.leaveSettings",
-        icon: <Settings2 className="w-5 h-5" />,
+        icon: <Settings2 className="w-4 h-4" />,
         roles: ["admin"],
       },
     ],
@@ -205,7 +205,7 @@ export function Sidebar({ userRole }: SidebarProps) {
         isOpen ? "w-64" : "w-16"
       )}
     >
-      <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
+      <div className="flex h-14 items-center justify-between px-3 border-b border-sidebar-border">
         {isOpen && (
           <Link href="/dashboard" className="font-bold text-xl text-sidebar-foreground">
             {t("common.appName")}
@@ -219,14 +219,14 @@ export function Sidebar({ userRole }: SidebarProps) {
         >
           <ChevronLeft
             className={cn(
-              "w-5 h-5 transition-transform",
+              "w-4 h-4 transition-transform",
               !isOpen && "rotate-180"
             )}
           />
         </Button>
       </div>
 
-      <nav className="p-2 space-y-4">
+      <nav className="p-1.5 space-y-3">
         {filteredSections.map((section, sectionIndex) => (
           <div key={section.titleKey}>
             {isOpen && (

@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
     const month = parseInt(searchParams.get("month") || String(new Date().getMonth() + 1));
 
     // Get teams based on role
-    let teams;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let teams: any[];
     if (session.user.role === "admin") {
       teams = await Team.find()
         .populate("leaderId", "name email image")
@@ -47,18 +48,21 @@ export async function GET(request: NextRequest) {
         ];
 
         // Get timesheets for this month
-        const timesheets = await Timesheet.find({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const timesheets: any[] = await Timesheet.find({
           userId: { $in: memberIds },
           year,
           month,
         }).populate("userId", "name email image");
 
         // Get members info
-        const members = await User.find({ _id: { $in: memberIds } })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const members: any[] = await User.find({ _id: { $in: memberIds } })
           .select("name email image role");
 
         // Get leave balances for the year
-        const leaveBalances = await LeaveBalance.find({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const leaveBalances: any[] = await (LeaveBalance as any).find({
           userId: { $in: memberIds },
           year,
         });

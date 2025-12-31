@@ -342,7 +342,7 @@ export default function TeamCalendarPage() {
   const weekDays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("teamCalendar.title")}</h1>

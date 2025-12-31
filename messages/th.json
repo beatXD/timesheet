@@ -51,7 +51,13 @@
     "total": "ทั้งหมด",
     "startDate": "วันที่เริ่มต้น",
     "endDate": "วันที่สิ้นสุด",
-    "clearFilters": "ล้างตัวกรอง"
+    "clearFilters": "ล้างตัวกรอง",
+    "records": "รายการ",
+    "language": "ภาษา",
+    "theme": "ธีม",
+    "themeLight": "สว่าง",
+    "themeDark": "มืด",
+    "themeSystem": "ตามระบบ"
   },
   "auth": {
     "login": "เข้าสู่ระบบ",

@@ -26,8 +26,8 @@ export async function GET() {
       .lean();
 
     // Get available users (not in any of leader's teams)
-    const teamMemberIds = teams.flatMap((t) =>
-      t.memberIds.map((m: { _id: { toString: () => string } }) => m._id.toString())
+    const teamMemberIds = teams.flatMap((t: { memberIds: { _id: { toString: () => string } }[] }) =>
+      t.memberIds.map((m) => m._id.toString())
     );
 
     const availableUsers = await User.find({

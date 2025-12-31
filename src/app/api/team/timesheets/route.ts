@@ -33,10 +33,12 @@ export async function GET(request: NextRequest) {
 
     if (session.user.role === "admin") {
       // Admin can see all timesheets
-      const users = await User.find({}, "_id").lean();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const users: any[] = await User.find({}, "_id").lean();
       memberIds = users.map((u) => u._id.toString());
       // Get all teams for mapping
-      const teams = await Team.find().lean();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const teams: any[] = await Team.find().lean();
       teamsData = teams.map((t) => ({
         _id: t._id.toString(),
         name: t.name,
@@ -47,7 +49,8 @@ export async function GET(request: NextRequest) {
       }));
     } else {
       // Leader can see their teams' members + their own timesheet
-      const teams = await Team.find({ leaderId: session.user.id });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const teams: any[] = await Team.find({ leaderId: session.user.id });
       if (teams.length > 0) {
         teamsData = teams.map((t) => ({
           _id: t._id.toString(),
@@ -81,7 +84,8 @@ export async function GET(request: NextRequest) {
       query.year = parseInt(year);
     }
 
-    const timesheets = await Timesheet.find(query)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const timesheets: any[] = await Timesheet.find(query)
       .populate("userId", "name email image")
       .sort({ submittedAt: -1 })
       .lean();

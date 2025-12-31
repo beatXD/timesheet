@@ -62,8 +62,8 @@ export async function GET(request: NextRequest) {
       // Leaders can see their own and their team members' requests
       const teams = await Team.find({ leaderId: session.user.id });
       if (teams.length > 0) {
-        const allMemberIds = teams.flatMap((t) =>
-          t.memberIds.map((id: { toString: () => string }) => id.toString())
+        const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
+          t.memberIds.map((id) => id.toString())
         );
         // Include leader's own ID in the filter
         filter.userId = { $in: [...allMemberIds, session.user.id] };
@@ -89,7 +89,8 @@ export async function GET(request: NextRequest) {
       .lean();
 
     // Convert ObjectIds to strings
-    const data = leaveRequests.map((lr) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = leaveRequests.map((lr: any) => ({
       ...lr,
       _id: lr._id.toString(),
       userId: lr.userId,

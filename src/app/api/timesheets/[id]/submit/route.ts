@@ -87,7 +87,8 @@ export async function POST(
     // Notify leaders if regular user submits timesheet
     if (!isLeader) {
       try {
-        const teams = await Team.find({ memberIds: session.user.id });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const teams: any[] = await Team.find({ memberIds: session.user.id });
         const leaderIds = teams
           .map((t) => t.leaderId?.toString())
           .filter((id): id is string => !!id);

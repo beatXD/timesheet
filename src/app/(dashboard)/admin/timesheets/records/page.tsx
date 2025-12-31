@@ -178,7 +178,7 @@ export default function TimesheetRecordsPage() {
   }, [filteredTimesheets]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("admin.timesheetRecords.title")}</h1>
@@ -187,7 +187,7 @@ export default function TimesheetRecordsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold">{stats.total}</div>

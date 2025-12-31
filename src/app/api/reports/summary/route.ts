@@ -29,10 +29,10 @@ export async function GET(request: NextRequest) {
     if (session.user.role === "leader") {
       // Leaders can only see their team data
       const teams = await Team.find({ leaderId: session.user.id });
-      userIds = teams.flatMap((t) =>
+      userIds = teams.flatMap((t: { leaderId: { toString: () => string }; memberIds: { toString: () => string }[] }) =>
         [
           t.leaderId.toString(),
-          ...t.memberIds.map((id: { toString: () => string }) => id.toString())
+          ...t.memberIds.map((id) => id.toString())
         ]
       );
     } else if (teamId) {
@@ -61,7 +61,8 @@ export async function GET(request: NextRequest) {
     };
 
     // Get timesheet data
-    const timesheets = await Timesheet.find(timesheetQuery);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const timesheets: any[] = await Timesheet.find(timesheetQuery);
 
     // Aggregate timesheet stats
     const timesheetStats = {
@@ -79,7 +80,8 @@ export async function GET(request: NextRequest) {
     };
 
     // Get leave request data
-    const leaveRequests = await LeaveRequest.find(leaveQuery);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const leaveRequests: any[] = await LeaveRequest.find(leaveQuery);
 
     const leaveStats = {
       total: leaveRequests.length,

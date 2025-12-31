@@ -289,8 +289,8 @@ export default function MyCalendarPage() {
   const weekDays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("myCalendar.title")}</h1>
           <p className="text-muted-foreground">{t("myCalendar.description")}</p>
@@ -298,7 +298,7 @@ export default function MyCalendarPage() {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <div className={cn("w-3 h-3 rounded-full", leaveTypeColors.sick.dot)} />
           <span className="text-sm">{t("leave.type.sick")}</span>
@@ -374,7 +374,7 @@ export default function MyCalendarPage() {
                           return (
                             <div
                               key={`empty-${weekIndex}-${dayIndex}`}
-                              className="min-h-[100px] p-2 border-b border-r bg-muted/20"
+                              className="min-h-[80px] p-2 border-b border-r bg-muted/20"
                             />
                           );
                         }
@@ -387,7 +387,7 @@ export default function MyCalendarPage() {
                           <div
                             key={day.toISOString()}
                             className={cn(
-                              "min-h-[100px] p-2 border-b border-r relative",
+                              "min-h-[80px] p-2 border-b border-r relative",
                               isWeekendDay && "bg-muted/20",
                               holiday && "bg-red-50 dark:bg-red-900/10"
                             )}

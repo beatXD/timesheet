@@ -25,11 +25,11 @@ export default async function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen overflow-hidden bg-background">
       <Sidebar userRole={user.role} />
       <MainContent>
         <Header user={user} />
-        <main className="p-6 mt-16">{children}</main>
+        <main className="p-4 pt-20 h-screen overflow-y-auto">{children}</main>
       </MainContent>
       <Toaster position="top-right" />
     </div>

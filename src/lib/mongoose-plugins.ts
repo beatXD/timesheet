@@ -82,7 +82,8 @@ export function softDeletePlugin(schema: Schema) {
     // Add match stage at the beginning to filter deleted documents
     const pipeline = this.pipeline();
     const hasDeletedFilter = pipeline.some(
-      (stage) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (stage: any) =>
         stage.$match &&
         Object.prototype.hasOwnProperty.call(stage.$match, "deletedAt")
     );
@@ -102,10 +103,11 @@ declare module "mongoose" {
     restore(): Promise<this>;
   }
 
-  interface Model<T> {
-    softDeleteById(id: string, userId?: string): Promise<T | null>;
-    restoreById(id: string): Promise<T | null>;
-    findWithDeleted(filter?: object): Query<T[], T>;
-    findDeleted(filter?: object): Query<T[], T>;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+  interface Model<TRawDocType, TQueryHelpers = {}, TInstanceMethods = {}, TVirtuals = {}, THydratedDocumentType = HydratedDocument<TRawDocType, TVirtuals & TInstanceMethods, TQueryHelpers, TVirtuals>, TSchema = any, TLeanResultType = TRawDocType> {
+    softDeleteById(id: string, userId?: string): Promise<TRawDocType | null>;
+    restoreById(id: string): Promise<TRawDocType | null>;
+    findWithDeleted(filter?: object): Query<TRawDocType[], TRawDocType>;
+    findDeleted(filter?: object): Query<TRawDocType[], TRawDocType>;
   }
 }

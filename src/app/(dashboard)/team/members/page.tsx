@@ -246,7 +246,7 @@ export default function TeamMembersPage() {
 
   if (teams.length === 0) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-bold">{t("teamMembers.title")}</h1>
           <p className="text-muted-foreground">{t("teamMembers.description")}</p>
@@ -263,7 +263,7 @@ export default function TeamMembersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("teamMembers.title")}</h1>

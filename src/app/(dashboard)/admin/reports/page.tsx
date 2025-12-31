@@ -178,7 +178,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("admin.reports.title")}</h1>
@@ -218,7 +218,7 @@ export default function ReportsPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
         </div>
       ) : (
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -231,9 +231,9 @@ export default function ReportsPage() {
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-4">
             {/* Key Metrics */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">{t("admin.reports.totalUsers")}</CardTitle>
@@ -284,7 +284,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Timesheet Status */}
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2">
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-2">
@@ -421,7 +421,7 @@ export default function ReportsPage() {
           </TabsContent>
 
           {/* Teams Tab */}
-          <TabsContent value="teams" className="space-y-6">
+          <TabsContent value="teams" className="space-y-4">
             {teamData.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
@@ -429,7 +429,7 @@ export default function ReportsPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-3">
                 {teamData.map((team) => (
                   <Card key={team.team._id}>
                     <CardHeader>
@@ -478,7 +478,7 @@ export default function ReportsPage() {
                         </div>
                       </div>
 
-                      <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid md:grid-cols-2 gap-3">
                         {/* Hours */}
                         <div className="p-3 bg-muted/50 rounded-lg">
                           <p className="text-sm font-medium mb-2">{t("admin.reports.hoursTracked")}</p>

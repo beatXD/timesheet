@@ -1,8 +1,9 @@
 "use client";
 
+import { useTransition } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,15 +13,19 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, User } from "lucide-react";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { LogOut, User, Globe, Check, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useSidebarStore } from "@/store";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
+import { locales, localeNames, type Locale } from "@/i18n/config";
 
 interface HeaderProps {
   user: {
@@ -39,6 +44,9 @@ const roleColors: Record<UserRole, string> = {
 
 export function Header({ user }: HeaderProps) {
   const t = useTranslations();
+  const locale = useLocale() as Locale;
+  const { theme, setTheme } = useTheme();
+  const [isPending, startTransition] = useTransition();
   const { isOpen } = useSidebarStore();
   const initials = user.name
     .split(" ")
@@ -47,15 +55,20 @@ export function Header({ user }: HeaderProps) {
     .toUpperCase()
     .slice(0, 2);
 
+  const handleLocaleChange = (newLocale: Locale) => {
+    startTransition(() => {
+      document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
+      window.location.reload();
+    });
+  };
+
   return (
     <header
       className={cn(
-        "fixed top-0 right-0 z-30 h-16 bg-background border-b flex items-center justify-end px-6 gap-4 transition-all duration-300",
+        "fixed top-0 right-0 z-30 h-14 bg-background border-b flex items-center justify-end px-4 gap-3 transition-all duration-300",
         isOpen ? "left-64" : "left-16"
       )}
     >
-      <ThemeToggle />
-      <LanguageSwitcher />
       <NotificationBell />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -89,6 +102,46 @@ export function Header({ user }: HeaderProps) {
               {t("nav.profile")}
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger disabled={isPending}>
+              <Globe className="w-4 h-4 mr-2" />
+              {t("common.language")}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent>
+                {locales.map((l) => (
+                  <DropdownMenuItem
+                    key={l}
+                    onClick={() => handleLocaleChange(l)}
+                  >
+                    {locale === l && <Check className="w-4 h-4 mr-2" />}
+                    <span className={locale !== l ? "ml-6" : ""}>{localeNames[l]}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Sun className="w-4 h-4 mr-2 dark:hidden" />
+              <Moon className="w-4 h-4 mr-2 hidden dark:block" />
+              {t("common.theme")}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => setTheme("light")}>
+                  {theme === "light" && <Check className="w-4 h-4 mr-2" />}
+                  <Sun className={`w-4 h-4 mr-2 text-amber-500 ${theme !== "light" ? "ml-6" : ""}`} />
+                  {t("common.themeLight")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>
+                  {theme === "dark" && <Check className="w-4 h-4 mr-2" />}
+                  <Moon className={`w-4 h-4 mr-2 text-blue-400 ${theme !== "dark" ? "ml-6" : ""}`} />
+                  {t("common.themeDark")}
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-red-600"

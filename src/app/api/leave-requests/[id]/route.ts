@@ -171,8 +171,8 @@ export async function POST(
     // Check if leader has authority over this user
     if (session.user.role === "leader") {
       const teams = await Team.find({ leaderId: session.user.id });
-      const allMemberIds = teams.flatMap((t) =>
-        t.memberIds.map((mid: { toString: () => string }) => mid.toString())
+      const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
+        t.memberIds.map((mid) => mid.toString())
       );
       if (!allMemberIds.includes(leaveRequest.userId.toString())) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
