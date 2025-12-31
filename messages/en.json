@@ -574,7 +574,8 @@
     "failedToApprove": "Failed to approve",
     "failedToReject": "Failed to reject",
     "failedToSubmit": "Failed to submit",
-    "failedToCreate": "Failed to create"
+    "failedToCreate": "Failed to create",
+    "insufficientBalance": "Insufficient {leaveType} leave balance. You have {remaining} day(s) remaining but requested {requested} day(s)."
   },
   "success": {
     "saved": "Saved successfully",

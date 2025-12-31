@@ -206,6 +206,7 @@ export async function POST(
       // Deduct from balance
       const leaveTypeKey = leaveRequest.leaveType as "sick" | "personal" | "annual";
       balance.quotas[leaveTypeKey].used += daysUsed;
+      balance.markModified("quotas");
       await balance.save();
 
       // Update leave request status

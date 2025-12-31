@@ -182,7 +182,22 @@ export async function POST(request: NextRequest) {
     // Get remaining balance for this leave type
     const leaveTypeKey = leaveType as "sick" | "personal" | "annual";
     const remaining = balance.quotas[leaveTypeKey].total - balance.quotas[leaveTypeKey].used;
-    const balanceWarning = requestedDays > remaining;
+
+    // Block if exceeds balance
+    if (requestedDays > remaining) {
+      return NextResponse.json(
+        {
+          error: `Insufficient ${leaveType} leave balance. You have ${remaining} day(s) remaining but requested ${requestedDays} day(s).`,
+          code: "INSUFFICIENT_BALANCE",
+          details: {
+            leaveType,
+            remaining,
+            requested: requestedDays,
+          },
+        },
+        { status: 400 }
+      );
+    }
 
     const isLeader = session.user.role === "leader";
 
@@ -195,7 +210,6 @@ export async function POST(request: NextRequest) {
       reason,
       status: isLeader ? "approved" : "pending",
       daysRequested: requestedDays,
-      exceedsBalance: balanceWarning,
       ...(isLeader && {
         reviewedBy: session.user.id,
         reviewedAt: new Date(),
@@ -207,6 +221,7 @@ export async function POST(request: NextRequest) {
     if (isLeader) {
       // Deduct from balance
       balance.quotas[leaveTypeKey].used += requestedDays;
+      balance.markModified("quotas");
       await balance.save();
 
       // Log the auto-approval
@@ -278,25 +293,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Include balance warning in response if applicable
-    const response: {
-      data: typeof leaveRequest;
-      warning?: string;
-      balance?: {
-        remaining: number;
-        requested: number;
-      };
-    } = { data: leaveRequest };
-
-    if (balanceWarning) {
-      response.warning = `Your ${leaveType} leave balance (${remaining} days) is less than requested (${requestedDays} days). Request submitted for approval.`;
-      response.balance = {
-        remaining,
-        requested: requestedDays,
-      };
-    }
-
-    return NextResponse.json(response, { status: 201 });
+    return NextResponse.json({ data: leaveRequest }, { status: 201 });
   } catch (error) {
     console.error("Error creating leave request:", error);
     return NextResponse.json(

@@ -573,7 +573,8 @@
     "failedToApprove": "ไม่สามารถอนุมัติได้",
     "failedToReject": "ไม่สามารถปฏิเสธได้",
     "failedToSubmit": "ไม่สามารถส่งได้",
-    "failedToCreate": "ไม่สามารถสร้างได้"
+    "failedToCreate": "ไม่สามารถสร้างได้",
+    "insufficientBalance": "วันลา{leaveType}ไม่เพียงพอ คุณเหลือ {remaining} วัน แต่ขอลา {requested} วัน"
   },
   "success": {
     "saved": "บันทึกสำเร็จ",
