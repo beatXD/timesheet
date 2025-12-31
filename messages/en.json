@@ -819,6 +819,7 @@
     "failedToFetchCommits": "Failed to fetch commits",
     "failedToImport": "Failed to import commits",
     "summarizeWithAi": "Summarize with AI",
-    "aiSummarizeFailed": "Failed to summarize commits with AI"
+    "aiSummarizeFailed": "Failed to summarize commits with AI",
+    "aiRateLimitExceeded": "AI rate limit exceeded. Please wait {seconds} seconds and try again."
   }
 }

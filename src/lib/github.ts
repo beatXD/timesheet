@@ -236,7 +236,7 @@ export function isMergeCommit(message: string): boolean {
 
 /**
  * Format commits for task field
- * Format: [repo-name] commit message
+ * For AI summaries, use message as-is. Otherwise just the commit message.
  */
 export function formatCommitsForTask(commits: IGitHubCommit[]): string {
   // Filter out merge commits
@@ -246,12 +246,13 @@ export function formatCommitsForTask(commits: IGitHubCommit[]): string {
 
   if (filteredCommits.length === 0) return "";
 
-  return filteredCommits
-    .map((commit) => {
-      const repoName = commit.repo.split("/")[1]; // Get just the repo name
-      return `[${repoName}] ${commit.message}`;
-    })
-    .join("\n");
+  // For AI summary (single summary commit), return message directly
+  if (filteredCommits.length === 1 && filteredCommits[0].sha === "summary") {
+    return filteredCommits[0].message;
+  }
+
+  // For regular commits, just return the messages
+  return filteredCommits.map((commit) => commit.message).join("\n");
 }
 
 /**

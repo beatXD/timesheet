@@ -818,6 +818,7 @@
     "failedToFetchCommits": "ไม่สามารถดึง commits",
     "failedToImport": "ไม่สามารถนำเข้า commits",
     "summarizeWithAi": "สรุปด้วย AI",
-    "aiSummarizeFailed": "ไม่สามารถสรุป commits ด้วย AI"
+    "aiSummarizeFailed": "ไม่สามารถสรุป commits ด้วย AI",
+    "aiRateLimitExceeded": "เกินโควต้า AI กรุณารอ {seconds} วินาทีแล้วลองใหม่"
   }
 }

@@ -39,8 +39,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error summarizing commits:", error);
+    const message = error instanceof Error ? error.message : "Failed to summarize commits";
     return NextResponse.json(
-      { error: "Failed to summarize commits" },
+      { error: message },
       { status: 500 }
     );
   }
