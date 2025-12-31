@@ -267,6 +267,7 @@ export interface IGitHubRepoSettings {
 export interface IGitHubCommit {
   sha: string;
   message: string;
+  originalMessage?: string; // Original message before AI summarization
   date: Date;
   repo: string; // "owner/name"
   url: string;

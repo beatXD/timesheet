@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ import {
   Lock,
   Globe,
   FolderGit2,
+  Sparkles,
 } from "lucide-react";
 import type { IGitHubCommit, IGitHubRepository } from "@/types";
 
@@ -69,6 +71,26 @@ export function CommitImportDialog({
     Record<number, IGitHubCommit[]>
   >({});
   const [mode, setMode] = useState<"append" | "replace">("append");
+  const [aiAvailable, setAiAvailable] = useState(false);
+  const [useAiSummary, setUseAiSummary] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
+  const [originalGroupedCommits, setOriginalGroupedCommits] = useState<
+    Record<number, IGitHubCommit[]>
+  >({});
+
+  // Check AI availability on mount
+  useEffect(() => {
+    const checkAi = async () => {
+      try {
+        const res = await fetch("/api/ai/summarize-commits");
+        const data = await res.json();
+        setAiAvailable(data.data?.available || false);
+      } catch {
+        setAiAvailable(false);
+      }
+    };
+    checkAi();
+  }, []);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -77,6 +99,8 @@ export function CommitImportDialog({
       setSelectedRepo(null);
       setCommits([]);
       setGroupedCommits({});
+      setOriginalGroupedCommits({});
+      setUseAiSummary(false);
       fetchRepos();
     }
   }, [open]);
@@ -121,10 +145,57 @@ export function CommitImportDialog({
 
       setCommits(data.data.commits || []);
       setGroupedCommits(data.data.groupedByDate || {});
+      setOriginalGroupedCommits(data.data.groupedByDate || {});
     } catch {
       toast.error(t("errors.generic"));
     } finally {
       setLoadingCommits(false);
+    }
+  };
+
+  const handleAiSummaryToggle = async (checked: boolean) => {
+    setUseAiSummary(checked);
+
+    if (checked && Object.keys(originalGroupedCommits).length > 0) {
+      setSummarizing(true);
+      try {
+        const res = await fetch("/api/ai/summarize-commits", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ groupedCommits: originalGroupedCommits }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          toast.error(data.error || t("github.aiSummarizeFailed"));
+          setUseAiSummary(false);
+          return;
+        }
+
+        setGroupedCommits(data.data.groupedCommits);
+
+        // Rebuild commits array from grouped
+        const newCommits: IGitHubCommit[] = [];
+        for (const dayCommits of Object.values(
+          data.data.groupedCommits as Record<number, IGitHubCommit[]>
+        )) {
+          newCommits.push(...dayCommits);
+        }
+        setCommits(newCommits);
+      } catch {
+        toast.error(t("errors.generic"));
+        setUseAiSummary(false);
+      } finally {
+        setSummarizing(false);
+      }
+    } else if (!checked) {
+      // Restore original commits
+      setGroupedCommits(originalGroupedCommits);
+      const newCommits: IGitHubCommit[] = [];
+      for (const dayCommits of Object.values(originalGroupedCommits)) {
+        newCommits.push(...dayCommits);
+      }
+      setCommits(newCommits);
     }
   };
 
@@ -133,6 +204,8 @@ export function CommitImportDialog({
     setSelectedRepo(null);
     setCommits([]);
     setGroupedCommits({});
+    setOriginalGroupedCommits({});
+    setUseAiSummary(false);
   };
 
   const handleImport = async () => {
@@ -294,6 +367,27 @@ export function CommitImportDialog({
                   </Badge>
                 </div>
 
+                {aiAvailable && (
+                  <div className="flex items-center gap-2 px-1 py-2 bg-muted/50 rounded-lg">
+                    <Checkbox
+                      id="ai-summary"
+                      checked={useAiSummary}
+                      onCheckedChange={handleAiSummaryToggle}
+                      disabled={summarizing}
+                    />
+                    <Label
+                      htmlFor="ai-summary"
+                      className="flex items-center gap-2 cursor-pointer text-sm"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      {t("github.summarizeWithAi")}
+                    </Label>
+                    {summarizing && (
+                      <Loader2 className="w-4 h-4 animate-spin ml-auto" />
+                    )}
+                  </div>
+                )}
+
                 <ScrollArea className="h-[280px] pr-4">
                   <div className="space-y-4">
                     {sortedDays.map((day) => {
@@ -309,20 +403,35 @@ export function CommitImportDialog({
                             <span className="font-medium">
                               {day} {monthName.split(" ")[0]}
                             </span>
-                            <Badge variant="outline" className="ml-auto">
-                              {dayCommits.length} commits
-                            </Badge>
+                            {dayCommits.length === 1 && dayCommits[0].sha === "summary" ? (
+                              <Badge variant="outline" className="ml-auto bg-amber-500/10 text-amber-600 border-amber-500/30">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                AI Summary
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="ml-auto">
+                                {dayCommits.length} commits
+                              </Badge>
+                            )}
                           </div>
                           <div className="space-y-1 pl-6">
-                            {dayCommits.map((commit) => (
+                            {dayCommits.map((commit, idx) => (
                               <div
-                                key={commit.sha}
-                                className="flex items-start gap-2 text-sm p-2 rounded border bg-muted/30"
+                                key={commit.sha === "summary" ? `summary-${idx}` : commit.sha}
+                                className={`flex items-start gap-2 text-sm p-2 rounded border ${
+                                  commit.sha === "summary"
+                                    ? "bg-amber-500/10 border-amber-500/30"
+                                    : "bg-muted/30"
+                                }`}
                               >
-                                <code className="text-xs text-muted-foreground shrink-0">
-                                  {commit.sha}
-                                </code>
-                                <span className="flex-1 break-words">
+                                {commit.sha === "summary" ? (
+                                  <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                                ) : (
+                                  <code className="text-xs text-muted-foreground shrink-0">
+                                    {commit.sha}
+                                  </code>
+                                )}
+                                <span className="flex-1 break-words whitespace-pre-line">
                                   {commit.message}
                                 </span>
                               </div>

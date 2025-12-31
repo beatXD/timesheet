@@ -816,6 +816,8 @@
     "import": "นำเข้า",
     "importSuccess": "นำเข้า commits ไปยัง {count} entries สำเร็จ",
     "failedToFetchCommits": "ไม่สามารถดึง commits",
-    "failedToImport": "ไม่สามารถนำเข้า commits"
+    "failedToImport": "ไม่สามารถนำเข้า commits",
+    "summarizeWithAi": "สรุปด้วย AI",
+    "aiSummarizeFailed": "ไม่สามารถสรุป commits ด้วย AI"
   }
 }

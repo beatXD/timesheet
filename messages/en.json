@@ -817,6 +817,8 @@
     "import": "Import",
     "importSuccess": "Imported commits to {count} entries",
     "failedToFetchCommits": "Failed to fetch commits",
-    "failedToImport": "Failed to import commits"
+    "failedToImport": "Failed to import commits",
+    "summarizeWithAi": "Summarize with AI",
+    "aiSummarizeFailed": "Failed to summarize commits with AI"
   }
 }
