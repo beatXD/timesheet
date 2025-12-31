@@ -536,6 +536,8 @@ export default function ProfilePage() {
                     onClick={() =>
                       signIn("github", {
                         callbackUrl: "/profile",
+                      }, {
+                        prompt: "consent",
                       })
                     }
                   >
