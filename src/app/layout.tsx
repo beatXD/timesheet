@@ -5,6 +5,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SessionProvider } from "@/components/SessionProvider";
 import { Analytics } from "@/components/Analytics";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,7 +20,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Timesheet System",
-  description: "Timesheet management system",
+  description: "ระบบบันทึกเวลาทำงานและจัดการลางาน",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Timesheet",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
 };
 
 export default async function RootLayout({
@@ -45,6 +59,7 @@ export default async function RootLayout({
             <NextIntlClientProvider messages={messages}>
               {children}
               <Analytics />
+              <ServiceWorkerRegister />
             </NextIntlClientProvider>
           </ThemeProvider>
         </SessionProvider>

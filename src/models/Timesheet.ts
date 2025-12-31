@@ -1,5 +1,6 @@
 import mongoose, { Schema, Model } from "mongoose";
 import type { ITimesheet, ITimesheetEntry, EntryType, TimesheetStatus, LeaveType } from "@/types";
+import { softDeletePlugin } from "@/lib/mongoose-plugins";
 
 const TimesheetEntrySchema = new Schema<ITimesheetEntry>(
   {
@@ -47,11 +48,21 @@ const TimesheetSchema = new Schema<ITimesheet>(
   },
   {
     timestamps: true,
+    optimisticConcurrency: true, // Enable version-based conflict detection
   }
 );
 
 // Compound index for unique timesheet per user per month
 TimesheetSchema.index({ userId: 1, month: 1, year: 1 }, { unique: true });
+
+// Performance indexes for common queries
+TimesheetSchema.index({ userId: 1, status: 1 }); // For filtering by user and status
+TimesheetSchema.index({ status: 1, teamSubmittedAt: -1 }); // For admin approval queue
+TimesheetSchema.index({ status: 1, submittedAt: -1 }); // For leader approval queue
+TimesheetSchema.index({ year: 1, month: 1 }); // For monthly reports
+
+// Apply soft delete plugin
+TimesheetSchema.plugin(softDeletePlugin);
 
 const Timesheet: Model<ITimesheet> =
   mongoose.models.Timesheet ||

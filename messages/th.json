@@ -748,6 +748,12 @@
     "rejectedCount": "ปฏิเสธ {count} รายการสำเร็จ",
     "failedCount": "{count} รายการล้มเหลว"
   },
+  "notifications": {
+    "title": "การแจ้งเตือน",
+    "markAllRead": "อ่านทั้งหมด",
+    "empty": "ไม่มีการแจ้งเตือน",
+    "newNotification": "การแจ้งเตือนใหม่"
+  },
   "template": {
     "title": "เทมเพลต",
     "apply": "ใช้เทมเพลต",

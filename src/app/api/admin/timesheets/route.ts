@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
 
     // For each team, get timesheets
     const result = await Promise.all(
-      teams.map(async (team) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      teams.map(async (team: any) => {
         const memberIds = team.memberIds.map((id: { toString: () => string }) =>
           id.toString()
         );
@@ -53,11 +54,13 @@ export async function GET(request: NextRequest) {
 
         // Calculate totals
         const totalBaseHours = timesheets.reduce(
-          (sum, ts) => sum + (ts.totalBaseHours || 0),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (sum: number, ts: any) => sum + (ts.totalBaseHours || 0),
           0
         );
         const totalAdditionalHours = timesheets.reduce(
-          (sum, ts) => sum + (ts.totalAdditionalHours || 0),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (sum: number, ts: any) => sum + (ts.totalAdditionalHours || 0),
           0
         );
 
@@ -81,7 +84,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Filter out teams with no timesheets
-    const filteredResult = result.filter((r) => r.timesheets.length > 0);
+    const filteredResult = result.filter((r: { timesheets: unknown[] }) => r.timesheets.length > 0);
 
     return NextResponse.json({ data: filteredResult });
   } catch (error) {

@@ -3,6 +3,12 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import {
+  checkRateLimit,
+  rateLimitConfigs,
+  getClientIdentifier,
+  createRateLimitHeaders,
+} from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   name: z.string().min(2, "ชื่อต้องมีอย่างน้อย 2 ตัวอักษร"),
@@ -12,6 +18,24 @@ const registerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting check
+    const clientId = getClientIdentifier(request);
+    const rateLimit = checkRateLimit(`register:${clientId}`, rateLimitConfigs.auth);
+
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { error: "คำขอมากเกินไป กรุณารอสักครู่แล้วลองใหม่" },
+        {
+          status: 429,
+          headers: createRateLimitHeaders(
+            rateLimit.remaining,
+            rateLimit.resetTime,
+            rateLimitConfigs.auth.maxRequests
+          ),
+        }
+      );
+    }
+
     const body = await request.json();
 
     // Validate input

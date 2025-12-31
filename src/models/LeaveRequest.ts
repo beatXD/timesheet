@@ -1,5 +1,6 @@
 import mongoose, { Schema, Model } from "mongoose";
 import type { ILeaveRequest, LeaveType, LeaveRequestStatus } from "@/types";
+import { softDeletePlugin } from "@/lib/mongoose-plugins";
 
 const LeaveRequestSchema = new Schema<ILeaveRequest>(
   {
@@ -27,12 +28,16 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
   },
   {
     timestamps: true,
+    optimisticConcurrency: true, // Enable version-based conflict detection
   }
 );
 
 // Index for efficient querying
 LeaveRequestSchema.index({ userId: 1, status: 1 });
 LeaveRequestSchema.index({ startDate: 1, endDate: 1 });
+
+// Apply soft delete plugin
+LeaveRequestSchema.plugin(softDeletePlugin);
 
 const LeaveRequest: Model<ILeaveRequest> =
   mongoose.models.LeaveRequest ||

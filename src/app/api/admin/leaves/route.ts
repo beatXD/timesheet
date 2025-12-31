@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       // Leaders can see team members' leaves
       const teams = await Team.find({ leaderId: session.user.id });
       if (teams.length > 0) {
-        const allMemberIds = teams.flatMap((t) =>
+        const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
           t.memberIds.map((id: { toString: () => string }) => id.toString())
         );
         userFilter = { userId: { $in: [session.user.id, ...allMemberIds] } };
@@ -86,7 +86,18 @@ export async function GET(request: NextRequest) {
     // Extract leave records
     const leaveRecords: LeaveRecord[] = [];
 
-    timesheets.forEach((ts) => {
+    timesheets.forEach((ts: {
+      _id: { toString: () => string };
+      userId: unknown;
+      month: number;
+      year: number;
+      entries?: Array<{
+        type?: string;
+        leaveType?: string;
+        date?: number;
+        remark?: string;
+      }>;
+    }) => {
       if (ts.entries) {
         ts.entries.forEach((entry: {
           type?: string;
@@ -154,7 +165,7 @@ export async function GET(request: NextRequest) {
         rawUsers = await User.find({}, "name email").lean();
       } else if (session.user.role === "leader") {
         const teams = await Team.find({ leaderId: session.user.id });
-        const allMemberIds = teams.flatMap((t) =>
+        const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
           t.memberIds.map((id: { toString: () => string }) => id.toString())
         );
         rawUsers = await User.find(
@@ -163,7 +174,7 @@ export async function GET(request: NextRequest) {
         ).lean();
       }
       if (rawUsers) {
-        users = rawUsers.map((u) => ({
+        users = rawUsers.map((u: { _id: { toString: () => string }; name: string; email: string }) => ({
           _id: u._id.toString(),
           name: u.name,
           email: u.email,

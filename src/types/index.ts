@@ -204,6 +204,39 @@ export interface ApiResponse<T = unknown> {
   message?: string;
 }
 
+// Notification Types
+export type NotificationType =
+  | "timesheet_approved"
+  | "timesheet_rejected"
+  | "timesheet_pending"
+  | "leave_approved"
+  | "leave_rejected"
+  | "leave_pending"
+  | "team_leave"
+  | "system_announcement"
+  | "holiday_added";
+
+export type NotificationCategory = "approval" | "team" | "system";
+
+export interface INotification {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  type: NotificationType;
+  category: NotificationCategory;
+  title: string;
+  message: string;
+  link?: string;
+  read: boolean;
+  metadata?: Record<string, unknown>;
+  createdAt: Date;
+}
+
+export interface INotificationPreferences {
+  approval: boolean;
+  team: boolean;
+  system: boolean;
+}
+
 // Extended User for NextAuth
 export interface SessionUser {
   id: string;

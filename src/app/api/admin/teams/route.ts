@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Team, User } from "@/models";
+import { Team, User, Timesheet, LeaveRequest } from "@/models";
 
 // GET /api/admin/teams - List teams (admin sees all, leader sees their teams)
 export async function GET() {
@@ -26,20 +26,22 @@ export async function GET() {
       .lean();
 
     // Convert ObjectIds to strings for consistent comparison
-    const serializedTeams = teams.map((team) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const serializedTeams = teams.map((team: any) => ({
       ...team,
       _id: team._id?.toString(),
       leaderId: team.leaderId ? {
         ...team.leaderId,
-        _id: (team.leaderId as { _id?: { toString(): string } })._id?.toString(),
+        _id: team.leaderId._id?.toString(),
       } : null,
-      memberIds: (team.memberIds || []).map((m) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      memberIds: (team.memberIds || []).map((m: any) => ({
         ...m,
-        _id: (m as { _id?: { toString(): string } })._id?.toString(),
+        _id: m._id?.toString(),
       })),
       projectId: team.projectId ? {
         ...team.projectId,
-        _id: (team.projectId as { _id?: { toString(): string } })._id?.toString(),
+        _id: team.projectId._id?.toString(),
       } : null,
     }));
 
@@ -216,6 +218,48 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "Team ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Get team to check members
+    const team = await Team.findById(id);
+    if (!team) {
+      return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    }
+
+    // Get all member IDs including leader
+    const allMemberIds = [
+      team.leaderId?.toString(),
+      ...team.memberIds.map((m: { toString: () => string }) => m.toString()),
+    ].filter(Boolean);
+
+    // Check for pending/submitted timesheets from team members
+    const pendingTimesheets = await Timesheet.countDocuments({
+      userId: { $in: allMemberIds },
+      status: { $in: ["submitted", "approved", "team_submitted"] },
+    });
+
+    if (pendingTimesheets > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete team: ${pendingTimesheets} timesheet(s) are pending approval. Please complete all pending approvals first.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check for pending leave requests from team members
+    const pendingLeaves = await LeaveRequest.countDocuments({
+      userId: { $in: allMemberIds },
+      status: "pending",
+    });
+
+    if (pendingLeaves > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete team: ${pendingLeaves} leave request(s) are pending approval. Please complete all pending approvals first.`,
+        },
         { status: 400 }
       );
     }

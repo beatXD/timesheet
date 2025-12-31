@@ -9,3 +9,4 @@ export { default as LeaveBalance } from "./LeaveBalance";
 export { default as LeaveSettings } from "./LeaveSettings";
 export { default as AuditLog } from "./AuditLog";
 export { default as TimesheetTemplate } from "./TimesheetTemplate";
+export { default as Notification } from "./Notification";

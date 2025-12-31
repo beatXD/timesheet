@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Timesheet, Team, AuditLog, User } from "@/models";
 import { sendTimesheetStatusEmail } from "@/lib/email";
+import { notifyTimesheetRejected } from "@/lib/notifications";
 import { timesheetRejectSchema, validateRequest } from "@/lib/validation/schemas";
 
 // POST /api/timesheets/[id]/reject - Reject timesheet
@@ -108,6 +109,18 @@ export async function POST(
     } catch (emailError) {
       console.error("Failed to send timesheet status email:", emailError);
       // Don't fail the request if email fails
+    }
+
+    // Send in-app notification
+    try {
+      await notifyTimesheetRejected(
+        timesheet.userId.toString(),
+        timesheet.month,
+        timesheet.year,
+        reason
+      );
+    } catch (notifError) {
+      console.error("Failed to send notification:", notifError);
     }
 
     return NextResponse.json({ data: timesheet });

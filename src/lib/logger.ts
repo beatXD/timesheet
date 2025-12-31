@@ -1,136 +1,92 @@
 /**
- * Structured logging utility for production
- * Uses pino for high-performance JSON logging
+ * Structured logging utility using Winston
  */
 
-type LogLevel = "debug" | "info" | "warn" | "error" | "fatal";
+import winston from "winston";
 
-interface LogContext {
-  [key: string]: unknown;
-}
+const { combine, timestamp, printf, colorize, json } = winston.format;
 
-interface LogEntry {
-  timestamp: string;
-  level: LogLevel;
-  message: string;
-  context?: LogContext;
-  error?: {
-    message: string;
-    stack?: string;
-    name: string;
+// Custom format for development
+const devFormat = printf(({ level, message, timestamp, ...meta }) => {
+  const emoji: Record<string, string> = {
+    error: "❌",
+    warn: "⚠️",
+    info: "ℹ️",
+    debug: "🔍",
   };
+  const icon = emoji[level] || "📝";
+  const metaStr = Object.keys(meta).length ? `\n  Context: ${JSON.stringify(meta, null, 2)}` : "";
+  return `${icon} [${timestamp}] ${level.toUpperCase()}: ${message}${metaStr}`;
+});
+
+// Create Winston logger
+const winstonLogger = winston.createLogger({
+  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === "production" ? "info" : "debug"),
+  defaultMeta: { service: "timesheet-api" },
+  transports: [
+    new winston.transports.Console({
+      format: process.env.NODE_ENV === "production"
+        ? combine(timestamp(), json())
+        : combine(timestamp({ format: "HH:mm:ss" }), colorize(), devFormat),
+    }),
+  ],
+});
+
+// Add file transport in production
+if (process.env.NODE_ENV === "production") {
+  winstonLogger.add(
+    new winston.transports.File({
+      filename: "logs/error.log",
+      level: "error",
+      format: combine(timestamp(), json()),
+    })
+  );
+  winstonLogger.add(
+    new winston.transports.File({
+      filename: "logs/combined.log",
+      format: combine(timestamp(), json()),
+    })
+  );
 }
 
-const LOG_LEVELS: Record<LogLevel, number> = {
-  debug: 10,
-  info: 20,
-  warn: 30,
-  error: 40,
-  fatal: 50,
-};
-
+// Logger wrapper with utility methods
 class Logger {
-  private minLevel: LogLevel;
-  private serviceName: string;
-
-  constructor() {
-    this.minLevel = (process.env.LOG_LEVEL as LogLevel) ||
-      (process.env.NODE_ENV === "production" ? "info" : "debug");
-    this.serviceName = "timesheet-api";
+  debug(message: string, context?: Record<string, unknown>): void {
+    winstonLogger.debug(message, context);
   }
 
-  private shouldLog(level: LogLevel): boolean {
-    return LOG_LEVELS[level] >= LOG_LEVELS[this.minLevel];
+  info(message: string, context?: Record<string, unknown>): void {
+    winstonLogger.info(message, context);
   }
 
-  private formatEntry(
-    level: LogLevel,
-    message: string,
-    context?: LogContext,
-    error?: Error
-  ): LogEntry {
-    const entry: LogEntry = {
-      timestamp: new Date().toISOString(),
-      level,
-      message,
-    };
-
-    if (context && Object.keys(context).length > 0) {
-      entry.context = {
-        service: this.serviceName,
-        ...context,
-      };
-    }
-
-    if (error) {
-      entry.error = {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-      };
-    }
-
-    return entry;
+  warn(message: string, context?: Record<string, unknown>): void {
+    winstonLogger.warn(message, context);
   }
 
-  private log(
-    level: LogLevel,
-    message: string,
-    context?: LogContext,
-    error?: Error
-  ): void {
-    if (!this.shouldLog(level)) return;
-
-    const entry = this.formatEntry(level, message, context, error);
-
-    // In production, output JSON for log aggregation
-    if (process.env.NODE_ENV === "production") {
-      const output = JSON.stringify(entry);
-      switch (level) {
-        case "error":
-        case "fatal":
-          console.error(output);
-          break;
-        case "warn":
-          console.warn(output);
-          break;
-        default:
-          console.log(output);
-      }
-    } else {
-      // In development, use readable format
-      const emoji = {
-        debug: "🔍",
-        info: "ℹ️",
-        warn: "⚠️",
-        error: "❌",
-        fatal: "💀",
-      }[level];
-
-      console.log(`${emoji} [${level.toUpperCase()}] ${message}`);
-      if (context) console.log("  Context:", context);
-      if (error) console.log("  Error:", error);
-    }
+  error(message: string, error?: Error, context?: Record<string, unknown>): void {
+    winstonLogger.error(message, {
+      ...context,
+      error: error
+        ? {
+            message: error.message,
+            name: error.name,
+            stack: error.stack,
+          }
+        : undefined,
+    });
   }
 
-  debug(message: string, context?: LogContext): void {
-    this.log("debug", message, context);
-  }
-
-  info(message: string, context?: LogContext): void {
-    this.log("info", message, context);
-  }
-
-  warn(message: string, context?: LogContext): void {
-    this.log("warn", message, context);
-  }
-
-  error(message: string, error?: Error, context?: LogContext): void {
-    this.log("error", message, context, error);
-  }
-
-  fatal(message: string, error?: Error, context?: LogContext): void {
-    this.log("fatal", message, context, error);
+  fatal(message: string, error?: Error, context?: Record<string, unknown>): void {
+    winstonLogger.error(`[FATAL] ${message}`, {
+      ...context,
+      error: error
+        ? {
+            message: error.message,
+            name: error.name,
+            stack: error.stack,
+          }
+        : undefined,
+    });
   }
 
   // Utility for request logging
@@ -141,7 +97,7 @@ class Logger {
     duration: number,
     userId?: string
   ): void {
-    this.info("HTTP Request", {
+    winstonLogger.info("HTTP Request", {
       method,
       path,
       statusCode,
@@ -152,7 +108,7 @@ class Logger {
 
   // Utility for database operations
   db(operation: string, collection: string, duration: number): void {
-    this.debug("Database Operation", {
+    winstonLogger.debug("Database Operation", {
       operation,
       collection,
       duration: `${duration}ms`,
@@ -160,8 +116,8 @@ class Logger {
   }
 
   // Utility for authentication events
-  auth(event: string, userId?: string, context?: LogContext): void {
-    this.info(`Auth: ${event}`, {
+  auth(event: string, userId?: string, context?: Record<string, unknown>): void {
+    winstonLogger.info(`Auth: ${event}`, {
       userId,
       ...context,
     });
@@ -170,6 +126,9 @@ class Logger {
 
 // Export singleton instance
 export const logger = new Logger();
+
+// Export winston logger for advanced usage
+export { winstonLogger };
 
 // Export for API route error handling
 export function logApiError(

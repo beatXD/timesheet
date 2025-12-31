@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { LogOut, User } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationBell } from "@/components/NotificationBell";
 import type { UserRole } from "@/types";
 
 interface HeaderProps {
@@ -47,6 +48,7 @@ export function Header({ user }: HeaderProps) {
     <header className="fixed top-0 left-64 right-0 z-30 h-16 bg-background border-b flex items-center justify-end px-6 gap-4">
       <ThemeToggle />
       <LanguageSwitcher />
+      <NotificationBell />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="rounded-full">

@@ -155,6 +155,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check for existing leave entries in timesheets
+    const overlappingTimesheetLeave = await checkExistingLeaveInTimesheets({
+      userId: session.user.id,
+      startDate: start,
+      endDate: end,
+    });
+
+    if (overlappingTimesheetLeave) {
+      return NextResponse.json(
+        { error: `You already have leave recorded on ${overlappingTimesheetLeave.date} in your timesheet` },
+        { status: 400 }
+      );
+    }
+
     // Check leave balance
     const requestedDays = calculateWorkingDays(start, end);
     const settings = await LeaveSettings.getSettings();
@@ -353,4 +367,60 @@ async function addLeaveToTimesheet(params: {
     await timesheet.save();
     currentDate.setDate(currentDate.getDate() + 1);
   }
+}
+
+// Helper function to check for existing leave entries in timesheets
+async function checkExistingLeaveInTimesheets(params: {
+  userId: string;
+  startDate: Date;
+  endDate: Date;
+}): Promise<{ date: string } | null> {
+  const { userId, startDate, endDate } = params;
+
+  // Get all months covered by the date range
+  const months: { month: number; year: number }[] = [];
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    const month = current.getMonth() + 1;
+    const year = current.getFullYear();
+    if (!months.find((m) => m.month === month && m.year === year)) {
+      months.push({ month, year });
+    }
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  // Check each relevant timesheet for leave entries
+  for (const { month, year } of months) {
+    const timesheet = await Timesheet.findOne({ userId, month, year });
+    if (!timesheet) continue;
+
+    // Check each date in the range that falls in this month
+    const checkDate = new Date(startDate);
+    while (checkDate <= endDate) {
+      if (
+        checkDate.getMonth() + 1 === month &&
+        checkDate.getFullYear() === year
+      ) {
+        const day = checkDate.getDate();
+        const dayOfWeek = checkDate.getDay();
+
+        // Skip weekends
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          const existingEntry = timesheet.entries.find(
+            (e: { date: number; type: string }) =>
+              e.date === day && e.type === "leave"
+          );
+
+          if (existingEntry) {
+            return {
+              date: `${day}/${month}/${year}`,
+            };
+          }
+        }
+      }
+      checkDate.setDate(checkDate.getDate() + 1);
+    }
+  }
+
+  return null;
 }

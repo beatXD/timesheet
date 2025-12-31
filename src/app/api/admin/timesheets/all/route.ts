@@ -70,14 +70,15 @@ export async function GET(request: NextRequest) {
     const teams = await Team.find({}).select("name memberIds leaderId");
 
     // Map timesheets with team info
-    const data = timesheets.map((ts) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = timesheets.map((ts: any) => {
       // Find team for this user
-      const user = ts.userId as any;
-      const userTeam = teams.find(
-        (t) =>
-          t.memberIds.some(
-            (id: { toString: () => string }) => id.toString() === user._id.toString()
-          ) || t.leaderId?.toString() === user._id.toString()
+      const user = ts.userId;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const userTeam = teams.find((t: any) =>
+        t.memberIds.some(
+          (id: { toString: () => string }) => id.toString() === user._id.toString()
+        ) || t.leaderId?.toString() === user._id.toString()
       );
 
       return {

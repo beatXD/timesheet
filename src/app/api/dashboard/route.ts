@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
         }).lean();
 
         const submittedUserIds = new Set(
-          submittedTimesheets.map((ts) => ts.userId.toString())
+          submittedTimesheets.map((ts: { userId: { toString: () => string } }) => ts.userId.toString())
         );
 
         const notSubmitted = allMembers.filter(
@@ -179,18 +179,18 @@ export async function GET(request: NextRequest) {
       // FIX #2: Include all submitted statuses
       const submittedUserIds = new Set(
         allCurrentMonthTimesheets
-          .filter((ts) => SUBMITTED_STATUSES.includes(ts.status))
-          .map((ts) => ts.userId.toString())
+          .filter((ts: { status: string }) => SUBMITTED_STATUSES.includes(ts.status))
+          .map((ts: { userId: { toString: () => string } }) => ts.userId.toString())
       );
 
       // FIX #3: Include team_submitted in pending count
       const pendingUserIds = new Set(
         allCurrentMonthTimesheets
-          .filter((ts) => PENDING_STATUSES.includes(ts.status))
-          .map((ts) => ts.userId.toString())
+          .filter((ts: { status: string }) => PENDING_STATUSES.includes(ts.status))
+          .map((ts: { userId: { toString: () => string } }) => ts.userId.toString())
       );
 
-      const teamStats = allTeams.map((team) => {
+      const teamStats = allTeams.map((team: any) => {
         const memberIds: string[] = [];
         team.memberIds.forEach((m: unknown) => {
           // FIX #8: Use type guard
@@ -283,11 +283,11 @@ export async function GET(request: NextRequest) {
     // Apply vendor filter (admin/leader only)
     if (vendorIdParam && session.user.role !== "user") {
       const usersWithVendor = await User.find({ vendorId: vendorIdParam }, "_id").lean();
-      const vendorUserIds = usersWithVendor.map((u) => u._id.toString());
+      const vendorUserIds = usersWithVendor.map((u: { _id: { toString: () => string } }) => u._id.toString());
 
       if (userFilter.userId) {
         const existingIds = (userFilter.userId as { $in: string[] }).$in || [];
-        const intersection = vendorUserIds.filter((id) => existingIds.includes(id));
+        const intersection = vendorUserIds.filter((id: string) => existingIds.includes(id));
         userFilter = { userId: { $in: intersection } };
       } else {
         userFilter = { userId: { $in: vendorUserIds } };
@@ -307,23 +307,24 @@ export async function GET(request: NextRequest) {
     }).lean();
 
     // Calculate counts from fetched data
-    const draftCount = allTimesheets.filter(ts => ts.status === "draft").length;
-    const submittedCount = allTimesheets.filter(ts => ts.status === "submitted").length;
-    const approvedCount = allTimesheets.filter(ts => ts.status === "approved").length;
-    const rejectedCount = allTimesheets.filter(ts => ts.status === "rejected").length;
+    type TimesheetDoc = { status: string; totalBaseHours?: number; totalAdditionalHours?: number; entries?: { type?: string; leaveType?: string }[] };
+    const draftCount = allTimesheets.filter((ts: TimesheetDoc) => ts.status === "draft").length;
+    const submittedCount = allTimesheets.filter((ts: TimesheetDoc) => ts.status === "submitted").length;
+    const approvedCount = allTimesheets.filter((ts: TimesheetDoc) => ts.status === "approved").length;
+    const rejectedCount = allTimesheets.filter((ts: TimesheetDoc) => ts.status === "rejected").length;
 
     // Get approved timesheets for hours calculation
     // FIX #6: Also include final_approved for accurate hour totals
     const approvedTimesheets = allTimesheets.filter(
-      ts => ts.status === "approved" || ts.status === "final_approved"
+      (ts: TimesheetDoc) => ts.status === "approved" || ts.status === "final_approved"
     );
 
     const totalBaseHours = approvedTimesheets.reduce(
-      (sum, ts) => sum + (ts.totalBaseHours || 0),
+      (sum: number, ts: TimesheetDoc) => sum + (ts.totalBaseHours || 0),
       0
     );
     const totalAdditionalHours = approvedTimesheets.reduce(
-      (sum, ts) => sum + (ts.totalAdditionalHours || 0),
+      (sum: number, ts: TimesheetDoc) => sum + (ts.totalAdditionalHours || 0),
       0
     );
 
@@ -335,7 +336,7 @@ export async function GET(request: NextRequest) {
       total: 0,
     };
 
-    approvedTimesheets.forEach((ts) => {
+    approvedTimesheets.forEach((ts: TimesheetDoc) => {
       if (ts.entries) {
         ts.entries.forEach((entry: { type?: string; leaveType?: string }) => {
           if (entry.type === "leave" && entry.leaveType) {
@@ -363,13 +364,14 @@ export async function GET(request: NextRequest) {
     }).lean();
 
     // Build monthly hours data
+    type YearlyTimesheetDoc = { month: number; status: string; totalBaseHours?: number; entries?: { type?: string; leaveType?: string }[] };
     const monthlyHours: { month: number; hours: number; manDays: number }[] = [];
     for (let m = 1; m <= 12; m++) {
       const monthTimesheets = yearlyTimesheets.filter(
-        (ts) => ts.month === m && (ts.status === "approved" || ts.status === "final_approved")
+        (ts: YearlyTimesheetDoc) => ts.month === m && (ts.status === "approved" || ts.status === "final_approved")
       );
       const hours = monthTimesheets.reduce(
-        (sum, ts) => sum + (ts.totalBaseHours || 0),
+        (sum: number, ts: YearlyTimesheetDoc) => sum + (ts.totalBaseHours || 0),
         0
       );
       monthlyHours.push({
@@ -383,10 +385,10 @@ export async function GET(request: NextRequest) {
     const monthlyLeave: { month: number; sick: number; personal: number; annual: number }[] = [];
     for (let m = 1; m <= 12; m++) {
       const monthTimesheets = yearlyTimesheets.filter(
-        (ts) => ts.month === m && (ts.status === "approved" || ts.status === "final_approved")
+        (ts: YearlyTimesheetDoc) => ts.month === m && (ts.status === "approved" || ts.status === "final_approved")
       );
       const leave = { month: m, sick: 0, personal: 0, annual: 0 };
-      monthTimesheets.forEach((ts) => {
+      monthTimesheets.forEach((ts: YearlyTimesheetDoc) => {
         if (ts.entries) {
           ts.entries.forEach((entry: { type?: string; leaveType?: string }) => {
             if (entry.type === "leave" && entry.leaveType) {

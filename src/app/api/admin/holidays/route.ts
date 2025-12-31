@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Holiday, Timesheet } from "@/models";
+import { cachedFetch, CacheTTL, CacheKeys, invalidateCache } from "@/lib/cache";
 
 // Interface for Calendarific API response
 interface CalendarificHoliday {
@@ -152,11 +153,16 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     const searchParams = request.nextUrl.searchParams;
-    const year = searchParams.get("year") || new Date().getFullYear();
+    const year = parseInt(searchParams.get("year") || new Date().getFullYear().toString());
 
-    const holidays = await Holiday.find({ year: parseInt(year.toString()) })
-      .sort({ date: 1 })
-      .lean();
+    // Use cache for holiday queries (cache for 1 hour)
+    const holidays = await cachedFetch(
+      CacheKeys.holidays(year),
+      CacheTTL.LONG,
+      async () => {
+        return Holiday.find({ year }).sort({ date: 1 }).lean();
+      }
+    );
 
     return NextResponse.json({ data: holidays });
   } catch (error) {
@@ -244,6 +250,9 @@ export async function POST(request: NextRequest) {
       createdBy: session.user.id,
     });
 
+    // Invalidate cache for this year
+    invalidateCache(`holidays:${year}`);
+
     return NextResponse.json({ data: holiday }, { status: 201 });
   } catch (error) {
     console.error("Error creating holiday:", error);
@@ -304,6 +313,9 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Holiday not found" }, { status: 404 });
     }
 
+    // Invalidate cache for this year
+    invalidateCache(`holidays:${holiday.year}`);
+
     return NextResponse.json({ data: holiday });
   } catch (error) {
     console.error("Error updating holiday:", error);
@@ -362,6 +374,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     await Holiday.findByIdAndDelete(id);
+
+    // Invalidate cache for this year
+    invalidateCache(`holidays:${holidayDate.getFullYear()}`);
 
     return NextResponse.json({ message: "Holiday deleted" });
   } catch (error) {

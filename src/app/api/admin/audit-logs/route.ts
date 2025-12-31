@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { AuditLog } from "@/models";
+import AuditLog from "@/models/AuditLog";
 import { parsePaginationParams, createPaginationMeta } from "@/lib/pagination";
 
 // GET /api/admin/audit-logs - List audit logs
@@ -49,10 +49,12 @@ export async function GET(request: NextRequest) {
     const { page, limit, skip } = parsePaginationParams(request);
 
     // Get total count
-    const total = await AuditLog.countDocuments(query);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const total = await (AuditLog as any).countDocuments(query);
 
     // Fetch audit logs
-    const auditLogs = await AuditLog.find(query)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const auditLogs = await (AuditLog as any).find(query)
       .populate("performedBy", "name email image")
       .sort({ createdAt: -1 })
       .skip(skip)

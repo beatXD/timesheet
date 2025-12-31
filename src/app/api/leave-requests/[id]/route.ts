@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { LeaveRequest, Team, Timesheet, LeaveBalance, LeaveSettings, AuditLog, User } from "@/models";
 import { sendLeaveStatusEmail } from "@/lib/email";
+import { notifyLeaveApproved, notifyLeaveRejected } from "@/lib/notifications";
 import type { LeaveType } from "@/types";
 
 // Helper function to calculate working days between two dates
@@ -53,7 +54,7 @@ export async function GET(
       // Check if leader of user's team
       if (session.user.role === "leader") {
         const teams = await Team.find({ leaderId: session.user.id });
-        const allMemberIds = teams.flatMap((t) =>
+        const allMemberIds = teams.flatMap((t: any) =>
           t.memberIds.map((mid: { toString: () => string }) => mid.toString())
         );
         if (!allMemberIds.includes(leaveRequest.userId._id.toString())) {
@@ -247,6 +248,17 @@ export async function POST(
         // Don't fail the request if email fails
       }
 
+      // Send in-app notification
+      try {
+        await notifyLeaveApproved(
+          leaveRequest.userId.toString(),
+          new Date(leaveRequest.startDate),
+          new Date(leaveRequest.endDate)
+        );
+      } catch (notifError) {
+        console.error("Failed to send notification:", notifError);
+      }
+
       return NextResponse.json({
         message: "Leave request approved",
         data: leaveRequest,
@@ -296,6 +308,18 @@ export async function POST(
       } catch (emailError) {
         console.error("Failed to send leave status email:", emailError);
         // Don't fail the request if email fails
+      }
+
+      // Send in-app notification
+      try {
+        await notifyLeaveRejected(
+          leaveRequest.userId.toString(),
+          new Date(leaveRequest.startDate),
+          new Date(leaveRequest.endDate),
+          rejectionReason
+        );
+      } catch (notifError) {
+        console.error("Failed to send notification:", notifError);
       }
 
       return NextResponse.json({

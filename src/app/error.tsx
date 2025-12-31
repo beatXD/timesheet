@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
-import { logger } from "@/lib/logger";
 
 export default function Error({
   error,
@@ -13,8 +12,11 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log error to monitoring service
-    logger.error("Unhandled client error", error, {
+    // Log error to console (winston can't be used in client components)
+    console.error("Unhandled client error:", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
       digest: error.digest,
     });
   }, [error]);

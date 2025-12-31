@@ -749,6 +749,12 @@
     "rejectedCount": "{count} request(s) rejected successfully",
     "failedCount": "{count} request(s) failed"
   },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications",
+    "newNotification": "New notification"
+  },
   "template": {
     "title": "Template",
     "apply": "Apply Template",
