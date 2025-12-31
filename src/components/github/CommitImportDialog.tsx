@@ -16,8 +16,16 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, GitCommit, Calendar } from "lucide-react";
-import type { IGitHubCommit } from "@/types";
+import {
+  Loader2,
+  GitCommit,
+  Calendar,
+  ArrowLeft,
+  Lock,
+  Globe,
+  FolderGit2,
+} from "lucide-react";
+import type { IGitHubCommit, IGitHubRepository } from "@/types";
 
 // Check if commit is a merge commit (client-safe version)
 function isMergeCommit(message: string): boolean {
@@ -29,6 +37,8 @@ function isMergeCommit(message: string): boolean {
   ];
   return mergePatterns.some((pattern) => pattern.test(message));
 }
+
+type Step = "select-repo" | "view-commits";
 
 interface CommitImportDialogProps {
   open: boolean;
@@ -48,25 +58,59 @@ export function CommitImportDialog({
   onImportComplete,
 }: CommitImportDialogProps) {
   const t = useTranslations();
-  const [loading, setLoading] = useState(true);
+  const [step, setStep] = useState<Step>("select-repo");
+  const [loadingRepos, setLoadingRepos] = useState(true);
+  const [loadingCommits, setLoadingCommits] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [repos, setRepos] = useState<IGitHubRepository[]>([]);
+  const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [commits, setCommits] = useState<IGitHubCommit[]>([]);
   const [groupedCommits, setGroupedCommits] = useState<
     Record<number, IGitHubCommit[]>
   >({});
   const [mode, setMode] = useState<"append" | "replace">("append");
 
+  // Reset state when dialog opens
   useEffect(() => {
     if (open) {
-      fetchCommits();
+      setStep("select-repo");
+      setSelectedRepo(null);
+      setCommits([]);
+      setGroupedCommits({});
+      fetchRepos();
     }
-  }, [open, month, year]);
+  }, [open]);
 
-  const fetchCommits = async () => {
-    setLoading(true);
+  const fetchRepos = async () => {
+    setLoadingRepos(true);
+    try {
+      const res = await fetch("/api/github/settings");
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(t("github.failedToFetchRepos"));
+        return;
+      }
+
+      const enabledRepos = (data.data?.repositories || []).filter(
+        (r: IGitHubRepository) => r.enabled
+      );
+      setRepos(enabledRepos);
+    } catch {
+      toast.error(t("errors.generic"));
+    } finally {
+      setLoadingRepos(false);
+    }
+  };
+
+  const handleSelectRepo = async (repoFullName: string) => {
+    setSelectedRepo(repoFullName);
+    setStep("view-commits");
+    setLoadingCommits(true);
+
     try {
       const res = await fetch(
-        `/api/github/commits?month=${month}&year=${year}`
+        `/api/github/commits?month=${month}&year=${year}&repo=${encodeURIComponent(repoFullName)}`
       );
       const data = await res.json();
 
@@ -80,14 +124,20 @@ export function CommitImportDialog({
     } catch {
       toast.error(t("errors.generic"));
     } finally {
-      setLoading(false);
+      setLoadingCommits(false);
     }
+  };
+
+  const handleBack = () => {
+    setStep("select-repo");
+    setSelectedRepo(null);
+    setCommits([]);
+    setGroupedCommits({});
   };
 
   const handleImport = async () => {
     setImporting(true);
     try {
-      // Convert grouped commits with proper date keys
       const commitsByDate: Record<number, IGitHubCommit[]> = {};
       for (const [day, dayCommits] of Object.entries(groupedCommits)) {
         commitsByDate[parseInt(day)] = dayCommits;
@@ -118,7 +168,6 @@ export function CommitImportDialog({
     }
   };
 
-  // Filter out merge commits for display
   const filteredCommits = commits.filter(
     (commit) => !isMergeCommit(commit.message)
   );
@@ -132,109 +181,189 @@ export function CommitImportDialog({
     year: "numeric",
   });
 
+  const selectedRepoName = selectedRepo?.split("/")[1] || "";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
+            {step === "view-commits" && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 mr-1"
+                onClick={handleBack}
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            )}
             <GitCommit className="w-5 h-5" />
-            {t("github.importCommits")}
+            {step === "select-repo"
+              ? t("github.selectRepo")
+              : t("github.importCommits")}
           </DialogTitle>
           <DialogDescription>
-            {t("github.importCommitsDesc", { month: monthName })}
+            {step === "select-repo"
+              ? t("github.selectRepoDesc")
+              : t("github.importCommitsFrom", { repo: selectedRepoName })}
           </DialogDescription>
         </DialogHeader>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin" />
-          </div>
-        ) : filteredCommits.length === 0 ? (
-          <div className="text-center py-12">
-            <GitCommit className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">{t("github.noCommits")}</p>
-          </div>
-        ) : (
+        {/* Step 1: Select Repository */}
+        {step === "select-repo" && (
           <>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <p className="text-sm text-muted-foreground">
-                  {t("github.foundCommits", { count: filteredCommits.length })}
-                </p>
-                <Badge variant="secondary">
-                  {sortedDays.length} {t("github.daysWithCommits")}
-                </Badge>
+            {loadingRepos ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin" />
               </div>
-
-              <ScrollArea className="h-[300px] pr-4">
-                <div className="space-y-4">
-                  {sortedDays.map((day) => {
-                    const dayCommits = groupedCommits[day].filter(
-                      (c) => !isMergeCommit(c.message)
-                    );
-                    if (dayCommits.length === 0) return null;
-
-                    return (
-                      <div key={day} className="space-y-2">
-                        <div className="flex items-center gap-2 sticky top-0 bg-background py-1">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {day} {monthName.split(" ")[0]}
-                          </span>
-                          <Badge variant="outline" className="ml-auto">
-                            {dayCommits.length} commits
-                          </Badge>
-                        </div>
-                        <div className="space-y-1 pl-6">
-                          {dayCommits.map((commit) => (
-                            <div
-                              key={commit.sha}
-                              className="flex items-start gap-2 text-sm p-2 rounded border bg-muted/30"
-                            >
-                              <code className="text-xs text-muted-foreground shrink-0">
-                                {commit.sha}
-                              </code>
-                              <span className="flex-1 break-words">
-                                [{commit.repo.split("/")[1]}] {commit.message}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+            ) : repos.length === 0 ? (
+              <div className="text-center py-12">
+                <FolderGit2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  {t("github.noReposConfigured")}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {t("github.configureReposFirst")}
+                </p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[400px] pr-4">
+                <div className="space-y-2">
+                  {repos.map((repo) => (
+                    <div
+                      key={repo.fullName}
+                      className="flex items-center gap-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => handleSelectRepo(repo.fullName)}
+                    >
+                      <FolderGit2 className="w-5 h-5 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{repo.name}</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {repo.owner}
+                        </p>
                       </div>
-                    );
-                  })}
+                      {repo.isPrivate ? (
+                        <Badge variant="secondary" className="shrink-0">
+                          <Lock className="w-3 h-3 mr-1" />
+                          Private
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="shrink-0">
+                          <Globe className="w-3 h-3 mr-1" />
+                          Public
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </ScrollArea>
+            )}
 
-              <div className="border-t pt-4">
-                <Label className="text-sm font-medium mb-3 block">
-                  {t("github.importMode")}
-                </Label>
-                <RadioGroup
-                  value={mode}
-                  onValueChange={(v) => setMode(v as "append" | "replace")}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="append" id="append" />
-                    <Label htmlFor="append" className="cursor-pointer">
-                      {t("github.appendMode")}
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="replace" id="replace" />
-                    <Label htmlFor="replace" className="cursor-pointer">
-                      {t("github.replaceMode")}
-                    </Label>
-                  </div>
-                </RadioGroup>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {mode === "append"
-                    ? t("github.appendModeDesc")
-                    : t("github.replaceModeDesc")}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                {t("common.cancel")}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+
+        {/* Step 2: View and Import Commits */}
+        {step === "view-commits" && (
+          <>
+            {loadingCommits ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+            ) : filteredCommits.length === 0 ? (
+              <div className="text-center py-12">
+                <GitCommit className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">{t("github.noCommits")}</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {t("github.noCommitsInMonth", { month: monthName })}
                 </p>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <p className="text-sm text-muted-foreground">
+                    {t("github.foundCommits", { count: filteredCommits.length })}
+                  </p>
+                  <Badge variant="secondary">
+                    {sortedDays.length} {t("github.daysWithCommits")}
+                  </Badge>
+                </div>
+
+                <ScrollArea className="h-[280px] pr-4">
+                  <div className="space-y-4">
+                    {sortedDays.map((day) => {
+                      const dayCommits = groupedCommits[day].filter(
+                        (c) => !isMergeCommit(c.message)
+                      );
+                      if (dayCommits.length === 0) return null;
+
+                      return (
+                        <div key={day} className="space-y-2">
+                          <div className="flex items-center gap-2 sticky top-0 bg-background py-1">
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-medium">
+                              {day} {monthName.split(" ")[0]}
+                            </span>
+                            <Badge variant="outline" className="ml-auto">
+                              {dayCommits.length} commits
+                            </Badge>
+                          </div>
+                          <div className="space-y-1 pl-6">
+                            {dayCommits.map((commit) => (
+                              <div
+                                key={commit.sha}
+                                className="flex items-start gap-2 text-sm p-2 rounded border bg-muted/30"
+                              >
+                                <code className="text-xs text-muted-foreground shrink-0">
+                                  {commit.sha}
+                                </code>
+                                <span className="flex-1 break-words">
+                                  {commit.message}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+
+                <div className="border-t pt-4">
+                  <Label className="text-sm font-medium mb-3 block">
+                    {t("github.importMode")}
+                  </Label>
+                  <RadioGroup
+                    value={mode}
+                    onValueChange={(v) => setMode(v as "append" | "replace")}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="append" id="append" />
+                      <Label htmlFor="append" className="cursor-pointer">
+                        {t("github.appendMode")}
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="replace" id="replace" />
+                      <Label htmlFor="replace" className="cursor-pointer">
+                        {t("github.replaceMode")}
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {mode === "append"
+                      ? t("github.appendModeDesc")
+                      : t("github.replaceModeDesc")}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <DialogFooter>
               <Button
@@ -244,12 +373,14 @@ export function CommitImportDialog({
               >
                 {t("common.cancel")}
               </Button>
-              <Button onClick={handleImport} disabled={importing}>
-                {importing && (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                )}
-                {t("github.import")}
-              </Button>
+              {filteredCommits.length > 0 && (
+                <Button onClick={handleImport} disabled={importing}>
+                  {importing && (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  )}
+                  {t("github.import")}
+                </Button>
+              )}
             </DialogFooter>
           </>
         )}

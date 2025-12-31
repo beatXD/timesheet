@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const monthParam = searchParams.get("month");
     const yearParam = searchParams.get("year");
+    const repoParam = searchParams.get("repo"); // Optional: specific repo (owner/name)
 
     if (!monthParam || !yearParam) {
       return NextResponse.json(
@@ -82,7 +83,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const enabledRepos = settings.repositories.filter((repo) => repo.enabled);
+    let enabledRepos = settings.repositories.filter((repo) => repo.enabled);
+
+    // If specific repo is requested, filter to just that one
+    if (repoParam) {
+      enabledRepos = enabledRepos.filter((repo) => repo.fullName === repoParam);
+      if (enabledRepos.length === 0) {
+        return NextResponse.json(
+          { error: "Repository not found or not enabled" },
+          { status: 404 }
+        );
+      }
+    }
 
     if (enabledRepos.length === 0) {
       return NextResponse.json({
@@ -98,7 +110,7 @@ export async function GET(request: NextRequest) {
     const since = new Date(year, month - 1, 1, 0, 0, 0);
     const until = new Date(year, month, 0, 23, 59, 59); // Last day of month
 
-    // Fetch commits from all enabled repos in parallel
+    // Fetch commits from repos in parallel
     const commitPromises = enabledRepos.map((repo) =>
       getRepoCommits(
         account.accessToken,
