@@ -16,7 +16,6 @@ const COLLECTIONS_TO_DELETE = [
   "leaverequests",
   "leavebalances",
   "leavesettings",
-  "holidays",
   "notifications",
   "auditlogs",
 ];
