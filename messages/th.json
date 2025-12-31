@@ -580,7 +580,8 @@
     "failedToReject": "ไม่สามารถปฏิเสธได้",
     "failedToSubmit": "ไม่สามารถส่งได้",
     "failedToCreate": "ไม่สามารถสร้างได้",
-    "insufficientBalance": "วันลา{leaveType}ไม่เพียงพอ คุณเหลือ {remaining} วัน แต่ขอลา {requested} วัน"
+    "insufficientBalance": "วันลา{leaveType}ไม่เพียงพอ คุณเหลือ {remaining} วัน แต่ขอลา {requested} วัน",
+    "oauthAccountAlreadyLinked": "บัญชี {provider} นี้เชื่อมต่อกับผู้ใช้อื่นอยู่แล้ว กรุณาใช้บัญชีอื่นหรือยกเลิกการเชื่อมต่อจากผู้ใช้นั้นก่อน"
   },
   "success": {
     "saved": "บันทึกสำเร็จ",

@@ -581,7 +581,8 @@
     "failedToReject": "Failed to reject",
     "failedToSubmit": "Failed to submit",
     "failedToCreate": "Failed to create",
-    "insufficientBalance": "Insufficient {leaveType} leave balance. You have {remaining} day(s) remaining but requested {requested} day(s)."
+    "insufficientBalance": "Insufficient {leaveType} leave balance. You have {remaining} day(s) remaining but requested {requested} day(s).",
+    "oauthAccountAlreadyLinked": "This {provider} account is already connected to another user. Please use a different account or disconnect it from the other user first."
   },
   "success": {
     "saved": "Saved successfully",

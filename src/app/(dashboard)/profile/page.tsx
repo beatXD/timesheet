@@ -63,6 +63,22 @@ export default function ProfilePage() {
   const [repoManagerOpen, setRepoManagerOpen] = useState(false);
   const [upgradingGitHub, setUpgradingGitHub] = useState(false);
 
+  // Check for OAuth error in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get("error");
+    const provider = urlParams.get("provider");
+    if (error === "OAuthAccountAlreadyLinked") {
+      const providerName = provider === "github" ? "GitHub" : provider === "google" ? "Google" : provider || "";
+      setTimeout(() => {
+        toast.error(t("errors.oauthAccountAlreadyLinked", { provider: providerName }), {
+          duration: 8000,
+        });
+      }, 100);
+      window.history.replaceState({}, "", "/profile");
+    }
+  }, [t]);
+
   useEffect(() => {
     fetchProfile();
     fetchGitHubStatus();

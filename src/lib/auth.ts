@@ -3,6 +3,8 @@ import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
 import Credentials from "next-auth/providers/credentials";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
+import { cookies } from "next/headers";
+import { decode } from "next-auth/jwt";
 import clientPromise from "./mongodb-client";
 import { connectDB } from "./db";
 import User from "@/models/User";
@@ -84,6 +86,45 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ account }) {
+      // For OAuth providers, check if account is already linked to another user
+      if (account && account.provider !== "credentials") {
+        const client = await clientPromise;
+        const db = client.db();
+
+        // Check if this OAuth account already exists
+        const existingAccount = await db.collection("accounts").findOne({
+          provider: account.provider,
+          providerAccountId: account.providerAccountId,
+        });
+
+        if (existingAccount) {
+          // Account exists - check if there's a logged-in user trying to link
+          const cookieStore = await cookies();
+          const sessionToken = cookieStore.get("authjs.session-token")?.value
+            || cookieStore.get("__Secure-authjs.session-token")?.value;
+
+          if (sessionToken) {
+            // User is logged in - this is an account linking attempt
+            try {
+              const decoded = await decode({
+                token: sessionToken,
+                secret: process.env.AUTH_SECRET!,
+                salt: "authjs.session-token",
+              });
+
+              if (decoded?.id && decoded.id !== existingAccount.userId.toString()) {
+                // This OAuth account is linked to a different user
+                return `/profile?error=OAuthAccountAlreadyLinked&provider=${account.provider}`;
+              }
+            } catch {
+              // Failed to decode token - allow flow to continue
+            }
+          }
+        }
+      }
+      return true;
+    },
     async jwt({ token, user, account }) {
       // Initial sign in
       if (user) {

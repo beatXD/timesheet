@@ -76,6 +76,8 @@ function LoginForm() {
           <div className="p-3 text-sm text-rose-600 bg-rose-50 dark:bg-rose-500/10 dark:text-rose-400 rounded-md border border-rose-200 dark:border-rose-500/20">
             {error === "CredentialsSignin"
               ? t("errors.invalidCredentials")
+              : error === "OAuthAccountAlreadyLinked"
+              ? t("errors.oauthAccountAlreadyLinked", { provider: "GitHub" })
               : t("errors.generic")}
           </div>
         )}
