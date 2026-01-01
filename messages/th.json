@@ -435,8 +435,6 @@
         "submit": "ส่ง",
         "approve": "อนุมัติ",
         "reject": "ปฏิเสธ",
-        "team_submit": "ส่งจากทีม",
-        "final_approve": "อนุมัติขั้นสุดท้าย",
         "auto_approve": "อนุมัติอัตโนมัติ"
       }
     },
@@ -510,9 +508,7 @@
       "submit": "ส่ง",
       "approve": "อนุมัติ",
       "reject": "ปฏิเสธ",
-      "cancel": "ยกเลิก",
-      "team_submit": "ส่งจากทีม",
-      "final_approve": "อนุมัติขั้นสุดท้าย"
+      "cancel": "ยกเลิก"
     },
     "by": "โดย",
     "reason": "เหตุผล"

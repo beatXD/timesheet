@@ -31,7 +31,7 @@ const TimesheetSchema = new Schema<ITimesheet>(
     year: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["draft", "submitted", "approved", "rejected", "team_submitted", "final_approved"] as TimesheetStatus[],
+      enum: ["draft", "submitted", "approved", "rejected"] as TimesheetStatus[],
       default: "draft",
     },
     entries: [TimesheetEntrySchema],
@@ -41,10 +41,6 @@ const TimesheetSchema = new Schema<ITimesheet>(
     approvedAt: { type: Date },
     approvedBy: { type: Schema.Types.ObjectId, ref: "User" },
     rejectedReason: { type: String },
-    teamSubmittedAt: { type: Date },
-    teamSubmittedBy: { type: Schema.Types.ObjectId, ref: "User" },
-    finalApprovedAt: { type: Date },
-    finalApprovedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   {
     timestamps: true,
@@ -57,7 +53,6 @@ TimesheetSchema.index({ userId: 1, month: 1, year: 1 }, { unique: true });
 
 // Performance indexes for common queries
 TimesheetSchema.index({ userId: 1, status: 1 }); // For filtering by user and status
-TimesheetSchema.index({ status: 1, teamSubmittedAt: -1 }); // For admin approval queue
 TimesheetSchema.index({ status: 1, submittedAt: -1 }); // For leader approval queue
 TimesheetSchema.index({ year: 1, month: 1 }); // For monthly reports
 

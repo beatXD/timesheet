@@ -16,8 +16,8 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only admin or leader can approve
-    if (session.user.role === "user") {
+    // Only leaders can approve (admin is view-only now)
+    if (session.user.role !== "leader") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -41,21 +41,19 @@ export async function POST(
       );
     }
 
-    // If leader, check if timesheet belongs to their team(s) or is their own
-    if (session.user.role === "leader") {
-      const isOwnTimesheet = timesheet.userId.toString() === session.user.id;
+    // Check if timesheet belongs to leader's team(s) or is their own
+    const isOwnTimesheet = timesheet.userId.toString() === session.user.id;
 
-      if (!isOwnTimesheet) {
-        const teams = await Team.find({ leaderId: session.user.id });
-        const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
-          t.memberIds.map((id) => id.toString())
+    if (!isOwnTimesheet) {
+      const teams = await Team.find({ leaderId: session.user.id });
+      const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
+        t.memberIds.map((id) => id.toString())
+      );
+      if (!allMemberIds.includes(timesheet.userId.toString())) {
+        return NextResponse.json(
+          { error: "Can only approve timesheets from your team" },
+          { status: 403 }
         );
-        if (!allMemberIds.includes(timesheet.userId.toString())) {
-          return NextResponse.json(
-            { error: "Can only approve timesheets from your team" },
-            { status: 403 }
-          );
-        }
       }
     }
 

@@ -72,8 +72,6 @@ const statusColors: Record<TimesheetStatus, string> = {
   submitted: "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300",
   approved: "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300",
   rejected: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300",
-  team_submitted: "bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-300",
-  final_approved: "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300",
 };
 
 const typeOptions: EntryType[] = ["working", "weekend", "holiday", "leave"];

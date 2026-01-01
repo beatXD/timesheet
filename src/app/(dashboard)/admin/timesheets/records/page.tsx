@@ -57,8 +57,6 @@ interface TimesheetRecord {
   totalAdditionalHours: number;
   submittedAt?: string;
   approvedAt?: string;
-  teamSubmittedAt?: string;
-  finalApprovedAt?: string;
   team?: { _id: string; name: string };
 }
 
@@ -67,8 +65,6 @@ const statusColors: Record<TimesheetStatus, string> = {
   submitted: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
   approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
   rejected: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
-  team_submitted: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
-  final_approved: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
 };
 
 export default function TimesheetRecordsPage() {
@@ -197,17 +193,17 @@ export default function TimesheetRecordsPage() {
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold text-green-600">
-              {stats.byStatus["final_approved"] || 0}
+              {stats.byStatus["approved"] || 0}
             </div>
-            <p className="text-xs text-muted-foreground">{t("timesheet.status.final_approved")}</p>
+            <p className="text-xs text-muted-foreground">{t("timesheet.status.approved")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-purple-600">
-              {stats.byStatus["team_submitted"] || 0}
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.byStatus["submitted"] || 0}
             </div>
-            <p className="text-xs text-muted-foreground">{t("timesheet.status.team_submitted")}</p>
+            <p className="text-xs text-muted-foreground">{t("timesheet.status.submitted")}</p>
           </CardContent>
         </Card>
         <Card>
@@ -268,8 +264,6 @@ export default function TimesheetRecordsPage() {
                   <SelectItem value="draft">{t("timesheet.status.draft")}</SelectItem>
                   <SelectItem value="submitted">{t("timesheet.status.submitted")}</SelectItem>
                   <SelectItem value="approved">{t("timesheet.status.approved")}</SelectItem>
-                  <SelectItem value="team_submitted">{t("timesheet.status.team_submitted")}</SelectItem>
-                  <SelectItem value="final_approved">{t("timesheet.status.final_approved")}</SelectItem>
                   <SelectItem value="rejected">{t("timesheet.status.rejected")}</SelectItem>
                 </SelectContent>
               </Select>

@@ -142,16 +142,6 @@ const statusConfig: Record<
     bgColor: "bg-rose-100 dark:bg-rose-900/30",
     icon: <AlertCircle className="w-4 h-4" />,
   },
-  team_submitted: {
-    color: "text-purple-600 dark:text-purple-400",
-    bgColor: "bg-purple-100 dark:bg-purple-900/30",
-    icon: <Send className="w-4 h-4" />,
-  },
-  final_approved: {
-    color: "text-green-600 dark:text-green-400",
-    bgColor: "bg-green-100 dark:bg-green-900/30",
-    icon: <CheckCircle2 className="w-4 h-4" />,
-  },
 };
 
 export default function DashboardPage() {

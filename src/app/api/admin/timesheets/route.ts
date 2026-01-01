@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, Team, User } from "@/models";
+import { Timesheet, Team } from "@/models";
 
-// GET /api/admin/timesheets - Get team_submitted timesheets grouped by team
+// GET /api/admin/timesheets - Get all timesheets grouped by team (view-only for admin)
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const month = searchParams.get("month");
     const year = searchParams.get("year");
     const teamId = searchParams.get("teamId");
-    const status = searchParams.get("status") || "team_submitted";
+    const status = searchParams.get("status") || "all";
 
     // Build query
     const query: Record<string, unknown> = {};
@@ -77,7 +77,6 @@ export async function GET(request: NextRequest) {
             count: timesheets.length,
             totalBaseHours,
             totalAdditionalHours,
-            submittedAt: timesheets[0]?.teamSubmittedAt,
           },
         };
       })

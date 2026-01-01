@@ -89,8 +89,6 @@ const statusColors: Record<TimesheetStatus, string> = {
   submitted: "bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300",
   approved: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300",
   rejected: "bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-300",
-  team_submitted: "bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300",
-  final_approved: "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300",
 };
 
 export default function TeamPage() {
@@ -292,7 +290,7 @@ export default function TeamPage() {
     // Find members who have submitted/approved timesheets
     const submittedUserIds = new Set(
       timesheets
-        .filter((ts) => ["submitted", "approved", "team_submitted", "final_approved"].includes(ts.status))
+        .filter((ts) => ["submitted", "approved"].includes(ts.status))
         .map((ts) => ts.userId._id)
     );
 

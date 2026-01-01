@@ -72,8 +72,6 @@ export async function GET(request: NextRequest) {
         submitted: timesheets.filter(t => t.status === "submitted").length,
         approved: timesheets.filter(t => t.status === "approved").length,
         rejected: timesheets.filter(t => t.status === "rejected").length,
-        team_submitted: timesheets.filter(t => t.status === "team_submitted").length,
-        final_approved: timesheets.filter(t => t.status === "final_approved").length,
       },
       totalBaseHours: timesheets.reduce((sum, t) => sum + (t.totalBaseHours || 0), 0),
       totalAdditionalHours: timesheets.reduce((sum, t) => sum + (t.totalAdditionalHours || 0), 0),
