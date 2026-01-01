@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export type AuditEntityType = "timesheet" | "leave_request";
-export type AuditAction = "create" | "submit" | "approve" | "reject" | "cancel" | "team_submit" | "final_approve" | "auto_approve";
+export type AuditAction = "create" | "submit" | "approve" | "reject" | "cancel" | "auto_approve";
 
 export interface IAuditLog extends Document {
   entityType: AuditEntityType;
@@ -29,7 +29,7 @@ const AuditLogSchema = new Schema<IAuditLog>(
     action: {
       type: String,
       required: true,
-      enum: ["create", "submit", "approve", "reject", "cancel", "team_submit", "final_approve", "auto_approve"],
+      enum: ["create", "submit", "approve", "reject", "cancel", "auto_approve"],
     },
     fromStatus: {
       type: String,

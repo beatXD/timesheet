@@ -237,7 +237,7 @@ export async function DELETE(request: NextRequest) {
     // Check for pending/submitted timesheets from team members
     const pendingTimesheets = await Timesheet.countDocuments({
       userId: { $in: allMemberIds },
-      status: { $in: ["submitted", "approved", "team_submitted"] },
+      status: { $in: ["submitted", "approved"] },
     });
 
     if (pendingTimesheets > 0) {

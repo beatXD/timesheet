@@ -59,15 +59,11 @@ export async function GET(request: NextRequest) {
             (ts) => ts.status === "submitted"
           ).length;
           const approved = timesheets.filter((ts) =>
-            ["approved", "team_submitted", "final_approved"].includes(ts.status)
+            ts.status === "approved"
           ).length;
           const draft = timesheets.filter((ts) => ts.status === "draft").length;
           const totalBaseHours = timesheets
-            .filter((ts) =>
-              ["approved", "team_submitted", "final_approved"].includes(
-                ts.status
-              )
-            )
+            .filter((ts) => ts.status === "approved")
             .reduce((sum, ts) => sum + (ts.totalBaseHours || 0), 0);
 
           return {

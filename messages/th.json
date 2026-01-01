@@ -239,9 +239,7 @@
       "pending": "รอดำเนินการ",
       "submitted": "ส่งแล้ว",
       "approved": "อนุมัติแล้ว",
-      "rejected": "ถูกปฏิเสธ",
-      "team_submitted": "ทีมส่งแล้ว",
-      "final_approved": "อนุมัติสุดท้าย"
+      "rejected": "ถูกปฏิเสธ"
     },
     "currentMonth": "เดือนปัจจุบัน",
     "notCreated": "ยังไม่ได้สร้าง",

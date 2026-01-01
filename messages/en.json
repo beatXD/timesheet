@@ -245,9 +245,7 @@
       "pending": "Pending",
       "submitted": "Submitted",
       "approved": "Approved",
-      "rejected": "Rejected",
-      "team_submitted": "Team Submitted",
-      "final_approved": "Final Approved"
+      "rejected": "Rejected"
     },
     "currentMonth": "Current Month",
     "notCreated": "Not created yet",

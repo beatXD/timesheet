@@ -372,8 +372,8 @@ async function addLeaveToTimesheet(params: {
       { upsert: true, new: true }
     );
 
-    // Skip if timesheet already submitted/approved
-    if (["approved", "final_approved", "team_submitted"].includes(timesheet.status)) {
+    // Skip if timesheet already approved
+    if (timesheet.status === "approved") {
       currentDate.setDate(currentDate.getDate() + 1);
       continue;
     }

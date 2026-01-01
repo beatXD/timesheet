@@ -77,8 +77,7 @@ const actionColors: Record<string, string> = {
   submit: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
   approve: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
   reject: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
-  team_submit: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300",
-  final_approve: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  auto_approve: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
 };
 
 export default function AuditLogsPage() {
@@ -145,8 +144,6 @@ export default function AuditLogsPage() {
       submitted: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
       approved: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
       rejected: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
-      team_submitted: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300",
-      final_approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
       pending: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
     };
     return (
@@ -189,8 +186,7 @@ export default function AuditLogsPage() {
                 <SelectItem value="submit">{t("admin.auditLogs.actions.submit")}</SelectItem>
                 <SelectItem value="approve">{t("admin.auditLogs.actions.approve")}</SelectItem>
                 <SelectItem value="reject">{t("admin.auditLogs.actions.reject")}</SelectItem>
-                <SelectItem value="team_submit">{t("admin.auditLogs.actions.team_submit")}</SelectItem>
-                <SelectItem value="final_approve">{t("admin.auditLogs.actions.final_approve")}</SelectItem>
+                <SelectItem value="auto_approve">{t("admin.auditLogs.actions.auto_approve")}</SelectItem>
               </SelectContent>
             </Select>
 

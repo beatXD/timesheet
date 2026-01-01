@@ -61,8 +61,6 @@ interface SummaryReport {
       submitted: number;
       approved: number;
       rejected: number;
-      team_submitted: number;
-      final_approved: number;
     };
     totalBaseHours: number;
     totalAdditionalHours: number;
@@ -308,14 +306,6 @@ export default function ReportsPage() {
                     <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-500/10 rounded-lg">
                       <span className="text-sm text-muted-foreground">{t("timesheet.status.approved")}</span>
                       <Badge className="bg-green-100 text-green-700">{summaryData?.timesheets.byStatus.approved || 0}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
-                      <span className="text-sm text-muted-foreground">{t("timesheet.status.team_submitted")}</span>
-                      <Badge className="bg-indigo-100 text-indigo-700">{summaryData?.timesheets.byStatus.team_submitted || 0}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
-                      <span className="text-sm text-muted-foreground">{t("timesheet.status.final_approved")}</span>
-                      <Badge className="bg-emerald-100 text-emerald-700">{summaryData?.timesheets.byStatus.final_approved || 0}</Badge>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-500/10 rounded-lg">
                       <span className="text-sm text-muted-foreground">{t("timesheet.status.rejected")}</span>

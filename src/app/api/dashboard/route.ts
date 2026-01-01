@@ -35,9 +35,9 @@ function isPopulatedLeader(obj: unknown): obj is PopulatedLeader {
 }
 
 // All statuses that count as "submitted" for team summary
-const SUBMITTED_STATUSES = ["submitted", "approved", "team_submitted", "final_approved"];
+const SUBMITTED_STATUSES = ["submitted", "approved"];
 // Statuses that are pending approval
-const PENDING_STATUSES = ["submitted", "team_submitted"];
+const PENDING_STATUSES = ["submitted"];
 
 export async function GET(request: NextRequest) {
   try {
@@ -314,9 +314,8 @@ export async function GET(request: NextRequest) {
     const rejectedCount = allTimesheets.filter((ts: TimesheetDoc) => ts.status === "rejected").length;
 
     // Get approved timesheets for hours calculation
-    // FIX #6: Also include final_approved for accurate hour totals
     const approvedTimesheets = allTimesheets.filter(
-      (ts: TimesheetDoc) => ts.status === "approved" || ts.status === "final_approved"
+      (ts: TimesheetDoc) => ts.status === "approved"
     );
 
     const totalBaseHours = approvedTimesheets.reduce(
@@ -368,7 +367,7 @@ export async function GET(request: NextRequest) {
     const monthlyHours: { month: number; hours: number; manDays: number }[] = [];
     for (let m = 1; m <= 12; m++) {
       const monthTimesheets = yearlyTimesheets.filter(
-        (ts: YearlyTimesheetDoc) => ts.month === m && (ts.status === "approved" || ts.status === "final_approved")
+        (ts: YearlyTimesheetDoc) => ts.month === m && ts.status === "approved"
       );
       const hours = monthTimesheets.reduce(
         (sum: number, ts: YearlyTimesheetDoc) => sum + (ts.totalBaseHours || 0),
@@ -385,7 +384,7 @@ export async function GET(request: NextRequest) {
     const monthlyLeave: { month: number; sick: number; personal: number; annual: number }[] = [];
     for (let m = 1; m <= 12; m++) {
       const monthTimesheets = yearlyTimesheets.filter(
-        (ts: YearlyTimesheetDoc) => ts.month === m && (ts.status === "approved" || ts.status === "final_approved")
+        (ts: YearlyTimesheetDoc) => ts.month === m && ts.status === "approved"
       );
       const leave = { month: m, sick: 0, personal: 0, annual: 0 };
       monthTimesheets.forEach((ts: YearlyTimesheetDoc) => {

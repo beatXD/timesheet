@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
             timesheetCompletion.missing++;
           } else if (ts.status === "draft") {
             timesheetCompletion.pending++;
-          } else if (["submitted", "approved", "team_submitted", "final_approved"].includes(ts.status)) {
+          } else if (["submitted", "approved"].includes(ts.status)) {
             if (ts.status === "submitted") {
               timesheetCompletion.submitted++;
             } else {

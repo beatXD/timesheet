@@ -381,14 +381,10 @@ async function addLeaveToTimesheet(leaveRequest: {
       { upsert: true, new: true }
     );
 
-    // Check if timesheet is already submitted/approved - skip adding leave entry
-    if (
-      ["approved", "final_approved", "team_submitted"].includes(
-        timesheet.status
-      )
-    ) {
+    // Check if timesheet is already approved - skip adding leave entry
+    if (timesheet.status === "approved") {
       console.warn(
-        `Timesheet ${timesheet._id} already submitted/approved, skipping auto-add leave for day ${day}`
+        `Timesheet ${timesheet._id} already approved, skipping auto-add leave for day ${day}`
       );
       currentDate.setDate(currentDate.getDate() + 1);
       continue;
