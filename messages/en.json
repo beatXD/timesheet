@@ -842,5 +842,116 @@
     "summarizeWithAi": "Summarize with AI",
     "aiSummarizeFailed": "Failed to summarize commits with AI",
     "aiRateLimitExceeded": "AI rate limit exceeded. Please wait {seconds} seconds and try again."
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "login": "Login",
+      "getStarted": "Get Started"
+    },
+    "hero": {
+      "badge": "Simple & Powerful Time Tracking",
+      "title": "Track Your Time",
+      "titleHighlight": "Like Never Before",
+      "subtitle": "The complete timesheet solution for freelancers and teams. Track hours, manage leave, and get approvals - all in one place.",
+      "cta": "Start Free Trial",
+      "learnMore": "Learn More",
+      "stats": {
+        "users": "Active Users",
+        "companies": "Companies",
+        "uptime": "Uptime",
+        "support": "Support"
+      }
+    },
+    "features": {
+      "title": "Everything You Need",
+      "subtitle": "Powerful features to help you manage time tracking and team productivity.",
+      "items": {
+        "timeTracking": {
+          "title": "Time Tracking",
+          "description": "Log daily work hours with detailed task descriptions. Track regular and overtime hours separately."
+        },
+        "teamManagement": {
+          "title": "Team Management",
+          "description": "Organize your workforce into teams with leaders and members. Perfect for project-based work."
+        },
+        "approvalWorkflow": {
+          "title": "Approval Workflow",
+          "description": "Multi-level approval process: Team Leader reviews, Admin gives final approval."
+        },
+        "leaveManagement": {
+          "title": "Leave Management",
+          "description": "Track sick leave, personal leave, and annual leave. Automated balance calculations."
+        },
+        "exportReports": {
+          "title": "Export Reports",
+          "description": "Generate professional reports in PDF and Excel formats. Perfect for payroll and billing."
+        },
+        "thaiHolidays": {
+          "title": "Thai Holiday Support",
+          "description": "Pre-loaded Thai public holidays including Buddhist holidays. Auto-applied to timesheets."
+        }
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "subtitle": "Get started in minutes with our simple 3-step process.",
+      "steps": {
+        "signup": {
+          "title": "Sign Up",
+          "description": "Create your account in seconds. No credit card required for the free trial."
+        },
+        "track": {
+          "title": "Track Time",
+          "description": "Log your daily hours, tasks, and activities. Works on any device."
+        },
+        "approve": {
+          "title": "Get Approved",
+          "description": "Submit timesheets for review. Leaders and admins can approve with one click."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Simple, Transparent Pricing",
+      "subtitle": "Choose the plan that fits your needs. All plans include a 14-day free trial.",
+      "popular": "Most Popular",
+      "tiers": {
+        "starter": {
+          "name": "Starter",
+          "description": "Perfect for freelancers",
+          "period": "/month",
+          "features": ["1 User", "Personal time tracking", "Thai holidays included", "PDF & Excel export", "Email support"],
+          "cta": "Start Free Trial"
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "For small teams",
+          "period": "/month",
+          "features": ["Up to 5 users", "1 Team", "Approval workflow", "Leave management", "Priority support"],
+          "cta": "Start Free Trial"
+        },
+        "enterprise": {
+          "name": "Enterprise",
+          "description": "For large organizations",
+          "period": "/user/month",
+          "features": ["Unlimited users", "Unlimited teams", "SSO integration", "API access", "Dedicated support"],
+          "cta": "Contact Sales"
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to Simplify Time Tracking?",
+      "subtitle": "Join thousands of professionals who trust Timesheet to manage their work hours.",
+      "button": "Get Started for Free"
+    },
+    "footer": {
+      "description": "The complete timesheet solution for modern teams and freelancers.",
+      "product": "Product",
+      "legal": "Legal",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "copyright": "© {year} Timesheet. All rights reserved."
+    }
   }
 }
