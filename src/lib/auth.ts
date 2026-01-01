@@ -65,34 +65,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("กรุณากรอก Email และ Password");
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
+          await connectDB();
+
+          const user = await User.findOne({ email: credentials.email });
+
+          if (!user || !user.password) {
+            return null;
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          );
+
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            image: user.image,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Authorize error:", error);
+          return null;
         }
-
-        await connectDB();
-
-        const user = await User.findOne({ email: credentials.email });
-
-        if (!user || !user.password) {
-          throw new Error("ไม่พบบัญชีผู้ใช้นี้ หรือบัญชีนี้ใช้ OAuth เท่านั้น");
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          throw new Error("รหัสผ่านไม่ถูกต้อง");
-        }
-
-        return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          image: user.image,
-          role: user.role,
-        };
       },
     }),
   ],

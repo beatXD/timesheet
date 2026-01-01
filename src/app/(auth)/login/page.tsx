@@ -43,24 +43,29 @@ function LoginForm() {
         email,
         password,
         redirect: false,
+        callbackUrl,
       });
 
-      console.log("SignIn result:", result);
+      console.log("SignIn result:", JSON.stringify(result, null, 2));
 
-      if (result?.error) {
+      // NextAuth v5 may return undefined on error with redirect: false
+      if (!result) {
+        toast.error(t("errors.invalidCredentials"));
+        return;
+      }
+
+      if (result.error) {
         // Handle different error formats
         const errorMessage = result.error === "CredentialsSignin"
           ? t("errors.invalidCredentials")
           : result.error;
         toast.error(errorMessage);
-      } else if (result?.ok) {
+      } else if (result.ok) {
         router.push(callbackUrl);
         router.refresh();
-      } else {
-        // No error but also not ok - might be a silent failure
-        toast.error(t("errors.invalidCredentials"));
       }
-    } catch {
+    } catch (err) {
+      console.error("SignIn error:", err);
       toast.error(t("errors.generic"));
     } finally {
       setLoading(false);
