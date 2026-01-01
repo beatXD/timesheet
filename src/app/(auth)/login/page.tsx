@@ -45,11 +45,20 @@ function LoginForm() {
         redirect: false,
       });
 
+      console.log("SignIn result:", result);
+
       if (result?.error) {
-        toast.error(result.error);
-      } else {
+        // Handle different error formats
+        const errorMessage = result.error === "CredentialsSignin"
+          ? t("errors.invalidCredentials")
+          : result.error;
+        toast.error(errorMessage);
+      } else if (result?.ok) {
         router.push(callbackUrl);
         router.refresh();
+      } else {
+        // No error but also not ok - might be a silent failure
+        toast.error(t("errors.invalidCredentials"));
       }
     } catch {
       toast.error(t("errors.generic"));
