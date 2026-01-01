@@ -219,6 +219,9 @@
     "noEntries": "ไม่มีข้อมูลสำหรับเดือนนี้",
     "noTimesheetsMatch": "ไม่มีไทม์ชีทที่ตรงกับตัวกรอง",
     "noTimesheetsYet": "ยังไม่มีไทม์ชีท สร้างไทม์ชีทแรกของคุณเพื่อเริ่มต้น",
+    "created": "สร้างไทม์ชีทสำเร็จ",
+    "createError": "ไม่สามารถสร้างไทม์ชีทได้",
+    "fetchError": "ไม่สามารถดึงข้อมูลไทม์ชีทได้",
     "notFound": "ไม่พบไทม์ชีท",
     "confirmSubmit": "คุณแน่ใจหรือไม่ที่จะส่งไทม์ชีทนี้เพื่อขออนุมัติ?",
     "confirmSubmitDesc": "คุณจะไม่สามารถแก้ไขได้หลังจากส่งแล้ว",
@@ -237,6 +240,7 @@
     "currentMonth": "เดือนปัจจุบัน",
     "notCreated": "ยังไม่ได้สร้าง",
     "totalHoursYear": "ชั่วโมงรวมปีนี้",
+    "totalThisYear": "รวมปีนี้",
     "completedThisYear": "เสร็จสมบูรณ์",
     "approvedOrHigher": "อนุมัติแล้วหรือสูงกว่า",
     "pendingAction": "ต้องดำเนินการ",
@@ -780,6 +784,12 @@
     "saved": "บันทึกเทมเพลตสำเร็จ",
     "applied": "ใช้เทมเพลตสำเร็จ",
     "nameRequired": "กรุณาระบุชื่อเทมเพลต"
+  },
+  "mode": {
+    "team": "ทีม",
+    "personal": "ส่วนตัว",
+    "personalTimesheet": "ไทม์ชีทส่วนตัว",
+    "personalDescription": "จัดการไทม์ชีทส่วนตัวของคุณ"
   },
   "github": {
     "integration": "GitHub Integration",

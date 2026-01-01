@@ -59,6 +59,12 @@
     "themeDark": "Dark",
     "themeSystem": "System"
   },
+  "mode": {
+    "team": "Team",
+    "personal": "Personal",
+    "personalTimesheet": "Personal Timesheet",
+    "personalDescription": "Manage your personal timesheets"
+  },
   "auth": {
     "login": "Login",
     "logout": "Logout",
@@ -219,6 +225,9 @@
     "noEntries": "No entries for this month",
     "noTimesheetsMatch": "No timesheets match the current filters.",
     "noTimesheetsYet": "No timesheets yet. Create your first timesheet to get started.",
+    "created": "Timesheet created",
+    "createError": "Failed to create timesheet",
+    "fetchError": "Failed to fetch timesheets",
     "notFound": "Timesheet not found",
     "confirmSubmit": "Are you sure you want to submit this timesheet for approval?",
     "confirmSubmitDesc": "You won't be able to edit it after submission.",
@@ -237,6 +246,7 @@
     "currentMonth": "Current Month",
     "notCreated": "Not created yet",
     "totalHoursYear": "Total Hours This Year",
+    "totalThisYear": "Total This Year",
     "completedThisYear": "Completed",
     "approvedOrHigher": "Approved or higher status",
     "pendingAction": "Needs Attention",

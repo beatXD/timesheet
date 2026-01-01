@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+export { useModeStore, type AppMode } from "./useModeStore";
+
 interface SidebarState {
   isOpen: boolean;
   toggle: () => void;

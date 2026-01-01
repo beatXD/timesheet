@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { useSidebarStore } from "@/store";
+import { useSidebarStore, useModeStore } from "@/store";
 import type { UserRole } from "@/types";
+import { ModeToggle } from "@/components/ModeToggle";
 import {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   LayoutDashboard, // TODO: Re-enable when dashboard is ready
@@ -183,15 +184,30 @@ interface SidebarProps {
 export function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname();
   const { isOpen, toggle } = useSidebarStore();
+  const { mode } = useModeStore();
   const t = useTranslations();
 
   const filteredSections = navSections
-    .filter((section) => !section.roles || section.roles.includes(userRole))
+    .filter((section) => {
+      // Role-based filtering
+      if (section.roles && !section.roles.includes(userRole)) return false;
+      // Mode-based filtering: hide admin/team sections in personal mode
+      if (mode === "personal") {
+        if (section.titleKey === "nav.sections.teamManagement") return false;
+        if (section.titleKey === "nav.sections.settings") return false;
+        if (section.titleKey === "nav.sections.overview") return false;
+      }
+      return true;
+    })
     .map((section) => ({
       ...section,
-      items: section.items.filter(
-        (item) => !item.roles || item.roles.includes(userRole)
-      ),
+      items: section.items.filter((item) => {
+        // Role-based filtering
+        if (item.roles && !item.roles.includes(userRole)) return false;
+        // Mode-based filtering: hide leave requests in personal mode
+        if (mode === "personal" && item.href === "/leave-requests") return false;
+        return true;
+      }),
     }))
     .filter((section) => section.items.length > 0);
 
@@ -224,6 +240,10 @@ export function Sidebar({ userRole }: SidebarProps) {
             )}
           />
         </Button>
+      </div>
+
+      <div className="border-b border-sidebar-border">
+        <ModeToggle isExpanded={isOpen} />
       </div>
 
       <nav className="p-1.5 space-y-3">

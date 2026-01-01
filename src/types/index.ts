@@ -116,6 +116,19 @@ export interface ITimesheet {
   updatedAt: Date;
 }
 
+// Personal Timesheet (no approval workflow)
+export interface IPersonalTimesheet {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  month: number; // 1-12
+  year: number;
+  entries: ITimesheetEntry[];
+  totalBaseHours: number;
+  totalAdditionalHours: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Holiday
 export interface IHoliday {
   _id: Types.ObjectId;

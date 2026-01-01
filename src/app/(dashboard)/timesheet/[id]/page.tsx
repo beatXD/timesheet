@@ -49,7 +49,8 @@ import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { CommitImportDialog } from "@/components/github";
-import type { ITimesheet, ITimesheetEntry, EntryType, TimesheetStatus, LeaveType, IGitHubStatus } from "@/types";
+import { useModeStore } from "@/store";
+import type { ITimesheet, IPersonalTimesheet, ITimesheetEntry, EntryType, TimesheetStatus, LeaveType, IGitHubStatus } from "@/types";
 
 interface Template {
   _id: string;
@@ -90,8 +91,10 @@ export default function TimesheetDetailPage() {
   const router = useRouter();
   const t = useTranslations();
   const locale = useLocale();
+  const { mode } = useModeStore();
+  const isPersonalMode = mode === "personal";
   const dateLocale = locale === "th" ? th : enUS;
-  const [timesheet, setTimesheet] = useState<ITimesheet | null>(null);
+  const [timesheet, setTimesheet] = useState<ITimesheet | IPersonalTimesheet | null>(null);
   const [entries, setEntries] = useState<ITimesheetEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -111,12 +114,16 @@ export default function TimesheetDetailPage() {
   const [githubStatus, setGithubStatus] = useState<IGitHubStatus | null>(null);
   const [showCommitImportDialog, setShowCommitImportDialog] = useState(false);
 
-  const isEditable =
-    timesheet?.status === "draft" || timesheet?.status === "rejected";
+  // Personal mode: always editable. Team mode: only draft or rejected
+  const isEditable = isPersonalMode ||
+    (timesheet && "status" in timesheet && (timesheet.status === "draft" || timesheet.status === "rejected"));
 
   const fetchTimesheet = useCallback(async () => {
     try {
-      const res = await fetch(`/api/timesheets/${params.id}`);
+      const endpoint = isPersonalMode
+        ? `/api/personal-timesheets/${params.id}`
+        : `/api/timesheets/${params.id}`;
+      const res = await fetch(endpoint);
       const data = await res.json();
       if (data.data) {
         setTimesheet(data.data);
@@ -127,7 +134,7 @@ export default function TimesheetDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [params.id, t]);
+  }, [params.id, t, isPersonalMode]);
 
   useEffect(() => {
     fetchTimesheet();
@@ -195,7 +202,10 @@ export default function TimesheetDetailPage() {
   const saveTimesheet = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`/api/timesheets/${params.id}`, {
+      const endpoint = isPersonalMode
+        ? `/api/personal-timesheets/${params.id}`
+        : `/api/timesheets/${params.id}`;
+      const res = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entries }),
@@ -392,17 +402,19 @@ export default function TimesheetDetailPage() {
                 locale: dateLocale,
               })}
             </h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge className={statusColors[timesheet.status]}>
-                {t(`timesheet.status.${timesheet.status}`)}
-              </Badge>
-              {timesheet.status === "rejected" && timesheet.rejectedReason && (
-                <span className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {timesheet.rejectedReason}
-                </span>
-              )}
-            </div>
+            {!isPersonalMode && "status" in timesheet && (
+              <div className="flex items-center gap-2 mt-1">
+                <Badge className={statusColors[timesheet.status]}>
+                  {t(`timesheet.status.${timesheet.status}`)}
+                </Badge>
+                {timesheet.status === "rejected" && timesheet.rejectedReason && (
+                  <span className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {timesheet.rejectedReason}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -470,10 +482,12 @@ export default function TimesheetDetailPage() {
                 <Save className="w-4 h-4 mr-2" />
                 {saving ? t("common.saving") : t("common.save")}
               </Button>
-              <Button onClick={() => setShowSubmitDialog(true)}>
-                <Send className="w-4 h-4 mr-2" />
-                {t("timesheet.submit")}
-              </Button>
+              {!isPersonalMode && (
+                <Button onClick={() => setShowSubmitDialog(true)}>
+                  <Send className="w-4 h-4 mr-2" />
+                  {t("timesheet.submit")}
+                </Button>
+              )}
             </>
           )}
         </div>

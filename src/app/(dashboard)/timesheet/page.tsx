@@ -42,7 +42,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Plus, FileEdit, Eye, Filter, X, Clock, CalendarCheck, FileText, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import type { ITimesheet, TimesheetStatus } from "@/types";
+import { useModeStore } from "@/store";
+import type { ITimesheet, IPersonalTimesheet, TimesheetStatus } from "@/types";
 
 const statusColors: Record<TimesheetStatus, string> = {
   draft: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",
@@ -57,8 +58,10 @@ export default function TimesheetListPage() {
   const router = useRouter();
   const t = useTranslations();
   const locale = useLocale();
+  const { mode } = useModeStore();
+  const isPersonalMode = mode === "personal";
   const dateLocale = locale === "th" ? th : enUS;
-  const [timesheets, setTimesheets] = useState<ITimesheet[]>([]);
+  const [timesheets, setTimesheets] = useState<(ITimesheet | IPersonalTimesheet)[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(
@@ -79,16 +82,20 @@ export default function TimesheetListPage() {
 
   useEffect(() => {
     fetchTimesheets();
-  }, []);
+  }, [mode]);
 
   // Filtered timesheets
   const filteredTimesheets = useMemo(() => {
     return timesheets.filter((ts) => {
-      if (filterStatus !== "all" && ts.status !== filterStatus) return false;
+      // Status filter only applies to team mode
+      if (!isPersonalMode && filterStatus !== "all") {
+        const teamTs = ts as ITimesheet;
+        if (teamTs.status !== filterStatus) return false;
+      }
       if (filterYear !== "all" && ts.year !== parseInt(filterYear)) return false;
       return true;
     });
-  }, [timesheets, filterStatus, filterYear]);
+  }, [timesheets, filterStatus, filterYear, isPersonalMode]);
 
   // Summary stats
   const stats = useMemo(() => {
@@ -114,14 +121,16 @@ export default function TimesheetListPage() {
       0
     );
 
-    // Count by status
-    const statusCounts = timesheets.reduce(
-      (acc, ts) => {
-        acc[ts.status] = (acc[ts.status] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
+    // Count by status (only for team mode)
+    const statusCounts = isPersonalMode
+      ? {}
+      : (timesheets as ITimesheet[]).reduce(
+          (acc, ts) => {
+            acc[ts.status] = (acc[ts.status] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>
+        );
 
     return {
       currentMonthTs,
@@ -130,7 +139,7 @@ export default function TimesheetListPage() {
       statusCounts,
       thisYearCount: thisYearTimesheets.length,
     };
-  }, [timesheets]);
+  }, [timesheets, isPersonalMode]);
 
   const clearFilters = () => {
     setFilterStatus("all");
@@ -140,14 +149,16 @@ export default function TimesheetListPage() {
   const hasActiveFilters = filterStatus !== "all" || filterYear !== "all";
 
   const fetchTimesheets = async () => {
+    setLoading(true);
     try {
-      const res = await fetch("/api/timesheets");
+      const endpoint = isPersonalMode ? "/api/personal-timesheets" : "/api/timesheets";
+      const res = await fetch(endpoint);
       const data = await res.json();
       if (data.data) {
         setTimesheets(data.data);
       }
     } catch (error) {
-      toast.error("Failed to fetch timesheets");
+      toast.error(t("timesheet.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -156,7 +167,8 @@ export default function TimesheetListPage() {
   const createTimesheet = async () => {
     setCreating(true);
     try {
-      const res = await fetch("/api/timesheets", {
+      const endpoint = isPersonalMode ? "/api/personal-timesheets" : "/api/timesheets";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -168,15 +180,15 @@ export default function TimesheetListPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || "Failed to create timesheet");
+        toast.error(data.error || t("timesheet.createError"));
         return;
       }
 
-      toast.success("Timesheet created");
+      toast.success(t("timesheet.created"));
       setIsDialogOpen(false);
       router.push(`/timesheet/${data.data._id}`);
     } catch (error) {
-      toast.error("Failed to create timesheet");
+      toast.error(t("timesheet.createError"));
     } finally {
       setCreating(false);
     }
@@ -198,8 +210,12 @@ export default function TimesheetListPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{t("timesheet.title")}</h1>
-          <p className="text-muted-foreground">{t("timesheet.description")}</p>
+          <h1 className="text-2xl font-bold">
+            {isPersonalMode ? t("mode.personalTimesheet") : t("timesheet.title")}
+          </h1>
+          <p className="text-muted-foreground">
+            {isPersonalMode ? t("mode.personalDescription") : t("timesheet.description")}
+          </p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -264,23 +280,25 @@ export default function TimesheetListPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-3 md:grid-cols-4">
-        {/* Current Month Status */}
-        <Card className="p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarCheck className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{t("timesheet.currentMonth")}</span>
+      <div className={`grid gap-3 ${isPersonalMode ? "md:grid-cols-2" : "md:grid-cols-4"}`}>
+        {/* Current Month Status - Team mode only */}
+        {!isPersonalMode && (
+          <Card className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CalendarCheck className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">{t("timesheet.currentMonth")}</span>
+              </div>
+              {stats.currentMonthTs ? (
+                <Badge className={statusColors[(stats.currentMonthTs as ITimesheet).status]}>
+                  {t(`timesheet.status.${(stats.currentMonthTs as ITimesheet).status}`)}
+                </Badge>
+              ) : (
+                <span className="text-xs text-amber-500">{t("timesheet.notCreated")}</span>
+              )}
             </div>
-            {stats.currentMonthTs ? (
-              <Badge className={statusColors[stats.currentMonthTs.status]}>
-                {t(`timesheet.status.${stats.currentMonthTs.status}`)}
-              </Badge>
-            ) : (
-              <span className="text-xs text-amber-500">{t("timesheet.notCreated")}</span>
-            )}
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* Total Hours This Year */}
         <Card className="p-3">
@@ -293,45 +311,51 @@ export default function TimesheetListPage() {
           </div>
         </Card>
 
-        {/* Completed Timesheets */}
+        {/* Timesheets Count */}
         <Card className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{t("timesheet.completedThisYear")}</span>
+              <span className="text-xs text-muted-foreground">
+                {isPersonalMode ? t("timesheet.totalThisYear") : t("timesheet.completedThisYear")}
+              </span>
             </div>
             <span className="font-semibold text-green-600">
-              {(stats.statusCounts["approved"] || 0) +
-               (stats.statusCounts["team_submitted"] || 0) +
-               (stats.statusCounts["final_approved"] || 0)}/{stats.thisYearCount}
+              {isPersonalMode
+                ? stats.thisYearCount
+                : `${(stats.statusCounts["approved"] || 0) +
+                   (stats.statusCounts["team_submitted"] || 0) +
+                   (stats.statusCounts["final_approved"] || 0)}/${stats.thisYearCount}`}
             </span>
           </div>
         </Card>
 
-        {/* Pending Action */}
-        <Card className="p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{t("timesheet.pendingAction")}</span>
+        {/* Pending Action - Team mode only */}
+        {!isPersonalMode && (
+          <Card className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">{t("timesheet.pendingAction")}</span>
+              </div>
+              <div className="flex gap-1">
+                {(stats.statusCounts["draft"] || 0) > 0 && (
+                  <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                    {stats.statusCounts["draft"]} {t("timesheet.status.draft")}
+                  </Badge>
+                )}
+                {(stats.statusCounts["rejected"] || 0) > 0 && (
+                  <Badge variant="destructive" className="text-xs px-1.5 py-0">
+                    {stats.statusCounts["rejected"]} {t("timesheet.status.rejected")}
+                  </Badge>
+                )}
+                {(stats.statusCounts["draft"] || 0) === 0 && (stats.statusCounts["rejected"] || 0) === 0 && (
+                  <span className="text-xs text-green-600">{t("timesheet.allClear")}</span>
+                )}
+              </div>
             </div>
-            <div className="flex gap-1">
-              {(stats.statusCounts["draft"] || 0) > 0 && (
-                <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                  {stats.statusCounts["draft"]} {t("timesheet.status.draft")}
-                </Badge>
-              )}
-              {(stats.statusCounts["rejected"] || 0) > 0 && (
-                <Badge variant="destructive" className="text-xs px-1.5 py-0">
-                  {stats.statusCounts["rejected"]} {t("timesheet.status.rejected")}
-                </Badge>
-              )}
-              {(stats.statusCounts["draft"] || 0) === 0 && (stats.statusCounts["rejected"] || 0) === 0 && (
-                <span className="text-xs text-green-600">{t("timesheet.allClear")}</span>
-              )}
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
       </div>
 
       <Card>
@@ -345,20 +369,22 @@ export default function TimesheetListPage() {
             </div>
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-muted-foreground" />
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder={t("common.status")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("common.allStatus")}</SelectItem>
-                  <SelectItem value="draft">{t("timesheet.status.draft")}</SelectItem>
-                  <SelectItem value="submitted">{t("timesheet.status.submitted")}</SelectItem>
-                  <SelectItem value="approved">{t("timesheet.status.approved")}</SelectItem>
-                  <SelectItem value="rejected">{t("timesheet.status.rejected")}</SelectItem>
-                  <SelectItem value="team_submitted">{t("timesheet.status.team_submitted")}</SelectItem>
-                  <SelectItem value="final_approved">{t("timesheet.status.final_approved")}</SelectItem>
-                </SelectContent>
-              </Select>
+              {!isPersonalMode && (
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder={t("common.status")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("common.allStatus")}</SelectItem>
+                    <SelectItem value="draft">{t("timesheet.status.draft")}</SelectItem>
+                    <SelectItem value="submitted">{t("timesheet.status.submitted")}</SelectItem>
+                    <SelectItem value="approved">{t("timesheet.status.approved")}</SelectItem>
+                    <SelectItem value="rejected">{t("timesheet.status.rejected")}</SelectItem>
+                    <SelectItem value="team_submitted">{t("timesheet.status.team_submitted")}</SelectItem>
+                    <SelectItem value="final_approved">{t("timesheet.status.final_approved")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
               <Select value={filterYear} onValueChange={setFilterYear}>
                 <SelectTrigger className="w-28">
                   <SelectValue placeholder={t("common.year")} />
@@ -392,50 +418,57 @@ export default function TimesheetListPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("common.period")}</TableHead>
-                  <TableHead>{t("common.status")}</TableHead>
+                  {!isPersonalMode && <TableHead>{t("common.status")}</TableHead>}
                   <TableHead>{t("timesheet.baseHours")}</TableHead>
                   <TableHead>{t("timesheet.additionalHours")}</TableHead>
-                  <TableHead>{t("common.submitted")}</TableHead>
+                  {!isPersonalMode && <TableHead>{t("common.submitted")}</TableHead>}
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTimesheets.map((ts) => (
-                  <TableRow key={ts._id.toString()}>
-                    <TableCell className="font-medium">
-                      {getMonthName(ts.month, ts.year)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={statusColors[ts.status]}>
-                        {t(`timesheet.status.${ts.status}`)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{ts.totalBaseHours} {t("common.hours")}</TableCell>
-                    <TableCell>{ts.totalAdditionalHours} {t("common.hours")}</TableCell>
-                    <TableCell>
-                      {ts.submittedAt
-                        ? format(new Date(ts.submittedAt), "dd/MM/yyyy")
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Link href={`/timesheet/${ts._id}`}>
-                        <Button variant="ghost" size="sm">
-                          {ts.status === "draft" || ts.status === "rejected" ? (
-                            <>
-                              <FileEdit className="w-4 h-4 mr-1" />
-                              {t("common.edit")}
-                            </>
-                          ) : (
-                            <>
-                              <Eye className="w-4 h-4 mr-1" />
-                              {t("common.view")}
-                            </>
-                          )}
-                        </Button>
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredTimesheets.map((ts) => {
+                  const teamTs = ts as ITimesheet;
+                  return (
+                    <TableRow key={ts._id.toString()}>
+                      <TableCell className="font-medium">
+                        {getMonthName(ts.month, ts.year)}
+                      </TableCell>
+                      {!isPersonalMode && (
+                        <TableCell>
+                          <Badge className={statusColors[teamTs.status]}>
+                            {t(`timesheet.status.${teamTs.status}`)}
+                          </Badge>
+                        </TableCell>
+                      )}
+                      <TableCell>{ts.totalBaseHours} {t("common.hours")}</TableCell>
+                      <TableCell>{ts.totalAdditionalHours} {t("common.hours")}</TableCell>
+                      {!isPersonalMode && (
+                        <TableCell>
+                          {teamTs.submittedAt
+                            ? format(new Date(teamTs.submittedAt), "dd/MM/yyyy")
+                            : "-"}
+                        </TableCell>
+                      )}
+                      <TableCell className="text-right">
+                        <Link href={`/timesheet/${ts._id}`}>
+                          <Button variant="ghost" size="sm">
+                            {isPersonalMode || teamTs.status === "draft" || teamTs.status === "rejected" ? (
+                              <>
+                                <FileEdit className="w-4 h-4 mr-1" />
+                                {t("common.edit")}
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="w-4 h-4 mr-1" />
+                                {t("common.view")}
+                              </>
+                            )}
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
