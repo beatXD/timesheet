@@ -33,21 +33,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt", // Use JWT for Credentials provider
   },
   providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      allowDangerousEmailAccountLinking: true, // Allow linking accounts with same email
-    }),
-    GitHub({
-      clientId: process.env.AUTH_GITHUB_ID,
-      clientSecret: process.env.AUTH_GITHUB_SECRET,
-      allowDangerousEmailAccountLinking: true, // Allow linking accounts with same email
-      authorization: {
-        params: {
-          scope: "read:user user:email repo",
-        },
-      },
-    }),
+    // Only add Google provider if credentials exist
+    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
+      ? [
+          Google({
+            clientId: process.env.AUTH_GOOGLE_ID,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET,
+            allowDangerousEmailAccountLinking: true,
+          }),
+        ]
+      : []),
+    // Only add GitHub provider if credentials exist
+    ...(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET
+      ? [
+          GitHub({
+            clientId: process.env.AUTH_GITHUB_ID,
+            clientSecret: process.env.AUTH_GITHUB_SECRET,
+            allowDangerousEmailAccountLinking: true,
+            authorization: {
+              params: {
+                scope: "read:user user:email repo",
+              },
+            },
+          }),
+        ]
+      : []),
     Credentials({
       name: "credentials",
       credentials: {
