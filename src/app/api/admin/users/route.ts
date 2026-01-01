@@ -4,11 +4,11 @@ import { connectDB } from "@/lib/db";
 import { User } from "@/models";
 import { parsePaginationParams, createPaginationMeta } from "@/lib/pagination";
 
-// GET /api/admin/users - List all users
+// GET /api/admin/users - List all users (admin and leader can read)
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

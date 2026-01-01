@@ -4,8 +4,8 @@ import { getToken } from "next-auth/jwt";
 import { defaultLocale, locales, type Locale } from "./i18n/config";
 
 // Role-based path access control
-const adminPaths = ["/admin"];
-const leaderPaths = ["/team"];
+const adminOnlyPaths = ["/admin/users", "/admin/vendors", "/admin/holidays", "/admin/leave-settings", "/admin/leaves", "/admin/timesheets", "/admin/reports", "/admin/audit-logs"];
+const leaderPaths = ["/team", "/admin/teams", "/admin/projects"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -75,9 +75,9 @@ export async function middleware(request: NextRequest) {
     });
     const userRole = jwtToken?.role as string;
 
-    // Admin-only paths
-    const isAdminPath = adminPaths.some(p => pathname.startsWith(p));
-    if (isAdminPath && userRole !== "admin") {
+    // Admin-only paths (strict admin access)
+    const isAdminOnlyPath = adminOnlyPaths.some(p => pathname.startsWith(p));
+    if (isAdminOnlyPath && userRole !== "admin") {
       const response = NextResponse.redirect(new URL("/unauthorized", request.url));
       if (!localeCookie) {
         response.cookies.set("NEXT_LOCALE", locale, { path: "/" });
