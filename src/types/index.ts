@@ -14,9 +14,7 @@ export type TimesheetStatus =
   | "draft"
   | "submitted"
   | "approved"
-  | "rejected"
-  | "team_submitted"
-  | "final_approved";
+  | "rejected";
 
 // Leave Request Status
 export type LeaveRequestStatus = "pending" | "approved" | "rejected";
@@ -108,10 +106,6 @@ export interface ITimesheet {
   approvedAt?: Date;
   approvedBy?: Types.ObjectId;
   rejectedReason?: string;
-  teamSubmittedAt?: Date;
-  teamSubmittedBy?: Types.ObjectId;
-  finalApprovedAt?: Date;
-  finalApprovedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -194,7 +188,7 @@ export interface ILeaveSettings {
 
 // Audit Log
 export type AuditEntityType = "timesheet" | "leave_request";
-export type AuditAction = "create" | "submit" | "approve" | "reject" | "cancel" | "team_submit" | "final_approve" | "auto_approve";
+export type AuditAction = "create" | "submit" | "approve" | "reject" | "cancel" | "auto_approve";
 
 export interface IAuditLog {
   _id: Types.ObjectId;
