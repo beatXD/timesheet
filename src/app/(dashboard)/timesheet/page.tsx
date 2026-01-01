@@ -81,6 +81,8 @@ export default function TimesheetListPage() {
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
   useEffect(() => {
+    // Clear old data when mode changes to prevent stale data issues
+    setTimesheets([]);
     fetchTimesheets();
   }, [mode]);
 
@@ -90,7 +92,8 @@ export default function TimesheetListPage() {
       // Status filter only applies to team mode
       if (!isPersonalMode && filterStatus !== "all") {
         const teamTs = ts as ITimesheet;
-        if (teamTs.status !== filterStatus) return false;
+        // Guard against undefined status during mode transition
+        if (!teamTs.status || teamTs.status !== filterStatus) return false;
       }
       if (filterYear !== "all" && ts.year !== parseInt(filterYear)) return false;
       return true;
@@ -126,7 +129,10 @@ export default function TimesheetListPage() {
       ? {}
       : (timesheets as ITimesheet[]).reduce(
           (acc, ts) => {
-            acc[ts.status] = (acc[ts.status] || 0) + 1;
+            // Guard against undefined status during mode transition
+            if (ts.status) {
+              acc[ts.status] = (acc[ts.status] || 0) + 1;
+            }
             return acc;
           },
           {} as Record<string, number>
@@ -289,7 +295,7 @@ export default function TimesheetListPage() {
                 <CalendarCheck className="w-4 h-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">{t("timesheet.currentMonth")}</span>
               </div>
-              {stats.currentMonthTs ? (
+              {stats.currentMonthTs && (stats.currentMonthTs as ITimesheet).status ? (
                 <Badge className={statusColors[(stats.currentMonthTs as ITimesheet).status]}>
                   {t(`timesheet.status.${(stats.currentMonthTs as ITimesheet).status}`)}
                 </Badge>
@@ -433,7 +439,7 @@ export default function TimesheetListPage() {
                       <TableCell className="font-medium">
                         {getMonthName(ts.month, ts.year)}
                       </TableCell>
-                      {!isPersonalMode && (
+                      {!isPersonalMode && teamTs.status && (
                         <TableCell>
                           <Badge className={statusColors[teamTs.status]}>
                             {t(`timesheet.status.${teamTs.status}`)}
