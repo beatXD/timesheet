@@ -155,13 +155,6 @@ export default function TeamPage() {
         );
         setTeams(myTeams);
 
-        // Redirect leader with no teams to dashboard
-        if (myTeams.length === 0) {
-          toast.error(t("team.noTeamsAssigned") || "You are not assigned to lead any team");
-          redirect("/calendar");
-          return;
-        }
-
         // Add team info to timesheets
         if (timesheetsData.data) {
           const timesheetsWithTeam = timesheetsData.data.map((ts: TeamTimesheet) => {

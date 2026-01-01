@@ -55,7 +55,7 @@ export async function GET() {
   }
 }
 
-// POST /api/admin/teams - Create team (admin and leader)
+// POST /api/admin/teams - Create team (admin can create any, leader can only create teams they lead)
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -73,6 +73,11 @@ export async function POST(request: NextRequest) {
         { error: "Name and leader are required" },
         { status: 400 }
       );
+    }
+
+    // Leader can only create teams where they are the leader
+    if (session.user.role === "leader" && leaderId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Check for duplicate team name
@@ -112,7 +117,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/admin/teams - Update team (admin and leader)
+// PUT /api/admin/teams - Update team (admin can update any, leader can only update teams they lead)
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
@@ -136,6 +141,16 @@ export async function PUT(request: NextRequest) {
     const oldTeam = await Team.findById(_id);
     if (!oldTeam) {
       return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    }
+
+    // Leader can only update teams they lead
+    if (session.user.role === "leader" && oldTeam.leaderId?.toString() !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Leader cannot change the leader to someone else
+    if (session.user.role === "leader" && leaderId && leaderId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Check for duplicate team name (if name is being changed)
@@ -202,7 +217,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/admin/teams - Delete team (admin and leader)
+// DELETE /api/admin/teams - Delete team (admin can delete any, leader can only delete teams they lead)
 export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
@@ -226,6 +241,11 @@ export async function DELETE(request: NextRequest) {
     const team = await Team.findById(id);
     if (!team) {
       return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    }
+
+    // Leader can only delete teams they lead
+    if (session.user.role === "leader" && team.leaderId?.toString() !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Get all member IDs including leader

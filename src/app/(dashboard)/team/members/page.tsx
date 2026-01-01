@@ -103,13 +103,6 @@ export default function TeamMembersPage() {
         } else {
           setTeams(data.data.teams);
           setAvailableUsers(data.data.availableUsers);
-
-          // Redirect leader with no teams to dashboard
-          if (session?.user?.role === "leader" && data.data.teams.length === 0) {
-            toast.error(t("team.noTeamsAssigned") || "You are not assigned to lead any team");
-            router.push("/calendar");
-            return;
-          }
         }
       }
     } catch (error) {

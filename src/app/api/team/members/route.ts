@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Team, User } from "@/models";
+import mongoose from "mongoose";
 
 // GET /api/team/members - Get leader's teams with members
 export async function GET() {

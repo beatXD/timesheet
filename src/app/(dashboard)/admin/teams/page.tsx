@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -64,6 +65,7 @@ interface Team {
 
 export default function TeamsPage() {
   const t = useTranslations();
+  const { data: session } = useSession();
   const [teams, setTeams] = useState<Team[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -77,6 +79,9 @@ export default function TeamsPage() {
     projectId: "",
   });
   const [saving, setSaving] = useState(false);
+
+  // Check if current user is a leader (not admin)
+  const isLeader = session?.user?.role === "leader";
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -119,7 +124,9 @@ export default function TeamsPage() {
 
   const openCreateDialog = () => {
     setEditTeam(null);
-    setFormData({ name: "", leaderId: "", memberIds: [], projectId: "" });
+    // For leaders, auto-set themselves as the leader
+    const defaultLeaderId = isLeader && session?.user?.id ? session.user.id : "";
+    setFormData({ name: "", leaderId: defaultLeaderId, memberIds: [], projectId: "" });
     setIsDialogOpen(true);
   };
 
@@ -351,25 +358,35 @@ export default function TeamsPage() {
             </div>
             <div className="grid gap-2">
               <Label>{t("admin.teams.leader")} *</Label>
-              <Select
-                value={formData.leaderId}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, leaderId: v })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("admin.teams.selectLeader")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {users
-                    .filter((user) => user.role === "leader" || user.role === "admin")
-                    .map((user) => (
-                      <SelectItem key={user._id} value={user._id}>
-                        {user.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              {isLeader ? (
+                // Leaders can only be the leader of their own teams
+                <Input
+                  value={session?.user?.name || ""}
+                  disabled
+                  className="bg-muted"
+                />
+              ) : (
+                // Admins can select any leader
+                <Select
+                  value={formData.leaderId}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, leaderId: v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("admin.teams.selectLeader")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users
+                      .filter((user) => user.role === "leader" || user.role === "admin")
+                      .map((user) => (
+                        <SelectItem key={user._id} value={user._id}>
+                          {user.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="grid gap-2">
               <Label>{t("admin.teams.members")}</Label>

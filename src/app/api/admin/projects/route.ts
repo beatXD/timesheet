@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Project, Team } from "@/models";
 
-// GET /api/admin/projects - List all projects (admin and leader)
+// GET /api/admin/projects - List projects (admin sees all, leader sees projects used by their teams)
 export async function GET() {
   try {
     const session = await auth();
@@ -13,9 +13,20 @@ export async function GET() {
 
     await connectDB();
 
-    const projects = await Project.find()
-      .sort({ createdAt: -1 })
-      .lean();
+    let projects;
+    if (session.user.role === "admin") {
+      // Admin sees all projects
+      projects = await Project.find().sort({ createdAt: -1 }).lean();
+    } else {
+      // Leader sees only projects used by their teams
+      const leaderTeams = await Team.find({ leaderId: session.user.id }).select("projectId").lean();
+      const projectIds = leaderTeams
+        .map((t) => t.projectId)
+        .filter((id): id is NonNullable<typeof id> => id != null);
+      projects = await Project.find({ _id: { $in: projectIds } })
+        .sort({ createdAt: -1 })
+        .lean();
+    }
 
     return NextResponse.json({ data: projects });
   } catch (error) {
@@ -59,7 +70,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/admin/projects - Update project (admin and leader)
+// PUT /api/admin/projects - Update project (admin can update any, leader can only update their team's projects)
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
@@ -77,6 +88,14 @@ export async function PUT(request: NextRequest) {
         { error: "Project ID is required" },
         { status: 400 }
       );
+    }
+
+    // Leader can only update projects used by their teams
+    if (session.user.role === "leader") {
+      const leaderTeam = await Team.findOne({ leaderId: session.user.id, projectId: _id });
+      if (!leaderTeam) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
     const project = await Project.findByIdAndUpdate(
@@ -99,7 +118,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/admin/projects - Delete project (admin and leader)
+// DELETE /api/admin/projects - Delete project (admin can delete any, leader can only delete their team's projects)
 export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
@@ -117,6 +136,14 @@ export async function DELETE(request: NextRequest) {
         { error: "Project ID is required" },
         { status: 400 }
       );
+    }
+
+    // Leader can only delete projects used by their teams
+    if (session.user.role === "leader") {
+      const leaderTeam = await Team.findOne({ leaderId: session.user.id, projectId: id });
+      if (!leaderTeam) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
     // Check if project is being used by any teams
