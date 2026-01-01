@@ -620,6 +620,11 @@
     "timesheetStatus": "Timesheet Status",
     "timesheetOverview": "Overview of timesheet submissions",
     "last7Days": "Last 7 days",
+    "searchOrganizations": "Search organizations...",
+    "members": "Members",
+    "noTeams": "No teams",
+    "subscriptionInfo": "Subscription Info",
+    "viewDetails": "View Details",
     "plans": {
       "title": "Plans",
       "description": "Manage subscription plans and pricing",

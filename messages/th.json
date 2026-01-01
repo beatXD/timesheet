@@ -613,6 +613,11 @@
     "timesheetStatus": "สถานะใบบันทึกเวลา",
     "timesheetOverview": "ภาพรวมการส่งใบบันทึกเวลา",
     "last7Days": "7 วันที่ผ่านมา",
+    "searchOrganizations": "ค้นหาองค์กร...",
+    "members": "สมาชิก",
+    "noTeams": "ไม่มีทีม",
+    "subscriptionInfo": "ข้อมูลการสมัคร",
+    "viewDetails": "ดูรายละเอียด",
     "plans": {
       "title": "แพ็กเกจ",
       "description": "จัดการแพ็กเกจและราคา",
