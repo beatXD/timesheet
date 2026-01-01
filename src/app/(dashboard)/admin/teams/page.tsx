@@ -50,17 +50,11 @@ interface User {
   role: "admin" | "leader" | "user";
 }
 
-interface Project {
-  _id: string;
-  name: string;
-}
-
 interface Team {
   _id: string;
   name: string;
   leaderId: User;
   memberIds: User[];
-  projectId?: Project;
 }
 
 export default function TeamsPage() {
@@ -68,7 +62,6 @@ export default function TeamsPage() {
   const { data: session } = useSession();
   const [teams, setTeams] = useState<Team[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editTeam, setEditTeam] = useState<Team | null>(null);
@@ -76,7 +69,6 @@ export default function TeamsPage() {
     name: "",
     leaderId: "",
     memberIds: [] as string[],
-    projectId: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -123,18 +115,15 @@ export default function TeamsPage() {
 
   const fetchData = async () => {
     try {
-      const [teamsRes, usersRes, projectsRes] = await Promise.all([
+      const [teamsRes, usersRes] = await Promise.all([
         fetch("/api/admin/teams"),
         fetch("/api/admin/users"),
-        fetch("/api/admin/projects"),
       ]);
       const teamsData = await teamsRes.json();
       const usersData = await usersRes.json();
-      const projectsData = await projectsRes.json();
 
       if (teamsData.data) setTeams(teamsData.data);
       if (usersData.data) setUsers(usersData.data);
-      if (projectsData.data) setProjects(projectsData.data);
     } catch (error) {
       toast.error(t("errors.failedToFetch"));
     } finally {
@@ -146,7 +135,7 @@ export default function TeamsPage() {
     setEditTeam(null);
     // For leaders, auto-set themselves as the leader
     const defaultLeaderId = isLeader && session?.user?.id ? session.user.id : "";
-    setFormData({ name: "", leaderId: defaultLeaderId, memberIds: [], projectId: "" });
+    setFormData({ name: "", leaderId: defaultLeaderId, memberIds: [] });
     setIsDialogOpen(true);
   };
 
@@ -156,7 +145,6 @@ export default function TeamsPage() {
       name: team.name,
       leaderId: team.leaderId._id,
       memberIds: team.memberIds.map((m) => m._id),
-      projectId: team.projectId?._id || "",
     });
     setIsDialogOpen(true);
   };
@@ -272,7 +260,6 @@ export default function TeamsPage() {
                   <TableHead>{t("common.name")}</TableHead>
                   <TableHead>{t("admin.teams.leader")}</TableHead>
                   <TableHead>{t("admin.teams.members")}</TableHead>
-                  <TableHead>{t("admin.teams.project")}</TableHead>
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -308,7 +295,6 @@ export default function TeamsPage() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{team.projectId?.name || "-"}</TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"
@@ -344,37 +330,15 @@ export default function TeamsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>{t("admin.teams.teamName")} *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder={t("admin.teams.teamName")}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>{t("admin.teams.project")}</Label>
-                <Select
-                  value={formData.projectId}
-                  onValueChange={(v) =>
-                    setFormData({ ...formData, projectId: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("admin.teams.selectProject")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.map((project) => (
-                      <SelectItem key={project._id} value={project._id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid gap-2">
+              <Label>{t("admin.teams.teamName")} *</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder={t("admin.teams.teamName")}
+              />
             </div>
             <div className="grid gap-2">
               <Label>{t("admin.teams.leader")} *</Label>
