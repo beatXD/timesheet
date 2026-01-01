@@ -13,6 +13,7 @@ if (!MONGODB_URI) {
 // Collections to delete (all data)
 const COLLECTIONS_TO_DELETE = [
   "users",
+  "accounts",
   "teams",
   "vendors",
   "timesheets",
@@ -23,6 +24,7 @@ const COLLECTIONS_TO_DELETE = [
   "holidays",
   "notifications",
   "auditlogs",
+  "githubreposettings",
 ];
 
 async function reset() {
