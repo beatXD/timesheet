@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Only admin can view audit logs
-    if (session.user.role !== "admin") {
+    if (session.user.role !== "super_admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

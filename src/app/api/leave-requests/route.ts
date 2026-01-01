@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const yearParam = searchParams.get("year");
     // Default scope: admin sees all, others see own
-    const defaultScope = session.user.role === "admin" ? "all" : "own";
+    const defaultScope = session.user.role === "super_admin" ? "all" : "own";
     const scope = searchParams.get("scope") || defaultScope;
 
     // Build query filter
@@ -58,9 +58,9 @@ export async function GET(request: NextRequest) {
     if (session.user.role === "user" || scope === "own") {
       // Regular users can only see their own requests
       filter.userId = session.user.id;
-    } else if (session.user.role === "leader" && scope === "team") {
+    } else if (session.user.role === "admin" && scope === "team") {
       // Leaders can see their own and their team members' requests
-      const teams = await Team.find({ leaderId: session.user.id });
+      const teams = await Team.find({ adminId: session.user.id });
       if (teams.length > 0) {
         const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
           t.memberIds.map((id) => id.toString())
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isLeader = session.user.role === "leader";
+    const isLeader = session.user.role === "admin";
 
     // Create leave request - auto-approved for leaders
     const leaveRequest = await LeaveRequest.create({
@@ -278,21 +278,21 @@ export async function POST(request: NextRequest) {
     } else {
       // Regular user: notify team leader(s)
       const teams = await Team.find({ memberIds: session.user.id }).populate(
-        "leaderId",
+        "adminId",
         "name email"
       );
 
       const currentUser = await User.findById(session.user.id).lean();
-      const leaderIds: string[] = [];
+      const adminIds: string[] = [];
 
       for (const team of teams) {
-        const leader = team.leaderId as unknown as {
+        const leader = team.adminId as unknown as {
           _id: string;
           name: string;
           email: string;
         };
         if (leader?._id) {
-          leaderIds.push(leader._id.toString());
+          adminIds.push(leader._id.toString());
         }
         if (leader?.email) {
           try {
@@ -312,10 +312,10 @@ export async function POST(request: NextRequest) {
       }
 
       // Send in-app notification to leaders
-      if (leaderIds.length > 0) {
+      if (adminIds.length > 0) {
         try {
           await notifyPendingApproval(
-            leaderIds,
+            adminIds,
             currentUser?.name || session.user.name || "User",
             "leave"
           );

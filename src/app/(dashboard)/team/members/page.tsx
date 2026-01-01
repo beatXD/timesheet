@@ -40,8 +40,19 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, X, Search, ChevronRight, Users } from "lucide-react";
+import { UserPlus, X, Search, ChevronRight, Users, Link2, Copy, Trash2, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+interface Invite {
+  _id: string;
+  token: string;
+  teamId: string;
+  teamName: string;
+  expiresAt: string;
+  maxUses: number;
+  usedCount: number;
+  isExpired: boolean;
+}
 
 interface User {
   _id: string;
@@ -55,7 +66,7 @@ interface Team {
   _id: string;
   name: string;
   memberIds: User[];
-  leaderId?: User;
+  adminId?: User;
   projectId?: { _id: string; name: string };
 }
 
@@ -71,12 +82,14 @@ export default function TeamMembersPage() {
   const router = useRouter();
   const [teams, setTeams] = useState<Team[]>([]);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Check if user is admin (view-only mode)
-  const isAdmin = session?.user?.role === "admin";
-  const canEdit = !isAdmin; // Leaders can edit, admins cannot
+  // Check if user is admin (team admin, not super_admin)
+  const isSuperAdmin = session?.user?.role === "super_admin";
+  const isTeamAdmin = session?.user?.role === "admin";
+  const canEdit = isTeamAdmin; // Team admins can edit
 
   // Filter states
   const [filterTeam, setFilterTeam] = useState<string>("all");
@@ -87,17 +100,22 @@ export default function TeamMembersPage() {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
+  // Invite dialog state
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [generatingInvite, setGeneratingInvite] = useState(false);
+  const [newInviteUrl, setNewInviteUrl] = useState<string | null>(null);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Admin uses different endpoint to get all teams
-      const endpoint = isAdmin ? "/api/admin/teams" : "/api/team/members";
+      // Super admin uses different endpoint to get all teams
+      const endpoint = isSuperAdmin ? "/api/admin/teams" : "/api/team/members";
       const res = await fetch(endpoint);
       const data = await res.json();
 
       if (data.data) {
-        if (isAdmin) {
-          // Admin endpoint returns teams directly
+        if (isSuperAdmin) {
+          // Super admin endpoint returns teams directly
           setTeams(data.data);
           setAvailableUsers([]);
         } else {
@@ -105,12 +123,21 @@ export default function TeamMembersPage() {
           setAvailableUsers(data.data.availableUsers);
         }
       }
+
+      // Fetch invites for team admins
+      if (isTeamAdmin) {
+        const invitesRes = await fetch("/api/invites");
+        const invitesData = await invitesRes.json();
+        if (invitesData.data) {
+          setInvites(invitesData.data);
+        }
+      }
     } catch (error) {
       toast.error(t("errors.fetchFailed"));
     } finally {
       setLoading(false);
     }
-  }, [t, session?.user?.role, router, isAdmin]);
+  }, [t, isSuperAdmin, isTeamAdmin]);
 
   useEffect(() => {
     fetchData();
@@ -121,9 +148,9 @@ export default function TeamMembersPage() {
     const members: MemberWithTeam[] = [];
     teams.forEach((team) => {
       // Add leader first
-      if (team.leaderId) {
+      if (team.adminId) {
         members.push({
-          ...team.leaderId,
+          ...team.adminId,
           teamId: team._id,
           teamName: team.name,
           isLeader: true,
@@ -227,6 +254,58 @@ export default function TeamMembersPage() {
     }
   };
 
+  const generateInvite = async (teamId: string) => {
+    setGeneratingInvite(true);
+    setNewInviteUrl(null);
+    try {
+      const res = await fetch("/api/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || t("invite.failedToGenerate"));
+        return;
+      }
+
+      setNewInviteUrl(data.data.inviteUrl);
+      setIsInviteDialogOpen(true);
+      fetchData(); // Refresh invites list
+    } catch (error) {
+      toast.error(t("invite.failedToGenerate"));
+    } finally {
+      setGeneratingInvite(false);
+    }
+  };
+
+  const deleteInvite = async (inviteId: string) => {
+    if (!confirm(t("invite.confirmDelete"))) return;
+
+    try {
+      const res = await fetch(`/api/invites?id=${inviteId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        toast.error(t("invite.failedToDelete"));
+        return;
+      }
+
+      toast.success(t("invite.deleted"));
+      fetchData();
+    } catch (error) {
+      toast.error(t("invite.failedToDelete"));
+    }
+  };
+
+  const copyInviteLink = async (token: string) => {
+    const url = `${window.location.origin}/invite/${token}`;
+    await navigator.clipboard.writeText(url);
+    toast.success(t("invite.linkCopied"));
+  };
+
   // Combine current team members and available users for the dialog
   const getAllUsersForSelection = () => {
     if (!selectedTeam) return [];
@@ -268,8 +347,8 @@ export default function TeamMembersPage() {
     );
   }
 
-  // For admin: show team list view when no team is selected
-  if (isAdmin && filterTeam === "all") {
+  // For super admin: show team list view when no team is selected
+  if (isSuperAdmin && filterTeam === "all") {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -300,16 +379,16 @@ export default function TeamMembersPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {team.leaderId && (
+                  {team.adminId && (
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={team.leaderId.image} />
+                        <AvatarImage src={team.adminId.image} />
                         <AvatarFallback className="text-xs">
-                          {team.leaderId.name?.slice(0, 2).toUpperCase()}
+                          {team.adminId.name?.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm">{team.leaderId.name}</span>
-                      <Badge variant="secondary" className="text-xs">{t("roles.leader")}</Badge>
+                      <span className="text-sm">{team.adminId.name}</span>
+                      <Badge variant="secondary" className="text-xs">{t("roles.admin")}</Badge>
                     </div>
                   )}
                   <p className="text-sm text-muted-foreground">
@@ -330,7 +409,7 @@ export default function TeamMembersPage() {
         <div>
           <h1 className="text-2xl font-bold">{t("teamMembers.title")}</h1>
           <p className="text-muted-foreground">
-            {isAdmin ? t("teamMembers.viewDescription") : t("teamMembers.description")}
+            {isSuperAdmin ? t("teamMembers.viewDescription") : t("teamMembers.description")}
           </p>
         </div>
         <Badge variant="secondary" className="text-sm px-3 py-1">
@@ -344,7 +423,7 @@ export default function TeamMembersPage() {
             <div>
               <CardTitle>{t("teamMembers.allMembers")}</CardTitle>
               <CardDescription>
-                {isAdmin ? t("teamMembers.viewOnly") : t("teamMembers.manageMembers")}
+                {isSuperAdmin ? t("teamMembers.viewOnly") : t("teamMembers.manageMembers")}
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -371,16 +450,34 @@ export default function TeamMembersPage() {
                 </SelectContent>
               </Select>
               {canEdit && filterTeam !== "all" && (
-                <Button
-                  onClick={() => {
-                    const team = teams.find((t) => t._id === filterTeam);
-                    if (team) openAddDialog(team);
-                  }}
-                  className="gap-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  {t("teamMembers.addMembers")}
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const team = teams.find((t) => t._id === filterTeam);
+                      if (team) generateInvite(team._id);
+                    }}
+                    disabled={generatingInvite}
+                    className="gap-2"
+                  >
+                    {generatingInvite ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Link2 className="w-4 h-4" />
+                    )}
+                    {t("invite.generateLink")}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const team = teams.find((t) => t._id === filterTeam);
+                      if (team) openAddDialog(team);
+                    }}
+                    className="gap-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    {t("teamMembers.addMembers")}
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -415,7 +512,7 @@ export default function TeamMembersPage() {
                         <p className="font-medium">{member.name}</p>
                         {member.isLeader && (
                           <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
-                            {t("roles.leader")}
+                            {t("roles.admin")}
                           </Badge>
                         )}
                       </div>
@@ -454,6 +551,72 @@ export default function TeamMembersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Active Invites Section */}
+      {canEdit && invites.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Link2 className="w-5 h-5" />
+              {t("invite.activeInvites")}
+            </CardTitle>
+            <CardDescription>{t("invite.activeInvitesDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {invites.filter(inv => !inv.isExpired && inv.usedCount < inv.maxUses).map((invite) => {
+                const expiresAt = new Date(invite.expiresAt);
+                const hoursLeft = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60)));
+                const minutesLeft = Math.max(0, Math.floor(((expiresAt.getTime() - Date.now()) % (1000 * 60 * 60)) / (1000 * 60)));
+
+                return (
+                  <div
+                    key={invite._id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Link2 className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{invite.teamName}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          <span>{hoursLeft}h {minutesLeft}m {t("invite.remaining")}</span>
+                          <span>•</span>
+                          <span>{invite.usedCount}/{invite.maxUses} {t("invite.used")}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyInviteLink(invite.token)}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => deleteInvite(invite._id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+              {invites.filter(inv => !inv.isExpired && inv.usedCount < inv.maxUses).length === 0 && (
+                <p className="text-center text-muted-foreground py-4">
+                  {t("invite.noActiveInvites")}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Edit Members Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -515,6 +678,53 @@ export default function TeamMembersPage() {
             </Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? t("common.saving") : t("common.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Link Dialog */}
+      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="w-5 h-5" />
+              {t("invite.inviteLinkGenerated")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("invite.shareLinkDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+              <input
+                type="text"
+                readOnly
+                value={newInviteUrl || ""}
+                className="flex-1 bg-transparent text-sm outline-none"
+              />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={async () => {
+                  if (newInviteUrl) {
+                    await navigator.clipboard.writeText(newInviteUrl);
+                    toast.success(t("invite.linkCopied"));
+                  }
+                }}
+              >
+                <Copy className="w-4 h-4 mr-1" />
+                {t("common.copy")}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {t("invite.linkExpires")}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsInviteDialogOpen(false)}>
+              {t("common.done")}
             </Button>
           </DialogFooter>
         </DialogContent>

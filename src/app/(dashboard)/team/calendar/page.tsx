@@ -55,7 +55,7 @@ interface Team {
   _id: string;
   name: string;
   memberIds: { _id: string; name: string; email: string }[];
-  leaderId: { _id: string; name: string; email: string };
+  adminId: { _id: string; name: string; email: string };
 }
 
 interface LeaveRequest {
@@ -132,7 +132,7 @@ export default function TeamCalendarPage() {
       if (teamsData.data) {
         const myTeams = teamsData.data.filter(
           (team: Team) =>
-            team.leaderId?._id === session?.user?.id || session?.user?.role === "admin"
+            team.adminId?._id === session?.user?.id || session?.user?.role === "super_admin"
         );
         setTeams(myTeams);
       }
@@ -152,7 +152,7 @@ export default function TeamCalendarPage() {
   }, [session?.user?.id, session?.user?.role, t]);
 
   useEffect(() => {
-    if (session?.user?.role === "leader" || session?.user?.role === "admin") {
+    if (session?.user?.role === "admin" || session?.user?.role === "super_admin") {
       fetchData();
     }
   }, [session, fetchData]);
@@ -163,7 +163,7 @@ export default function TeamCalendarPage() {
       const allIds = new Set<string>();
       teams.forEach((team) => {
         team.memberIds.forEach((m) => allIds.add(m._id));
-        if (team.leaderId) allIds.add(team.leaderId._id);
+        if (team.adminId) allIds.add(team.adminId._id);
       });
       return allIds;
     }
@@ -171,7 +171,7 @@ export default function TeamCalendarPage() {
     if (!team) return new Set<string>();
     const ids = new Set<string>();
     team.memberIds.forEach((m) => ids.add(m._id));
-    if (team.leaderId) ids.add(team.leaderId._id);
+    if (team.adminId) ids.add(team.adminId._id);
     return ids;
   }, [teams, teamFilter]);
 

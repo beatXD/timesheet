@@ -287,7 +287,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Team Summary - Leader Only */}
-      {userRole === "leader" && data?.teamSummary && (
+      {userRole === "admin" && data?.teamSummary && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{t("dashboard.teamSummary")}</h2>
@@ -350,7 +350,7 @@ export default function DashboardPage() {
       )}
 
       {/* Org Overview - Admin Only */}
-      {userRole === "admin" && data?.orgOverview && (
+      {userRole === "super_admin" && data?.orgOverview && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{t("dashboard.orgOverview")}</h2>

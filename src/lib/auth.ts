@@ -9,11 +9,12 @@ import clientPromise from "./mongodb-client";
 import { connectDB } from "./db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
-import type { UserRole } from "@/types";
+import type { UserRole, SubscriptionPlan } from "@/types";
 
 declare module "next-auth" {
   interface User {
     role?: UserRole;
+    subscriptionPlan?: SubscriptionPlan;
   }
   interface Session {
     user: {
@@ -22,6 +23,7 @@ declare module "next-auth" {
       email: string;
       image?: string;
       role: UserRole;
+      subscriptionPlan?: SubscriptionPlan;
     };
   }
 }
@@ -93,6 +95,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             email: user.email,
             image: user.image,
             role: user.role,
+            subscriptionPlan: user.subscription?.plan,
           };
         } catch (error) {
           console.error("Authorize error:", error);
@@ -146,15 +149,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role || "user";
+        token.subscriptionPlan = user.subscriptionPlan;
       }
 
-      // For OAuth, fetch user from DB to get latest role
+      // For OAuth, fetch user from DB to get latest role and subscription
       if (account && account.provider !== "credentials") {
         await connectDB();
         const dbUser = await User.findOne({ email: token.email });
         if (dbUser) {
           token.id = dbUser._id.toString();
           token.role = dbUser.role;
+          token.subscriptionPlan = dbUser.subscription?.plan;
         }
       }
 
@@ -164,6 +169,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = (token.role as UserRole) || "user";
+        session.user.subscriptionPlan = token.subscriptionPlan as SubscriptionPlan | undefined;
       }
       return session;
     },

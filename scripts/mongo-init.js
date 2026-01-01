@@ -28,7 +28,7 @@ db.leaverequests.createIndex({ userId: 1, status: 1 });
 db.leaverequests.createIndex({ startDate: 1, endDate: 1 });
 
 db.teams.createIndex({ name: 1 }, { unique: true });
-db.teams.createIndex({ leaderId: 1 });
+db.teams.createIndex({ adminId: 1 });
 
 db.holidays.createIndex({ date: 1 });
 db.holidays.createIndex({ year: 1 });

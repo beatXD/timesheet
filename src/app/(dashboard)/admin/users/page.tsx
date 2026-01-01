@@ -63,8 +63,8 @@ interface User {
 }
 
 const roleColors: Record<UserRole, string> = {
-  admin: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300",
-  leader: "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300",
+  super_admin: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300",
+  admin: "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300",
   user: "bg-slate-100 text-slate-800 dark:bg-slate-500/20 dark:text-slate-300",
 };
 
@@ -210,8 +210,8 @@ export default function UsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t("common.allRoles")}</SelectItem>
+                  <SelectItem value="super_admin">{t("roles.super_admin")}</SelectItem>
                   <SelectItem value="admin">{t("roles.admin")}</SelectItem>
-                  <SelectItem value="leader">{t("roles.leader")}</SelectItem>
                   <SelectItem value="user">{t("roles.user")}</SelectItem>
                 </SelectContent>
               </Select>
@@ -337,8 +337,8 @@ export default function UsersPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">{t("roles.user")}</SelectItem>
-                    <SelectItem value="leader">{t("roles.leader")}</SelectItem>
                     <SelectItem value="admin">{t("roles.admin")}</SelectItem>
+                    <SelectItem value="super_admin">{t("roles.super_admin")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -47,13 +47,13 @@ interface User {
   name: string;
   email: string;
   image?: string;
-  role: "admin" | "leader" | "user";
+  role: "super_admin" | "admin" | "user";
 }
 
 interface Team {
   _id: string;
   name: string;
-  leaderId: User;
+  adminId: User;
   memberIds: User[];
 }
 
@@ -67,13 +67,13 @@ export default function TeamsPage() {
   const [editTeam, setEditTeam] = useState<Team | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    leaderId: "",
+    adminId: "",
     memberIds: [] as string[],
   });
   const [saving, setSaving] = useState(false);
 
   // Check if current user is a leader (not admin)
-  const isLeader = session?.user?.role === "leader";
+  const isLeader = session?.user?.role === "admin";
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -89,7 +89,7 @@ export default function TeamsPage() {
     return teams.filter(
       (team) =>
         team.name.toLowerCase().includes(query) ||
-        team.leaderId.name.toLowerCase().includes(query)
+        team.adminId.name.toLowerCase().includes(query)
     );
   }, [teams, searchQuery]);
 
@@ -135,7 +135,7 @@ export default function TeamsPage() {
     setEditTeam(null);
     // For leaders, auto-set themselves as the leader
     const defaultLeaderId = isLeader && session?.user?.id ? session.user.id : "";
-    setFormData({ name: "", leaderId: defaultLeaderId, memberIds: [] });
+    setFormData({ name: "", adminId: defaultLeaderId, memberIds: [] });
     setIsDialogOpen(true);
   };
 
@@ -143,14 +143,14 @@ export default function TeamsPage() {
     setEditTeam(team);
     setFormData({
       name: team.name,
-      leaderId: team.leaderId._id,
+      adminId: team.adminId._id,
       memberIds: team.memberIds.map((m) => m._id),
     });
     setIsDialogOpen(true);
   };
 
   const saveTeam = async () => {
-    if (!formData.name || !formData.leaderId) {
+    if (!formData.name || !formData.adminId) {
       toast.error(t("errors.required"));
       return;
     }
@@ -270,12 +270,12 @@ export default function TeamsPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={team.leaderId.image} />
+                          <AvatarImage src={team.adminId.image} />
                           <AvatarFallback className="text-xs">
-                            {team.leaderId.name.slice(0, 2).toUpperCase()}
+                            {team.adminId.name.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm">{team.leaderId.name}</span>
+                        <span className="text-sm">{team.adminId.name}</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -352,9 +352,9 @@ export default function TeamsPage() {
               ) : (
                 // Admins can select any leader
                 <Select
-                  value={formData.leaderId}
+                  value={formData.adminId}
                   onValueChange={(v) =>
-                    setFormData({ ...formData, leaderId: v })
+                    setFormData({ ...formData, adminId: v })
                   }
                 >
                   <SelectTrigger>
@@ -362,7 +362,7 @@ export default function TeamsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {users
-                      .filter((user) => user.role === "leader" || user.role === "admin")
+                      .filter((user) => user.role === "admin" || user.role === "super_admin")
                       .map((user) => (
                         <SelectItem key={user._id} value={user._id}>
                           {user.name}
@@ -379,7 +379,7 @@ export default function TeamsPage() {
                 <div className="h-56">
                   <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2 h-full">
                     {availableUsersForSelection
-                      .filter((user) => user._id !== formData.leaderId)
+                      .filter((user) => user._id !== formData.adminId)
                       .map((user) => (
                         <div key={user._id} className="flex items-center gap-2">
                           <Checkbox
@@ -409,7 +409,7 @@ export default function TeamsPage() {
                           </label>
                         </div>
                       ))}
-                    {availableUsersForSelection.filter((user) => user._id !== formData.leaderId).length === 0 && (
+                    {availableUsersForSelection.filter((user) => user._id !== formData.adminId).length === 0 && (
                       <p className="text-sm text-muted-foreground">{t("admin.teams.noMembers")}</p>
                     )}
                   </div>
@@ -422,7 +422,7 @@ export default function TeamsPage() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("admin.teams.users")}</p>
                     <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2">
                       {users
-                        .filter((user) => (!user.role || user.role === "user") && user._id !== formData.leaderId)
+                        .filter((user) => (!user.role || user.role === "user") && user._id !== formData.adminId)
                         .map((user) => (
                           <div key={user._id} className="flex items-center gap-2">
                             <Checkbox
@@ -452,7 +452,7 @@ export default function TeamsPage() {
                             </label>
                           </div>
                         ))}
-                      {users.filter((user) => (!user.role || user.role === "user") && user._id !== formData.leaderId).length === 0 && (
+                      {users.filter((user) => (!user.role || user.role === "user") && user._id !== formData.adminId).length === 0 && (
                         <p className="text-sm text-muted-foreground">{t("admin.teams.noUsers")}</p>
                       )}
                     </div>
@@ -462,7 +462,7 @@ export default function TeamsPage() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("admin.teams.leaders")}</p>
                     <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2">
                       {users
-                        .filter((user) => (user.role === "leader" || user.role === "admin") && user._id !== formData.leaderId)
+                        .filter((user) => (user.role === "admin" || user.role === "super_admin") && user._id !== formData.adminId)
                         .map((user) => (
                           <div key={user._id} className="flex items-center gap-2">
                             <Checkbox
@@ -495,7 +495,7 @@ export default function TeamsPage() {
                             </label>
                           </div>
                         ))}
-                      {users.filter((user) => (user.role === "leader" || user.role === "admin") && user._id !== formData.leaderId).length === 0 && (
+                      {users.filter((user) => (user.role === "admin" || user.role === "super_admin") && user._id !== formData.adminId).length === 0 && (
                         <p className="text-sm text-muted-foreground">{t("admin.teams.noLeaders")}</p>
                       )}
                     </div>

@@ -4,7 +4,7 @@ import type { ITeam } from "@/types";
 const TeamSchema = new Schema<ITeam>(
   {
     name: { type: String, required: true, unique: true },
-    leaderId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    adminId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     memberIds: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   {

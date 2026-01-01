@@ -19,7 +19,7 @@ const UserSchema = new mongoose.Schema({
   emailVerified: { type: Date },
   image: { type: String },
   password: { type: String },
-  role: { type: String, enum: ["admin", "leader", "user"], default: "user" },
+  role: { type: String, enum: ["super_admin", "admin", "user"], default: "user" },
   teamIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Team" }],
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: "Vendor" },
   contractRole: { type: String },
@@ -32,8 +32,23 @@ const HolidaySchema = new mongoose.Schema({
   type: { type: String, enum: ["public", "company"], default: "public" },
 }, { timestamps: true });
 
+// Plan Schema
+const PlanSchema = new mongoose.Schema({
+  slug: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  description: { type: String },
+  monthlyPrice: { type: Number, required: true, default: 0 },
+  maxUsers: { type: Number, required: true, default: 1 },
+  maxTeams: { type: Number, required: true, default: 1 },
+  features: [{ type: String }],
+  isActive: { type: Boolean, default: true },
+  sortOrder: { type: Number, default: 0 },
+  stripePriceId: { type: String },
+}, { timestamps: true });
+
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
 const Holiday = mongoose.models.Holiday || mongoose.model("Holiday", HolidaySchema);
+const Plan = mongoose.models.Plan || mongoose.model("Plan", PlanSchema);
 
 // Thai public holidays for 2025
 const thaiHolidays2025 = [
@@ -58,6 +73,59 @@ const thaiHolidays2025 = [
   { name: "วันสิ้นปี", date: new Date("2025-12-31"), type: "public" },
 ];
 
+// Default subscription plans
+const defaultPlans = [
+  {
+    slug: "free",
+    name: "Free",
+    description: "For individuals",
+    monthlyPrice: 0,
+    maxUsers: 1,
+    maxTeams: 1,
+    features: [
+      "Personal time tracking",
+      "Thai holidays included",
+      "PDF & Excel export",
+    ],
+    isActive: true,
+    sortOrder: 0,
+  },
+  {
+    slug: "pro",
+    name: "Pro",
+    description: "For small teams",
+    monthlyPrice: 990,
+    maxUsers: 5,
+    maxTeams: 1,
+    features: [
+      "Up to 5 users",
+      "1 Team",
+      "Approval workflow",
+      "Leave management",
+      "Priority support",
+    ],
+    isActive: true,
+    sortOrder: 1,
+  },
+  {
+    slug: "enterprise",
+    name: "Enterprise",
+    description: "For large organizations",
+    monthlyPrice: 4990,
+    maxUsers: 100,
+    maxTeams: 10,
+    features: [
+      "Unlimited users",
+      "Unlimited teams",
+      "Advanced reports",
+      "API access",
+      "Dedicated support",
+    ],
+    isActive: true,
+    sortOrder: 2,
+  },
+];
+
 async function seed() {
   console.log("Connecting to MongoDB...");
   await mongoose.connect(MONGODB_URI);
@@ -66,20 +134,20 @@ async function seed() {
   // Default password for admin: "password123"
   const hashedPassword = await bcrypt.hash("password123", 12);
 
-  console.log("\nCreating admin user...");
+  console.log("\nCreating super admin user...");
 
-  // Admin
-  const admin = await User.findOneAndUpdate(
-    { email: "admin@example.com" },
+  // Super Admin
+  const superAdmin = await User.findOneAndUpdate(
+    { email: "superadmin@example.com" },
     {
-      name: "Admin User",
-      email: "admin@example.com",
+      name: "Super Admin",
+      email: "superadmin@example.com",
       password: hashedPassword,
-      role: "admin",
+      role: "super_admin",
     },
     { upsert: true, new: true }
   );
-  console.log(`  Admin: ${admin.email}`);
+  console.log(`  Super Admin: ${superAdmin.email}`);
 
   console.log("\nCreating holidays...");
 
@@ -97,13 +165,23 @@ async function seed() {
     console.log(`  ${holiday.name} (${holiday.date.toISOString().split("T")[0]})`);
   }
 
+  console.log("\nCreating subscription plans...");
+
+  // Clear and insert plans
+  await Plan.deleteMany({});
+  for (const plan of defaultPlans) {
+    await Plan.create(plan);
+    console.log(`  ${plan.name} (${plan.slug}) - ฿${plan.monthlyPrice}/mo`);
+  }
+
   console.log("\n========================================");
   console.log("Seed completed!");
   console.log("========================================");
-  console.log("\nAdmin password: password123");
+  console.log("\nSuper Admin password: password123");
   console.log("\nCreated:");
-  console.log("  - admin@example.com (Admin)");
+  console.log("  - superadmin@example.com (Super Admin)");
   console.log(`  - ${thaiHolidays2025.length} Thai holidays for 2025`);
+  console.log(`  - ${defaultPlans.length} subscription plans`);
   console.log("========================================\n");
 
   await mongoose.disconnect();

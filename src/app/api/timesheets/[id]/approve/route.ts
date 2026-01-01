@@ -16,8 +16,8 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only leaders can approve (admin is view-only now)
-    if (session.user.role !== "leader") {
+    // Only team admins can approve timesheets (super_admin is view-only)
+    if (session.user.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -45,7 +45,7 @@ export async function POST(
     const isOwnTimesheet = timesheet.userId.toString() === session.user.id;
 
     if (!isOwnTimesheet) {
-      const teams = await Team.find({ leaderId: session.user.id });
+      const teams = await Team.find({ adminId: session.user.id });
       const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
         t.memberIds.map((id) => id.toString())
       );

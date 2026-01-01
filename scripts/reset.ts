@@ -25,6 +25,8 @@ const COLLECTIONS_TO_DELETE = [
   "notifications",
   "auditlogs",
   "githubreposettings",
+  "plans",
+  "invites",
 ];
 
 async function reset() {

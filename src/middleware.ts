@@ -4,8 +4,10 @@ import { getToken } from "next-auth/jwt";
 import { defaultLocale, locales, type Locale } from "./i18n/config";
 
 // Role-based path access control
-const adminOnlyPaths = ["/admin/users", "/admin/vendors", "/admin/holidays", "/admin/leave-settings", "/admin/leaves", "/admin/timesheets", "/admin/reports", "/admin/audit-logs"];
-const leaderPaths = ["/team", "/admin/teams"];
+// super_admin = system oversight (old admin)
+// admin = team leader (old leader)
+const superAdminPaths = ["/super-admin"];
+const adminPaths = ["/team", "/admin/teams"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -75,9 +77,9 @@ export async function middleware(request: NextRequest) {
     });
     const userRole = jwtToken?.role as string;
 
-    // Admin-only paths (strict admin access)
-    const isAdminOnlyPath = adminOnlyPaths.some(p => pathname.startsWith(p));
-    if (isAdminOnlyPath && userRole !== "admin") {
+    // Super Admin paths (system oversight)
+    const isSuperAdminPath = superAdminPaths.some(p => pathname.startsWith(p));
+    if (isSuperAdminPath && userRole !== "super_admin") {
       const response = NextResponse.redirect(new URL("/unauthorized", request.url));
       if (!localeCookie) {
         response.cookies.set("NEXT_LOCALE", locale, { path: "/" });
@@ -85,9 +87,9 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // Leader/Admin paths - only leaders and admins can access team management
-    const isLeaderPath = leaderPaths.some(p => pathname.startsWith(p));
-    if (isLeaderPath && !["admin", "leader"].includes(userRole)) {
+    // Admin paths (team management) - only admins (team leaders) can access
+    const isAdminPath = adminPaths.some(p => pathname.startsWith(p));
+    if (isAdminPath && userRole !== "super_admin") {
       const response = NextResponse.redirect(new URL("/unauthorized", request.url));
       if (!localeCookie) {
         response.cookies.set("NEXT_LOCALE", locale, { path: "/" });

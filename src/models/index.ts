@@ -11,3 +11,5 @@ export { default as AuditLog } from "./AuditLog";
 export { default as TimesheetTemplate } from "./TimesheetTemplate";
 export { default as Notification } from "./Notification";
 export { default as GitHubRepoSettings } from "./GitHubRepoSettings";
+export { default as Plan } from "./Plan";
+export { default as Invite } from "./Invite";

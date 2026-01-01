@@ -1,7 +1,39 @@
 import { Types } from "mongoose";
 
 // User Roles
-export type UserRole = "admin" | "leader" | "user";
+export type UserRole = "super_admin" | "admin" | "user";
+
+// Subscription Plans
+export type SubscriptionPlan = string; // Dynamic from database
+export type SubscriptionStatus = "active" | "cancelled" | "past_due";
+
+// Plan (stored in database)
+export interface IPlan {
+  _id: Types.ObjectId;
+  slug: string; // unique identifier (e.g., "free", "pro", "enterprise")
+  name: string;
+  description?: string;
+  monthlyPrice: number; // in THB
+  maxUsers: number;
+  maxTeams: number;
+  features: string[];
+  isActive: boolean;
+  sortOrder: number;
+  stripePriceId?: string; // For Stripe integration
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Subscription
+export interface ISubscription {
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  maxUsers: number;
+  maxTeams: number;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  currentPeriodEnd?: Date;
+}
 
 // Timesheet Entry Types
 export type EntryType = "working" | "weekend" | "holiday" | "leave";
@@ -31,6 +63,8 @@ export interface IUser {
   teamIds?: Types.ObjectId[];
   vendorId?: Types.ObjectId;
   contractRole?: string;
+  subscription?: ISubscription;
+  invitedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,10 +88,22 @@ export interface IAccount {
 export interface ITeam {
   _id: Types.ObjectId;
   name: string;
-  leaderId: Types.ObjectId;
+  adminId: Types.ObjectId;
   memberIds: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Invite
+export interface IInvite {
+  _id: Types.ObjectId;
+  teamId: Types.ObjectId;
+  adminId: Types.ObjectId;
+  token: string;
+  expiresAt: Date;
+  maxUses: number;
+  usedCount: number;
+  createdAt: Date;
 }
 
 // Vendor
@@ -241,6 +287,7 @@ export interface SessionUser {
   email: string;
   image?: string;
   role: UserRole;
+  subscriptionPlan?: SubscriptionPlan;
 }
 
 // GitHub Integration Types

@@ -37,8 +37,8 @@ interface HeaderProps {
 }
 
 const roleColors: Record<UserRole, string> = {
-  admin: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
-  leader: "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300",
+  super_admin: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+  admin: "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300",
   user: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",
 };
 

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Only admin can access
-    if (session.user.role !== "admin") {
+    if (session.user.role !== "super_admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
           id.toString()
         );
         // Include leader as well
-        if (team.leaderId) {
-          memberIds.push(team.leaderId.toString());
+        if (team.adminId) {
+          memberIds.push(team.adminId.toString());
         }
         query.userId = { $in: memberIds };
       }
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       .limit(limit);
 
     // Get all teams for reference
-    const teams = await Team.find({}).select("name memberIds leaderId");
+    const teams = await Team.find({}).select("name memberIds adminId");
 
     // Map timesheets with team info
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       const userTeam = teams.find((t: any) =>
         t.memberIds.some(
           (id: { toString: () => string }) => id.toString() === user._id.toString()
-        ) || t.leaderId?.toString() === user._id.toString()
+        ) || t.adminId?.toString() === user._id.toString()
       );
 
       return {

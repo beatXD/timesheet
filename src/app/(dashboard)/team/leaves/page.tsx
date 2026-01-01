@@ -70,7 +70,7 @@ interface Team {
   _id: string;
   name: string;
   memberIds: TeamMember[];
-  leaderId: TeamLeader;
+  adminId: TeamLeader;
 }
 
 interface LeaveRequest {
@@ -142,7 +142,7 @@ export default function TeamLeavesPage() {
     if (session.user.role === "user") {
       redirect("/calendar");
     }
-    if (session.user.role === "admin") {
+    if (session.user.role === "super_admin") {
       redirect("/admin/leave-requests");
     }
   }, [session, status]);
@@ -160,7 +160,7 @@ export default function TeamLeavesPage() {
 
       if (teamsData.data) {
         const myTeams = teamsData.data.filter(
-          (team: Team) => team.leaderId?._id === session?.user?.id
+          (team: Team) => team.adminId?._id === session?.user?.id
         );
         setTeams(myTeams);
 
@@ -169,7 +169,7 @@ export default function TeamLeavesPage() {
           const requestsWithTeam = requestsData.data.map((req: LeaveRequest) => {
             const team = myTeams.find((t: Team) =>
               t.memberIds.some((m: TeamMember) => m._id === req.userId._id) ||
-              t.leaderId?._id === req.userId._id
+              t.adminId?._id === req.userId._id
             );
             return {
               ...req,
@@ -188,7 +188,7 @@ export default function TeamLeavesPage() {
   }, [session?.user?.id, t, router]);
 
   useEffect(() => {
-    if (session?.user?.role === "leader") {
+    if (session?.user?.role === "admin") {
       fetchData();
     }
   }, [session, fetchData]);

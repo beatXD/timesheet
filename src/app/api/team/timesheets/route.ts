@@ -27,11 +27,11 @@ export async function GET(request: NextRequest) {
     let teamsData: Array<{
       _id: string;
       name: string;
-      leaderId: string;
+      adminId: string;
       memberIds: string[];
     }> = [];
 
-    if (session.user.role === "admin") {
+    if (session.user.role === "super_admin") {
       // Admin can see all timesheets
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const users: any[] = await User.find({}, "_id").lean();
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       teamsData = teams.map((t) => ({
         _id: t._id.toString(),
         name: t.name,
-        leaderId: t.leaderId?.toString() || "",
+        adminId: t.adminId?.toString() || "",
         memberIds: t.memberIds.map((id: { toString: () => string }) =>
           id.toString()
         ),
@@ -50,12 +50,12 @@ export async function GET(request: NextRequest) {
     } else {
       // Leader can see their teams' members + their own timesheet
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const teams: any[] = await Team.find({ leaderId: session.user.id });
+      const teams: any[] = await Team.find({ adminId: session.user.id });
       if (teams.length > 0) {
         teamsData = teams.map((t) => ({
           _id: t._id.toString(),
           name: t.name,
-          leaderId: t.leaderId?.toString() || "",
+          adminId: t.adminId?.toString() || "",
           memberIds: t.memberIds.map((id: { toString: () => string }) =>
             id.toString()
           ),
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     const timesheetsWithTeam = timesheets.map((ts) => {
       const userId = (ts.userId as { _id?: { toString(): string } })?._id?.toString() || "";
       const team = teamsData.find(
-        (t) => t.leaderId === userId || t.memberIds.includes(userId)
+        (t) => t.adminId === userId || t.memberIds.includes(userId)
       );
       return {
         ...ts,

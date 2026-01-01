@@ -13,16 +13,16 @@ export async function GET() {
     }
 
     // Only leaders and admins can access
-    if (!["leader", "admin"].includes(session.user.role)) {
+    if (!["admin", "super_admin"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await connectDB();
 
     // Get teams where user is leader
-    const teams = await Team.find({ leaderId: session.user.id })
+    const teams = await Team.find({ adminId: session.user.id })
       .populate("memberIds", "name email image role")
-      .populate("leaderId", "name email image role")
+      .populate("adminId", "name email image role")
       .lean();
 
     // Get available users (not in any of leader's teams)
@@ -60,7 +60,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!["leader", "admin"].includes(session.user.role)) {
+    if (!["admin", "super_admin"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -82,7 +82,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Team not found" }, { status: 404 });
     }
 
-    if (team.leaderId.toString() !== session.user.id && session.user.role !== "admin") {
+    if (team.adminId.toString() !== session.user.id && session.user.role !== "super_admin") {
       return NextResponse.json(
         { error: "You are not the leader of this team" },
         { status: 403 }

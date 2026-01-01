@@ -18,24 +18,82 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Loader2, ArrowLeft, Eye, EyeOff, Check, Users, User } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import type { SubscriptionPlan } from "@/types";
+
+type Step = "plan" | "details" | "payment";
+
+interface PlanOption {
+  id: SubscriptionPlan;
+  name: string;
+  description: string;
+  price: string;
+  features: string[];
+  icon: React.ReactNode;
+}
 
 export default function RegisterPage() {
   const router = useRouter();
   const t = useTranslations("auth");
+  const tSub = useTranslations("subscription");
+  const tLanding = useTranslations("landing");
   const tErrors = useTranslations("errors");
+
+  const [step, setStep] = useState<Step>("plan");
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [teamName, setTeamName] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleRegister = async (e: React.FormEvent) => {
+  // Mock payment state
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
+
+  const plans: PlanOption[] = [
+    {
+      id: "free",
+      name: tSub("free"),
+      description: tLanding("pricing.tiers.starter.description"),
+      price: "0",
+      features: [
+        "1 User",
+        "Personal time tracking",
+        "Thai holidays included",
+        "PDF & Excel export",
+      ],
+      icon: <User className="w-6 h-6" />,
+    },
+    {
+      id: "pro",
+      name: tSub("pro"),
+      description: tLanding("pricing.tiers.pro.description"),
+      price: "299",
+      features: [
+        "Up to 5 users",
+        "1 Team",
+        "Approval workflow",
+        "Leave management",
+        "Invite members via link",
+      ],
+      icon: <Users className="w-6 h-6" />,
+    },
+  ];
+
+  const handlePlanSelect = (plan: SubscriptionPlan) => {
+    setSelectedPlan(plan);
+    setStep("details");
+  };
+
+  const handleDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
@@ -48,13 +106,52 @@ export default function RegisterPage() {
       return;
     }
 
+    if (selectedPlan === "pro" && !teamName.trim()) {
+      toast.error("Team name is required for Pro plan");
+      return;
+    }
+
+    // For Pro plan, go to payment step
+    if (selectedPlan === "pro") {
+      setStep("payment");
+      return;
+    }
+
+    // For Free plan, register directly
+    await handleRegister();
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate mock payment
+    if (!cardNumber || !cardExpiry || !cardCvc) {
+      toast.error("Please fill in all payment details");
+      return;
+    }
+
+    // Mock payment processing
+    setLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate payment delay
+
+    // Continue with registration
+    await handleRegister();
+  };
+
+  const handleRegister = async () => {
     setLoading(true);
 
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          plan: selectedPlan,
+          teamName: selectedPlan === "pro" ? teamName : undefined,
+        }),
       });
 
       const data = await res.json();
@@ -87,10 +184,177 @@ export default function RegisterPage() {
   };
 
   const handleOAuthLogin = (provider: string) => {
+    // Store selected plan in sessionStorage for OAuth callback
+    if (selectedPlan) {
+      sessionStorage.setItem("registerPlan", selectedPlan);
+      if (teamName) {
+        sessionStorage.setItem("registerTeamName", teamName);
+      }
+    }
     setOauthLoading(provider);
     signIn(provider, { callbackUrl: "/calendar" });
   };
 
+  const handleBack = () => {
+    if (step === "payment") {
+      setStep("details");
+    } else if (step === "details") {
+      setStep("plan");
+      setSelectedPlan(null);
+    }
+  };
+
+  // Plan Selection Step
+  if (step === "plan") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/50 px-4 relative">
+        <div className="absolute top-4 right-4 flex items-center gap-2" suppressHydrationWarning>
+          <ThemeToggle />
+          <LanguageSwitcher />
+        </div>
+        <div className="w-full max-w-3xl">
+          <div className="text-center mb-8">
+            <Link href="/" className="inline-block mb-4">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to home
+              </Button>
+            </Link>
+            <h1 className="text-3xl font-bold">{t("createAccount")}</h1>
+            <p className="text-muted-foreground mt-2">Choose your plan to get started</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {plans.map((plan) => (
+              <Card
+                key={plan.id}
+                className={`cursor-pointer transition-all hover:shadow-lg ${
+                  selectedPlan === plan.id ? "ring-2 ring-primary" : ""
+                }`}
+                onClick={() => handlePlanSelect(plan.id)}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 bg-primary/10 rounded-lg">{plan.icon}</div>
+                    {plan.id === "pro" && (
+                      <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
+                        Popular
+                      </span>
+                    )}
+                  </div>
+                  <CardTitle className="text-xl">{plan.name}</CardTitle>
+                  <CardDescription>{plan.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4">
+                    <span className="text-3xl font-bold">฿{plan.price}</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-center gap-2 text-sm">
+                        <Check className="w-4 h-4 text-green-500" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+                <CardFooter>
+                  <Button className="w-full" variant={plan.id === "pro" ? "default" : "outline"}>
+                    {plan.id === "free" ? "Start Free" : "Start Pro Trial"}
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground mt-6">
+            {t("hasAccount")}{" "}
+            <Link href="/login" className="text-primary hover:underline font-medium">
+              {t("signIn")}
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Payment Step (Pro plan only)
+  if (step === "payment") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/50 px-4 relative">
+        <div className="absolute top-4 right-4 flex items-center gap-2" suppressHydrationWarning>
+          <ThemeToggle />
+          <LanguageSwitcher />
+        </div>
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute left-4 top-4 h-8 w-8"
+              onClick={handleBack}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle className="text-2xl font-bold">Payment Details</CardTitle>
+            <CardDescription>
+              Pro Plan - ฿299/month
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePaymentSubmit} className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg mb-4">
+                <p className="text-sm text-muted-foreground mb-2">This is a demo payment form</p>
+                <p className="text-xs text-muted-foreground">Use any card number (e.g., 4242 4242 4242 4242)</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cardNumber">Card Number</Label>
+                <Input
+                  id="cardNumber"
+                  placeholder="4242 4242 4242 4242"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cardExpiry">Expiry</Label>
+                  <Input
+                    id="cardExpiry"
+                    placeholder="MM/YY"
+                    value={cardExpiry}
+                    onChange={(e) => setCardExpiry(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cardCvc">CVC</Label>
+                  <Input
+                    id="cardCvc"
+                    placeholder="123"
+                    value={cardCvc}
+                    onChange={(e) => setCardCvc(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Pay ฿299 & Create Account
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Details Step
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/50 px-4 relative">
       <div className="absolute top-4 right-4 flex items-center gap-2" suppressHydrationWarning>
@@ -99,19 +363,22 @@ export default function RegisterPage() {
       </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center relative">
-          <Link href="/" className="absolute left-4 top-4">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-4 top-4 h-8 w-8"
+            onClick={handleBack}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           <CardTitle className="text-2xl font-bold">{t("createAccount")}</CardTitle>
           <CardDescription>
-            {t("signUpDescription")}
+            {selectedPlan === "free" ? tSub("free") : tSub("pro")} Plan
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Registration Form */}
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleDetailsSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">{t("name")}</Label>
               <Input
@@ -136,6 +403,23 @@ export default function RegisterPage() {
                 disabled={loading}
               />
             </div>
+
+            {/* Team name for Pro plan */}
+            {selectedPlan === "pro" && (
+              <div className="space-y-2">
+                <Label htmlFor="teamName">Team Name</Label>
+                <Input
+                  id="teamName"
+                  type="text"
+                  placeholder="My Team"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="password">{t("password")}</Label>
               <div className="relative">
@@ -192,7 +476,7 @@ export default function RegisterPage() {
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {t("createAccount")}
+              {selectedPlan === "pro" ? "Continue to Payment" : t("createAccount")}
             </Button>
           </form>
 

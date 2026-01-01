@@ -43,9 +43,9 @@ export async function GET(request: NextRequest) {
     if (session.user.role === "user") {
       // Regular users can only see their own leaves
       userFilter = { userId: session.user.id };
-    } else if (session.user.role === "leader") {
+    } else if (session.user.role === "admin") {
       // Leaders can see team members' leaves
-      const teams = await Team.find({ leaderId: session.user.id });
+      const teams = await Team.find({ adminId: session.user.id });
       if (teams.length > 0) {
         const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
           t.memberIds.map((id: { toString: () => string }) => id.toString())
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     // Apply user filter from query (admin/leader only)
     if (userIdParam && session.user.role !== "user") {
       // Verify user is within the allowed scope
-      if (session.user.role === "leader" && userFilter.userId) {
+      if (session.user.role === "admin" && userFilter.userId) {
         const allowedIds = (userFilter.userId as { $in: string[] }).$in || [];
         if (!allowedIds.includes(userIdParam)) {
           return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -161,10 +161,10 @@ export async function GET(request: NextRequest) {
     let users: { _id: string; name: string; email: string }[] = [];
     if (session.user.role !== "user") {
       let rawUsers;
-      if (session.user.role === "admin") {
+      if (session.user.role === "super_admin") {
         rawUsers = await User.find({}, "name email").lean();
-      } else if (session.user.role === "leader") {
-        const teams = await Team.find({ leaderId: session.user.id });
+      } else if (session.user.role === "admin") {
+        const teams = await Team.find({ adminId: session.user.id });
         const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
           t.memberIds.map((id: { toString: () => string }) => id.toString())
         );

@@ -95,7 +95,7 @@ export async function notifyTimesheetRejected(
 }
 
 export async function notifyPendingApproval(
-  leaderIds: (string | Types.ObjectId)[],
+  adminIds: (string | Types.ObjectId)[],
   userName: string,
   entityType: "timesheet" | "leave"
 ) {
@@ -106,7 +106,7 @@ export async function notifyPendingApproval(
       : `${userName} ส่งใบลารออนุมัติ`;
   const link = entityType === "timesheet" ? "/team" : "/team/leaves";
 
-  return createNotifications(leaderIds, {
+  return createNotifications(adminIds, {
     type: entityType === "timesheet" ? "timesheet_pending" : "leave_pending",
     title,
     message,
@@ -154,7 +154,7 @@ export async function notifyLeaveRejected(
 }
 
 export async function notifyTeamLeave(
-  leaderIds: (string | Types.ObjectId)[],
+  adminIds: (string | Types.ObjectId)[],
   userName: string,
   startDate: Date,
   endDate: Date,
@@ -163,7 +163,7 @@ export async function notifyTeamLeave(
   const formatDate = (date: Date) =>
     date.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
 
-  return createNotifications(leaderIds, {
+  return createNotifications(adminIds, {
     type: "team_leave",
     title: "สมาชิกขอลา",
     message: `${userName} ขอลา${leaveType} ${formatDate(startDate)} - ${formatDate(endDate)}`,

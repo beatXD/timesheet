@@ -88,7 +88,7 @@ export const leaveSettingsSchema = z.object({
 // User Update Schema
 export const updateUserSchema = z.object({
   _id: z.string().min(1, "User ID is required"),
-  role: z.enum(["admin", "leader", "user"]).optional(),
+  role: z.enum(["super_admin", "admin", "user"]).optional(),
   vendorId: z.string().nullable().optional(),
   contractRole: z.string().max(100).nullable().optional(),
 });

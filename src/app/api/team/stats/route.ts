@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Only admin can access this endpoint
-    if (session.user.role !== "admin") {
+    if (session.user.role !== "super_admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     // Get all teams with leader and members
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const teams: any[] = await Team.find()
-      .populate("leaderId", "_id name email")
+      .populate("adminId", "_id name email")
       .populate("memberIds", "_id name email")
       .lean();
 
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         teams.map(async (team) => {
           // Get all member IDs including leader
           const allMemberIds = [
-            team.leaderId?._id?.toString(),
+            team.adminId?._id?.toString(),
             ...team.memberIds.map((m: { _id?: { toString(): string } }) =>
               m._id?.toString()
             ),
@@ -69,8 +69,8 @@ export async function GET(request: NextRequest) {
           return {
             teamId: team._id?.toString(),
             teamName: team.name,
-            leaderName: (team.leaderId as { name?: string })?.name || "-",
-            leaderEmail: (team.leaderId as { email?: string })?.email || "-",
+            leaderName: (team.adminId as { name?: string })?.name || "-",
+            leaderEmail: (team.adminId as { email?: string })?.email || "-",
             memberCount: team.memberIds.length + 1, // +1 for leader
             stats: {
               pending,
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
         teams.map(async (team) => {
           // Get all member IDs including leader
           const allMemberIds = [
-            team.leaderId?._id?.toString(),
+            team.adminId?._id?.toString(),
             ...team.memberIds.map((m: { _id?: { toString(): string } }) =>
               m._id?.toString()
             ),
@@ -128,8 +128,8 @@ export async function GET(request: NextRequest) {
           return {
             teamId: team._id?.toString(),
             teamName: team.name,
-            leaderName: (team.leaderId as { name?: string })?.name || "-",
-            leaderEmail: (team.leaderId as { email?: string })?.email || "-",
+            leaderName: (team.adminId as { name?: string })?.name || "-",
+            leaderEmail: (team.adminId as { email?: string })?.email || "-",
             memberCount: team.memberIds.length + 1, // +1 for leader
             stats: {
               pending,

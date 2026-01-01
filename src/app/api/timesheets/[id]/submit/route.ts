@@ -58,10 +58,26 @@ export async function POST(
     }
 
     const previousStatus = timesheet.status;
-    const isLeader = session.user.role === "leader";
+    const user = await User.findById(session.user.id);
 
-    // Leader's own timesheet gets auto-approved
-    if (isLeader) {
+    // Determine if this is a Free plan user (auto-approve) or Pro/Enterprise (needs approval)
+    // Free plan users: Auto-approve their own timesheets
+    // Pro/Enterprise team members: Submit for admin approval
+    // Admins: Auto-approve their own timesheets
+    let shouldAutoApprove = false;
+
+    // Check if user is an admin (team leader) - they auto-approve their own timesheets
+    if (session.user.role === "admin") {
+      shouldAutoApprove = true;
+    } else if (user?.subscription?.plan === "free") {
+      // Free plan users auto-approve (self-managed)
+      shouldAutoApprove = true;
+    } else {
+      // Regular users in Pro/Enterprise teams need approval
+      shouldAutoApprove = false;
+    }
+
+    if (shouldAutoApprove) {
       timesheet.status = "approved";
       timesheet.submittedAt = new Date();
       timesheet.approvedAt = new Date();
@@ -78,25 +94,25 @@ export async function POST(
     await AuditLog.logAction({
       entityType: "timesheet",
       entityId: timesheet._id,
-      action: isLeader ? "auto_approve" : "submit",
+      action: shouldAutoApprove ? "auto_approve" : "submit",
       fromStatus: previousStatus,
       toStatus: timesheet.status,
       performedBy: session.user.id,
     });
 
-    // Notify leaders if regular user submits timesheet
-    if (!isLeader) {
+    // Notify leaders if regular user submits timesheet (needs approval)
+    if (!shouldAutoApprove) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const teams: any[] = await Team.find({ memberIds: session.user.id });
-        const leaderIds = teams
-          .map((t) => t.leaderId?.toString())
+        const adminIds = teams
+          .map((t) => t.adminId?.toString())
           .filter((id): id is string => !!id);
 
-        if (leaderIds.length > 0) {
+        if (adminIds.length > 0) {
           const currentUser = await User.findById(session.user.id).lean();
           await notifyPendingApproval(
-            leaderIds,
+            adminIds,
             currentUser?.name || session.user.name || "User",
             "timesheet"
           );

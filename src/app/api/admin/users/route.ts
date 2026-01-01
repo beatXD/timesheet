@@ -8,7 +8,7 @@ import { parsePaginationParams, createPaginationMeta } from "@/lib/pagination";
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
+    if (!session?.user || !["super_admin", "admin"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || session.user.role !== "super_admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -62,7 +62,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if admin is trying to change their own role
-    if (_id === session.user.id && role !== "admin") {
+    if (_id === session.user.id && role !== "super_admin") {
       return NextResponse.json(
         { error: "You cannot change your own admin role" },
         { status: 400 }

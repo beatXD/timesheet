@@ -98,8 +98,8 @@ export async function GET(request: NextRequest) {
     let teamSummary = null;
     let leaderTeams: typeof Team.prototype[] = [];
 
-    if (session.user.role === "leader") {
-      leaderTeams = await Team.find({ leaderId: session.user.id })
+    if (session.user.role === "admin") {
+      leaderTeams = await Team.find({ adminId: session.user.id })
         .populate("memberIds", "name email")
         .lean();
 
@@ -161,10 +161,10 @@ export async function GET(request: NextRequest) {
     // ===== ORG OVERVIEW (for admin) =====
     let orgOverview = null;
 
-    if (session.user.role === "admin") {
+    if (session.user.role === "super_admin") {
       const [allTeams, totalUsers] = await Promise.all([
         Team.find()
-          .populate("leaderId", "name email")
+          .populate("adminId", "name email")
           .populate("memberIds", "_id")
           .lean(),
         User.countDocuments(),
@@ -204,7 +204,7 @@ export async function GET(request: NextRequest) {
         const teamPending = memberIds.filter((id: string) => pendingUserIds.has(id)).length;
 
         // FIX #8: Use type guard for leader
-        const leader = isPopulatedLeader(team.leaderId) ? team.leaderId : null;
+        const leader = isPopulatedLeader(team.adminId) ? team.adminId : null;
 
         return {
           teamId: team._id.toString(),
@@ -232,9 +232,9 @@ export async function GET(request: NextRequest) {
     // For leaders/admins, show team/all stats
     let userFilter: Record<string, unknown> = { userId: session.user.id };
 
-    if (session.user.role === "admin") {
+    if (session.user.role === "super_admin") {
       userFilter = {}; // All timesheets
-    } else if (session.user.role === "leader") {
+    } else if (session.user.role === "admin") {
       if (leaderTeams.length > 0) {
         const allMemberIds: string[] = [];
         leaderTeams.forEach((t) => {
@@ -255,8 +255,8 @@ export async function GET(request: NextRequest) {
       const team = await Team.findById(teamIdParam);
       if (team) {
         // FIX #1: Security check - Leader can only view their own teams
-        if (session.user.role === "leader") {
-          const isLeaderOfTeam = team.leaderId.toString() === session.user.id;
+        if (session.user.role === "admin") {
+          const isLeaderOfTeam = team.adminId.toString() === session.user.id;
           if (!isLeaderOfTeam) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
           }
@@ -270,7 +270,7 @@ export async function GET(request: NextRequest) {
         });
 
         // Intersect with existing userFilter if leader
-        if (session.user.role === "leader" && userFilter.userId) {
+        if (session.user.role === "admin" && userFilter.userId) {
           const existingIds = (userFilter.userId as { $in: string[] }).$in || [];
           const intersection = teamMemberIds.filter((id: string) => existingIds.includes(id));
           userFilter = { userId: { $in: intersection } };

@@ -7,19 +7,19 @@ import { Team, User, Timesheet, LeaveRequest } from "@/models";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
+    if (!session?.user || !["super_admin", "admin"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await connectDB();
 
     // Admin sees all teams, leader sees only teams they lead
-    const query = session.user.role === "admin"
+    const query = session.user.role === "super_admin"
       ? {}
-      : { leaderId: session.user.id };
+      : { adminId: session.user.id };
 
     const teams = await Team.find(query)
-      .populate("leaderId", "_id name email")
+      .populate("adminId", "_id name email")
       .populate("memberIds", "_id name email")
       .sort({ createdAt: -1 })
       .lean();
@@ -29,9 +29,9 @@ export async function GET() {
     const serializedTeams = teams.map((team: any) => ({
       ...team,
       _id: team._id?.toString(),
-      leaderId: team.leaderId ? {
-        ...team.leaderId,
-        _id: team.leaderId._id?.toString(),
+      adminId: team.adminId ? {
+        ...team.adminId,
+        _id: team.adminId._id?.toString(),
       } : null,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       memberIds: (team.memberIds || []).map((m: any) => ({
@@ -54,16 +54,16 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
+    if (!session?.user || !["super_admin", "admin"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await connectDB();
 
     const body = await request.json();
-    const { name, leaderId, memberIds } = body;
+    const { name, adminId, memberIds } = body;
 
-    if (!name || !leaderId) {
+    if (!name || !adminId) {
       return NextResponse.json(
         { error: "Name and leader are required" },
         { status: 400 }
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Leader can only create teams where they are the leader
-    if (session.user.role === "leader" && leaderId !== session.user.id) {
+    if (session.user.role === "admin" && adminId !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -86,12 +86,12 @@ export async function POST(request: NextRequest) {
 
     const team = await Team.create({
       name,
-      leaderId,
+      adminId,
       memberIds: memberIds || [],
     });
 
     // Add team to leader's teamIds
-    await User.findByIdAndUpdate(leaderId, { $addToSet: { teamIds: team._id } });
+    await User.findByIdAndUpdate(adminId, { $addToSet: { teamIds: team._id } });
 
     // Add team to members' teamIds
     if (memberIds && memberIds.length > 0) {
@@ -115,14 +115,14 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
+    if (!session?.user || !["super_admin", "admin"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await connectDB();
 
     const body = await request.json();
-    const { _id, name, leaderId, memberIds } = body;
+    const { _id, name, adminId, memberIds } = body;
 
     if (!_id) {
       return NextResponse.json(
@@ -138,12 +138,12 @@ export async function PUT(request: NextRequest) {
     }
 
     // Leader can only update teams they lead
-    if (session.user.role === "leader" && oldTeam.leaderId?.toString() !== session.user.id) {
+    if (session.user.role === "admin" && oldTeam.adminId?.toString() !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Leader cannot change the leader to someone else
-    if (session.user.role === "leader" && leaderId && leaderId !== session.user.id) {
+    if (session.user.role === "admin" && adminId && adminId !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -158,7 +158,7 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    const oldLeaderId = oldTeam.leaderId?.toString();
+    const oldLeaderId = oldTeam.adminId?.toString();
     const oldMemberIds = oldTeam.memberIds.map((id: { toString: () => string }) => id.toString());
     const newMemberIds = memberIds || [];
 
@@ -169,19 +169,19 @@ export async function PUT(request: NextRequest) {
     // Update team
     const team = await Team.findByIdAndUpdate(
       _id,
-      { name, leaderId, memberIds },
+      { name, adminId, memberIds },
       { new: true }
     );
 
     // Handle leader change
-    if (oldLeaderId !== leaderId) {
+    if (oldLeaderId !== adminId) {
       // Remove team from old leader's teamIds
       if (oldLeaderId) {
         await User.findByIdAndUpdate(oldLeaderId, { $pull: { teamIds: _id } });
       }
       // Add team to new leader's teamIds
-      if (leaderId) {
-        await User.findByIdAndUpdate(leaderId, { $addToSet: { teamIds: _id } });
+      if (adminId) {
+        await User.findByIdAndUpdate(adminId, { $addToSet: { teamIds: _id } });
       }
     }
 
@@ -215,7 +215,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
+    if (!session?.user || !["super_admin", "admin"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -238,13 +238,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Leader can only delete teams they lead
-    if (session.user.role === "leader" && team.leaderId?.toString() !== session.user.id) {
+    if (session.user.role === "admin" && team.adminId?.toString() !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Get all member IDs including leader
     const allMemberIds = [
-      team.leaderId?.toString(),
+      team.adminId?.toString(),
       ...team.memberIds.map((m: { toString: () => string }) => m.toString()),
     ].filter(Boolean);
 

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Only admin can access
-    if (session.user.role !== "admin") {
+    if (session.user.role !== "super_admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     // Get all teams
     const teams = await Team.find(teamId ? { _id: teamId } : {})
-      .populate("leaderId", "name email image")
+      .populate("adminId", "name email image")
       .populate("projectId", "name");
 
     // For each team, get timesheets
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
           team: {
             _id: team._id,
             name: team.name,
-            leader: team.leaderId,
+            leader: team.adminId,
             project: team.projectId,
             memberCount: memberIds.length,
           },

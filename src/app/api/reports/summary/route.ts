@@ -26,12 +26,12 @@ export async function GET(request: NextRequest) {
     // Build base query for user filtering
     let userIds: string[] | undefined;
 
-    if (session.user.role === "leader") {
+    if (session.user.role === "admin") {
       // Leaders can only see their team data
-      const teams = await Team.find({ leaderId: session.user.id });
-      userIds = teams.flatMap((t: { leaderId: { toString: () => string }; memberIds: { toString: () => string }[] }) =>
+      const teams = await Team.find({ adminId: session.user.id });
+      userIds = teams.flatMap((t: { adminId: { toString: () => string }; memberIds: { toString: () => string }[] }) =>
         [
-          t.leaderId.toString(),
+          t.adminId.toString(),
           ...t.memberIds.map((id) => id.toString())
         ]
       );
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       const team = await Team.findById(teamId);
       if (team) {
         userIds = [
-          team.leaderId.toString(),
+          team.adminId.toString(),
           ...team.memberIds.map((id: { toString: () => string }) => id.toString())
         ];
       }
@@ -103,10 +103,10 @@ export async function GET(request: NextRequest) {
 
     // Get team count (admin only)
     let teamCount = 0;
-    if (session.user.role === "admin") {
+    if (session.user.role === "super_admin") {
       teamCount = await Team.countDocuments();
     } else {
-      teamCount = (await Team.find({ leaderId: session.user.id })).length;
+      teamCount = (await Team.find({ adminId: session.user.id })).length;
     }
 
     // Monthly breakdown (if full year requested)

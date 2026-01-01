@@ -67,7 +67,7 @@ interface Team {
   _id: string;
   name: string;
   memberIds: TeamMemberRef[];
-  leaderId: TeamLeader;
+  adminId: TeamLeader;
 }
 
 interface TeamTimesheet {
@@ -98,7 +98,7 @@ export default function TeamPage() {
   const { data: session, status } = useSession();
 
   // Redirect admin to their dedicated page
-  if (status !== "loading" && session?.user?.role === "admin") {
+  if (status !== "loading" && session?.user?.role === "super_admin") {
     redirect("/admin/timesheets/records");
   }
 
@@ -151,7 +151,7 @@ export default function TeamPage() {
 
       if (teamsData.data) {
         const myTeams = teamsData.data.filter(
-          (team: Team) => team.leaderId?._id === session?.user?.id
+          (team: Team) => team.adminId?._id === session?.user?.id
         );
         setTeams(myTeams);
 
@@ -160,7 +160,7 @@ export default function TeamPage() {
           const timesheetsWithTeam = timesheetsData.data.map((ts: TeamTimesheet) => {
             const team = myTeams.find((t: Team) =>
               t.memberIds.some((m: TeamMemberRef) => m._id === ts.userId._id) ||
-              t.leaderId?._id === ts.userId._id
+              t.adminId?._id === ts.userId._id
             );
             return {
               ...ts,
@@ -179,7 +179,7 @@ export default function TeamPage() {
   }, [filterYear, filterMonth, session?.user?.id, t]);
 
   useEffect(() => {
-    if (session?.user && session.user.role === "leader") {
+    if (session?.user && session.user.role === "admin") {
       fetchData();
     }
   }, [fetchData, session?.user]);
@@ -259,12 +259,12 @@ export default function TeamPage() {
 
     teams.forEach((team) => {
       // Include leader
-      if (team.leaderId && !memberIdSet.has(team.leaderId._id)) {
-        memberIdSet.add(team.leaderId._id);
+      if (team.adminId && !memberIdSet.has(team.adminId._id)) {
+        memberIdSet.add(team.adminId._id);
         allMembers.push({
-          _id: team.leaderId._id,
-          name: team.leaderId.name,
-          email: team.leaderId.email,
+          _id: team.adminId._id,
+          name: team.adminId.name,
+          email: team.adminId.email,
         });
       }
       // Include members

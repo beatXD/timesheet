@@ -8,8 +8,7 @@ import { useSidebarStore, useModeStore } from "@/store";
 import type { UserRole } from "@/types";
 import { ModeToggle } from "@/components/ModeToggle";
 import {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  LayoutDashboard, // TODO: Re-enable when dashboard is ready
+  LayoutDashboard,
   Clock,
   Building2,
   FolderKanban,
@@ -27,6 +26,8 @@ import {
   History,
   BarChart3,
   Users,
+  CreditCard,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -45,133 +46,158 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    titleKey: "nav.sections.overview",
+    titleKey: "nav.sections.superAdmin",
+    roles: ["super_admin"],
     items: [
-      // TODO: Enable when dashboard is ready
-      // {
-      //   href: "/dashboard",
-      //   labelKey: "nav.dashboard",
-      //   icon: <LayoutDashboard className="w-5 h-5" />,
-      // },
+      {
+        href: "/super-admin",
+        labelKey: "superAdmin.dashboard",
+        icon: <LayoutDashboard className="w-4 h-4" />,
+        roles: ["super_admin"],
+      },
+      {
+        href: "/super-admin/organizations",
+        labelKey: "superAdmin.organizations",
+        icon: <Building2 className="w-4 h-4" />,
+        roles: ["super_admin"],
+      },
+      {
+        href: "/super-admin/subscriptions",
+        labelKey: "superAdmin.subscriptions",
+        icon: <CreditCard className="w-4 h-4" />,
+        roles: ["super_admin"],
+      },
+      {
+        href: "/super-admin/plans",
+        labelKey: "superAdmin.plans.title",
+        icon: <Package className="w-4 h-4" />,
+        roles: ["super_admin"],
+      },
+    ],
+  },
+  {
+    titleKey: "nav.sections.overview",
+    roles: ["super_admin"],
+    items: [
       {
         href: "/admin/leaves",
         labelKey: "nav.leaves",
         icon: <Briefcase className="w-4 h-4" />,
-        roles: ["admin"],
+        roles: ["super_admin"],
       },
       {
         href: "/admin/timesheets/records",
         labelKey: "nav.timesheetRecords",
         icon: <FileSpreadsheet className="w-4 h-4" />,
-        roles: ["admin"],
+        roles: ["super_admin"],
       },
       {
         href: "/team/members",
         labelKey: "nav.teamMembers",
         icon: <UsersRound className="w-4 h-4" />,
-        roles: ["admin"],
+        roles: ["super_admin"],
       },
       {
         href: "/admin/reports",
         labelKey: "nav.reports",
         icon: <BarChart3 className="w-4 h-4" />,
-        roles: ["admin"],
+        roles: ["super_admin"],
       },
       {
         href: "/admin/audit-logs",
         labelKey: "nav.auditLogs",
         icon: <History className="w-4 h-4" />,
-        roles: ["admin"],
+        roles: ["super_admin"],
       },
     ],
   },
   {
     titleKey: "nav.sections.myWork",
-    roles: ["user", "leader"],
+    roles: ["user", "admin"],
     items: [
       {
         href: "/calendar",
         labelKey: "nav.myCalendar",
         icon: <CalendarDays className="w-4 h-4" />,
-        roles: ["user", "leader"],
+        roles: ["user", "admin"],
       },
       {
         href: "/timesheet",
         labelKey: "nav.timesheet",
         icon: <Clock className="w-4 h-4" />,
-        roles: ["user", "leader"],
+        roles: ["user", "admin"],
       },
       {
         href: "/leave-requests",
         labelKey: "nav.leaveRequests",
         icon: <CalendarPlus className="w-4 h-4" />,
-        roles: ["user", "leader"],
+        roles: ["user", "admin"],
       },
     ],
   },
   {
     titleKey: "nav.sections.teamManagement",
-    roles: ["leader"],
+    roles: ["admin"],
     items: [
       {
         href: "/team/calendar",
         labelKey: "nav.teamCalendar",
         icon: <CalendarDays className="w-4 h-4" />,
-        roles: ["leader"],
+        roles: ["admin"],
       },
       {
         href: "/team",
         labelKey: "nav.teamTimesheets",
         icon: <ClipboardList className="w-4 h-4" />,
-        roles: ["leader"],
+        roles: ["admin"],
       },
       {
         href: "/team/leaves",
         labelKey: "nav.teamLeaves",
         icon: <CalendarCheck className="w-4 h-4" />,
-        roles: ["leader"],
+        roles: ["admin"],
       },
       {
         href: "/team/members",
         labelKey: "nav.teamMembers",
         icon: <UsersRound className="w-4 h-4" />,
-        roles: ["leader"],
+        roles: ["admin"],
       },
       {
         href: "/admin/teams",
         labelKey: "nav.teams",
         icon: <Users className="w-4 h-4" />,
-        roles: ["leader"],
+        roles: ["admin"],
       },
     ],
   },
   {
     titleKey: "nav.sections.settings",
-    roles: ["admin"],
+    roles: ["super_admin"],
     items: [
       {
         href: "/admin/users",
         labelKey: "nav.users",
         icon: <UserCog className="w-4 h-4" />,
-        roles: ["admin"],
+        roles: ["super_admin"],
       },
       {
         href: "/admin/vendors",
         labelKey: "nav.vendors",
         icon: <Building2 className="w-4 h-4" />,
-        roles: ["admin"],
+        roles: ["super_admin"],
       },
       {
         href: "/admin/holidays",
         labelKey: "nav.holidays",
         icon: <Calendar className="w-4 h-4" />,
-        roles: ["admin"],
+        roles: ["super_admin"],
       },
       {
         href: "/admin/leave-settings",
         labelKey: "nav.leaveSettings",
         icon: <Settings2 className="w-4 h-4" />,
-        roles: ["admin"],
+        roles: ["super_admin"],
       },
     ],
   },

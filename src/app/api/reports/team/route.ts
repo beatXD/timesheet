@@ -25,13 +25,13 @@ export async function GET(request: NextRequest) {
     // Get teams based on role
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let teams: any[];
-    if (session.user.role === "admin") {
+    if (session.user.role === "super_admin") {
       teams = await Team.find()
-        .populate("leaderId", "name email image")
+        .populate("adminId", "name email image")
         .populate("projectId", "name");
     } else {
-      teams = await Team.find({ leaderId: session.user.id })
-        .populate("leaderId", "name email image")
+      teams = await Team.find({ adminId: session.user.id })
+        .populate("adminId", "name email image")
         .populate("projectId", "name");
     }
 
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       teams.map(async (team) => {
         // Get all member IDs including leader
         const memberIds = [
-          team.leaderId._id.toString(),
+          team.adminId._id.toString(),
           ...team.memberIds.map((id: { toString: () => string }) => id.toString())
         ];
 
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
           team: {
             _id: team._id,
             name: team.name,
-            leader: team.leaderId,
+            leader: team.adminId,
             project: team.projectId,
             memberCount: memberIds.length,
           },

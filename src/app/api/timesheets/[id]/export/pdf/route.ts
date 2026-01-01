@@ -34,8 +34,8 @@ export async function GET(
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       // Leaders can only export their team members' timesheets
-      if (session.user.role === "leader") {
-        const teams = await Team.find({ leaderId: session.user.id });
+      if (session.user.role === "admin") {
+        const teams = await Team.find({ adminId: session.user.id });
         const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
           t.memberIds.map((id) => id.toString())
         );

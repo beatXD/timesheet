@@ -29,7 +29,7 @@ export async function GET(
     }
 
     // Only admin and leader can view other users' balances
-    if (!["admin", "leader"].includes(session.user.role)) {
+    if (!["super_admin", "admin"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

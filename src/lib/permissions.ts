@@ -2,28 +2,40 @@ import type { UserRole } from "@/types";
 
 /**
  * Permission utilities for role-based access control
+ *
+ * Role hierarchy:
+ * - super_admin: System oversight, manage subscriptions, view reports, export data (no approval)
+ * - admin: Team leader, invite members, approve timesheets, manage own team
+ * - user: Team member or individual (self-managed with Free plan)
  */
 export const Permissions = {
-  // Timesheet permissions
-  canApproveTimesheet: (role: UserRole) => ["admin", "leader"].includes(role),
-  canFinalApprove: (role: UserRole) => role === "admin",
-  canSubmitToAdmin: (role: UserRole) => ["admin", "leader"].includes(role),
+  // Super Admin permissions (system-wide)
+  canAccessSuperAdmin: (role: UserRole) => role === "super_admin",
+  canManageSubscriptions: (role: UserRole) => role === "super_admin",
+  canViewAllOrganizations: (role: UserRole) => role === "super_admin",
+  canExportSystemData: (role: UserRole) => role === "super_admin",
+  canManageSystemSettings: (role: UserRole) => role === "super_admin",
 
-  // Team permissions
-  canManageTeam: (role: UserRole) => ["admin", "leader"].includes(role),
-  canViewAllTeams: (role: UserRole) => role === "admin",
-  canManageTeamMembers: (role: UserRole) => ["admin", "leader"].includes(role),
+  // Timesheet permissions (admin = team leader)
+  canApproveTimesheet: (role: UserRole) => role === "super_admin",
+  canViewTeamTimesheets: (role: UserRole) => ["super_admin", "super_admin"].includes(role),
 
-  // Admin permissions
-  canAccessAdmin: (role: UserRole) => role === "admin",
-  canManageUsers: (role: UserRole) => role === "admin",
-  canManageHolidays: (role: UserRole) => role === "admin",
-  canManageVendors: (role: UserRole) => role === "admin",
-  canManageProjects: (role: UserRole) => role === "admin",
+  // Team permissions (admin = team leader)
+  canManageTeam: (role: UserRole) => role === "super_admin",
+  canViewAllTeams: (role: UserRole) => role === "super_admin",
+  canManageTeamMembers: (role: UserRole) => role === "super_admin",
+  canInviteMembers: (role: UserRole) => role === "super_admin",
+
+  // Admin settings permissions (super_admin only)
+  canAccessAdminSettings: (role: UserRole) => role === "super_admin",
+  canManageUsers: (role: UserRole) => role === "super_admin",
+  canManageHolidays: (role: UserRole) => role === "super_admin", // Admin can manage holidays for their team
+  canManageVendors: (role: UserRole) => role === "super_admin",
 
   // Leave permissions
-  canApproveLeave: (role: UserRole) => ["admin", "leader"].includes(role),
-  canViewAllLeaves: (role: UserRole) => role === "admin",
+  canApproveLeave: (role: UserRole) => role === "super_admin",
+  canViewAllLeaves: (role: UserRole) => role === "super_admin",
+  canViewTeamLeaves: (role: UserRole) => ["super_admin", "super_admin"].includes(role),
 };
 
 /**
@@ -31,16 +43,22 @@ export const Permissions = {
  * Defines which roles can access which paths
  */
 export const PathAccess: Record<string, UserRole[]> = {
-  "/admin": ["admin"],
-  "/admin/users": ["admin"],
-  "/admin/teams": ["admin"],
-  "/admin/vendors": ["admin"],
-  "/admin/projects": ["admin"],
-  "/admin/holidays": ["admin"],
-  "/admin/leaves": ["admin"],
-  "/team": ["admin", "leader"],
-  "/team/members": ["admin", "leader"],
-  "/team/leaves": ["admin", "leader"],
+  // Super Admin paths (system oversight)
+  "/super-admin": ["super_admin"],
+  "/super-admin/organizations": ["super_admin"],
+  "/super-admin/subscriptions": ["super_admin"],
+  "/super-admin/reports": ["super_admin"],
+
+  // Admin paths (team management) - admin = old leader
+  "/team": ["super_admin"],
+  "/team/members": ["super_admin"],
+  "/team/leaves": ["super_admin"],
+  "/team/calendar": ["super_admin"],
+  "/team/timesheets": ["super_admin"],
+  "/admin/teams": ["super_admin"],
+
+  // Settings paths
+  "/settings/billing": ["super_admin"], // Only admins (team owners) have billing
 };
 
 /**

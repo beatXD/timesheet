@@ -48,12 +48,12 @@ export async function GET(
 
     // Check access
     const isOwner = leaveRequest.userId._id.toString() === session.user.id;
-    const isAdmin = session.user.role === "admin";
+    const isAdmin = session.user.role === "super_admin";
 
     if (!isOwner && !isAdmin) {
       // Check if leader of user's team
-      if (session.user.role === "leader") {
-        const teams = await Team.find({ leaderId: session.user.id });
+      if (session.user.role === "admin") {
+        const teams = await Team.find({ adminId: session.user.id });
         const allMemberIds = teams.flatMap((t: any) =>
           t.memberIds.map((mid: { toString: () => string }) => mid.toString())
         );
@@ -106,7 +106,7 @@ export async function DELETE(
     // Only owner or admin can delete
     if (
       leaveRequest.userId.toString() !== session.user.id &&
-      session.user.role !== "admin"
+      session.user.role !== "super_admin"
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -169,8 +169,8 @@ export async function POST(
     }
 
     // Check if leader has authority over this user
-    if (session.user.role === "leader") {
-      const teams = await Team.find({ leaderId: session.user.id });
+    if (session.user.role === "admin") {
+      const teams = await Team.find({ adminId: session.user.id });
       const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
         t.memberIds.map((mid) => mid.toString())
       );
