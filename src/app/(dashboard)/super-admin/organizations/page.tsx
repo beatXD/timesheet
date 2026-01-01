@@ -191,8 +191,8 @@ export default function OrganizationsPage() {
                     <CardDescription className="text-xs">{org.admin.email}</CardDescription>
                   </div>
                 </div>
-                <Badge className={getPlanColor(org.subscription.plan)}>
-                  {t(`subscription.${org.subscription.plan}`)}
+                <Badge className={getPlanColor(org.subscription?.plan || "free")}>
+                  {t(`subscription.${org.subscription?.plan || "free"}`)}
                 </Badge>
               </div>
             </CardHeader>
@@ -252,8 +252,8 @@ export default function OrganizationsPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">{t("superAdmin.plan")}:</span>{" "}
-                  <Badge className={getPlanColor(selectedOrg?.subscription.plan || "free")}>
-                    {t(`subscription.${selectedOrg?.subscription.plan}`)}
+                  <Badge className={getPlanColor(selectedOrg?.subscription?.plan || "free")}>
+                    {t(`subscription.${selectedOrg?.subscription?.plan || "free"}`)}
                   </Badge>
                 </div>
                 <div>

@@ -257,8 +257,8 @@ export default function SubscriptionsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getPlanColor(org.subscription.plan)}>
-                      {t(`subscription.${org.subscription.plan}`)}
+                    <Badge className={getPlanColor(org.subscription?.plan || "free")}>
+                      {t(`subscription.${org.subscription?.plan || "free"}`)}
                     </Badge>
                   </TableCell>
                   <TableCell>
