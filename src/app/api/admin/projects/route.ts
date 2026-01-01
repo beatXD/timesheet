@@ -3,11 +3,11 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Project, Team } from "@/models";
 
-// GET /api/admin/projects - List all projects
+// GET /api/admin/projects - List all projects (admin and leader)
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -27,11 +27,11 @@ export async function GET() {
   }
 }
 
-// POST /api/admin/projects - Create project
+// POST /api/admin/projects - Create project (admin and leader)
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -59,11 +59,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/admin/projects - Update project
+// PUT /api/admin/projects - Update project (admin and leader)
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -99,11 +99,11 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/admin/projects - Delete project
+// DELETE /api/admin/projects - Delete project (admin and leader)
 export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

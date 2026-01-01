@@ -137,6 +137,18 @@ const navSections: NavSection[] = [
         icon: <UsersRound className="w-4 h-4" />,
         roles: ["leader"],
       },
+      {
+        href: "/admin/teams",
+        labelKey: "nav.teams",
+        icon: <Users className="w-4 h-4" />,
+        roles: ["leader"],
+      },
+      {
+        href: "/admin/projects",
+        labelKey: "nav.projects",
+        icon: <FolderKanban className="w-4 h-4" />,
+        roles: ["leader"],
+      },
     ],
   },
   {
@@ -150,21 +162,9 @@ const navSections: NavSection[] = [
         roles: ["admin"],
       },
       {
-        href: "/admin/teams",
-        labelKey: "nav.teams",
-        icon: <Users className="w-4 h-4" />,
-        roles: ["admin"],
-      },
-      {
         href: "/admin/vendors",
         labelKey: "nav.vendors",
         icon: <Building2 className="w-4 h-4" />,
-        roles: ["admin"],
-      },
-      {
-        href: "/admin/projects",
-        labelKey: "nav.projects",
-        icon: <FolderKanban className="w-4 h-4" />,
         roles: ["admin"],
       },
       {

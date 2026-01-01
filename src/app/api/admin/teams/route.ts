@@ -55,11 +55,11 @@ export async function GET() {
   }
 }
 
-// POST /api/admin/teams - Create team
+// POST /api/admin/teams - Create team (admin and leader)
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -112,11 +112,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/admin/teams - Update team
+// PUT /api/admin/teams - Update team (admin and leader)
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -202,11 +202,11 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/admin/teams - Delete team
+// DELETE /api/admin/teams - Delete team (admin and leader)
 export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "leader"].includes(session.user.role || "")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
