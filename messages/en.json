@@ -57,7 +57,9 @@
     "theme": "Theme",
     "themeLight": "Light",
     "themeDark": "Dark",
-    "themeSystem": "System"
+    "themeSystem": "System",
+    "syncing": "Syncing...",
+    "seeding": "Seeding..."
   },
   "mode": {
     "team": "Team",
@@ -228,6 +230,8 @@
     "created": "Timesheet created",
     "createError": "Failed to create timesheet",
     "fetchError": "Failed to fetch timesheets",
+    "syncHolidays": "Sync Holidays",
+    "holidaysSynced": "Holidays synced successfully",
     "notFound": "Timesheet not found",
     "confirmSubmit": "Are you sure you want to submit this timesheet for approval?",
     "confirmSubmitDesc": "You won't be able to edit it after submission.",
@@ -375,6 +379,8 @@
       "seedThaiHolidays": "Seed Thai Holidays",
       "seeding": "Seeding...",
       "confirmSeed": "This will replace all holidays for {year} with Thai public holidays. Continue?",
+      "seedConfirm": "This will replace all holidays for {year} with Thai public holidays. Continue?",
+      "importedHolidays": "Imported {count} holidays for {year}",
       "addHoliday": "Add Holiday",
       "editHoliday": "Edit Holiday",
       "updateHoliday": "Update holiday information",
@@ -582,6 +588,7 @@
     "failedToFetch": "Failed to fetch data",
     "failedToSave": "Failed to save",
     "failedToDelete": "Failed to delete",
+    "failedToSync": "Failed to sync holidays",
     "unauthorized": "Access Denied",
     "noPermission": "You don't have permission to access this page.",
     "backToDashboard": "Back to Dashboard",

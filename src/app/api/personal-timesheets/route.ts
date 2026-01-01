@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { PersonalTimesheet } from "@/models";
-import { getDaysInMonth, isWeekend } from "date-fns";
+import { PersonalTimesheet, Holiday } from "@/models";
+import { getDaysInMonth, isWeekend, isSameDay } from "date-fns";
 import type { ITimesheetEntry, EntryType } from "@/types";
 
 // GET /api/personal-timesheets - List user's personal timesheets
@@ -88,13 +88,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate entries for each day of the month (simpler than team timesheet - no holidays)
+    // Get holidays for this year
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const holidays: any[] = await Holiday.find({ year }).lean();
+
+    // Generate entries for each day of the month
     const daysInMonth = getDaysInMonth(new Date(year, month - 1));
     const entries: ITimesheetEntry[] = [];
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month - 1, day);
-      const type: EntryType = isWeekend(date) ? "weekend" : "working";
+      let type: EntryType = "working";
+      let remark = "";
+
+      // Check if weekend
+      if (isWeekend(date)) {
+        type = "weekend";
+      }
+
+      // Check if holiday
+      const holiday = holidays.find((h) => isSameDay(new Date(h.date), date));
+      if (holiday) {
+        type = "holiday";
+        remark = holiday.name;
+      }
 
       entries.push({
         date: day,
@@ -104,7 +121,7 @@ export async function POST(request: NextRequest) {
         timeOut: type === "working" ? "18:00" : "",
         baseHours: type === "working" ? 8 : 0,
         additionalHours: 0,
-        remark: "",
+        remark,
       });
     }
 

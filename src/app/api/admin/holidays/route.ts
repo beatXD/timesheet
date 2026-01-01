@@ -222,6 +222,9 @@ export async function POST(request: NextRequest) {
       }));
       await Holiday.bulkWrite(bulkOps);
 
+      // Invalidate cache for this year after seeding
+      invalidateCache(`holidays:${year}`);
+
       const source = process.env.CALENDARIFIC_API_KEY ? "Calendarific API" : "Thai holidays database";
       return NextResponse.json({
         message: `Imported ${holidays.length} holidays for ${year} from ${source}`,

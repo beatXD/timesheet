@@ -45,7 +45,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText, Layout, Bookmark, GitCommit } from "lucide-react";
+import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText, Layout, Bookmark, GitCommit, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { CommitImportDialog } from "@/components/github";
@@ -113,6 +113,9 @@ export default function TimesheetDetailPage() {
   // GitHub integration states
   const [githubStatus, setGithubStatus] = useState<IGitHubStatus | null>(null);
   const [showCommitImportDialog, setShowCommitImportDialog] = useState(false);
+
+  // Sync holidays state (for personal mode)
+  const [syncingHolidays, setSyncingHolidays] = useState(false);
 
   // Personal mode: always editable. Team mode: only draft or rejected
   const isEditable = isPersonalMode ||
@@ -355,6 +358,32 @@ export default function TimesheetDetailPage() {
     toast.success(t("template.applied"));
   };
 
+  // Sync holidays function (for personal mode)
+  const syncHolidays = async () => {
+    if (!isPersonalMode) return;
+
+    setSyncingHolidays(true);
+    try {
+      const res = await fetch(`/api/personal-timesheets/${params.id}/sync-holidays`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || t("errors.failedToSync"));
+        return;
+      }
+
+      toast.success(data.message || t("timesheet.holidaysSynced"));
+      fetchTimesheet();
+    } catch {
+      toast.error(t("errors.failedToSync"));
+    } finally {
+      setSyncingHolidays(false);
+    }
+  };
+
   const totalBaseHours = entries.reduce((sum, e) => sum + (e.baseHours || 0), 0);
   const totalAdditionalHours = entries.reduce(
     (sum, e) => sum + (e.additionalHours || 0),
@@ -441,6 +470,18 @@ export default function TimesheetDetailPage() {
             </DropdownMenu>
           )}
 
+          {/* Sync Holidays button - only for personal mode when editable */}
+          {isEditable && isPersonalMode && (
+            <Button
+              variant="outline"
+              onClick={syncHolidays}
+              disabled={syncingHolidays}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${syncingHolidays ? "animate-spin" : ""}`} />
+              {syncingHolidays ? t("common.syncing") : t("timesheet.syncHolidays")}
+            </Button>
+          )}
+
           {/* GitHub Import button - only when editable and GitHub connected with repo scope */}
           {isEditable && githubStatus?.connected && githubStatus?.hasRepoScope && (
             <Button
@@ -462,13 +503,13 @@ export default function TimesheetDetailPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem asChild>
-                <a href={`/api/timesheets/${params.id}/export/excel`} download>
+                <a href={`/api/${isPersonalMode ? "personal-timesheets" : "timesheets"}/${params.id}/export/excel`} download>
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
                   {t("timesheet.exportToExcel")}
                 </a>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <a href={`/api/timesheets/${params.id}/export/pdf`} download>
+                <a href={`/api/${isPersonalMode ? "personal-timesheets" : "timesheets"}/${params.id}/export/pdf`} download>
                   <FileText className="w-4 h-4 mr-2" />
                   {t("timesheet.exportToPdf")}
                 </a>
