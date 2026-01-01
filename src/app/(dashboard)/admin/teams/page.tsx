@@ -101,6 +101,26 @@ export default function TeamsPage() {
     );
   }, [teams, searchQuery]);
 
+  // Get all member IDs from leader's teams (for filtering available users)
+  const leaderTeamMemberIds = useMemo(() => {
+    if (!isLeader) return new Set<string>();
+    const memberIds = new Set<string>();
+    teams.forEach((team) => {
+      team.memberIds.forEach((member) => {
+        memberIds.add(member._id);
+      });
+    });
+    return memberIds;
+  }, [teams, isLeader]);
+
+  // Filter users for member selection
+  // Leaders can only see members already in their teams
+  // Admins can see all users
+  const availableUsersForSelection = useMemo(() => {
+    if (!isLeader) return users;
+    return users.filter((user) => leaderTeamMemberIds.has(user._id));
+  }, [users, isLeader, leaderTeamMemberIds]);
+
   const fetchData = async () => {
     try {
       const [teamsRes, usersRes, projectsRes] = await Promise.all([
@@ -390,13 +410,12 @@ export default function TeamsPage() {
             </div>
             <div className="grid gap-2">
               <Label>{t("admin.teams.members")}</Label>
-              <div className="grid grid-cols-2 gap-4 h-56">
-                {/* Left column: Regular Users */}
-                <div className="flex flex-col gap-2 h-full">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("admin.teams.users")}</p>
-                  <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2">
-                    {users
-                      .filter((user) => (!user.role || user.role === "user") && user._id !== formData.leaderId)
+              {isLeader ? (
+                // Leaders: Show single column with their existing team members only
+                <div className="h-56">
+                  <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2 h-full">
+                    {availableUsersForSelection
+                      .filter((user) => user._id !== formData.leaderId)
                       .map((user) => (
                         <div key={user._id} className="flex items-center gap-2">
                           <Checkbox
@@ -426,55 +445,99 @@ export default function TeamsPage() {
                           </label>
                         </div>
                       ))}
-                    {users.filter((user) => (!user.role || user.role === "user") && user._id !== formData.leaderId).length === 0 && (
-                      <p className="text-sm text-muted-foreground">{t("admin.teams.noUsers")}</p>
+                    {availableUsersForSelection.filter((user) => user._id !== formData.leaderId).length === 0 && (
+                      <p className="text-sm text-muted-foreground">{t("admin.teams.noMembers")}</p>
                     )}
                   </div>
                 </div>
-                {/* Right column: Leaders (can be members in other teams) */}
-                <div className="flex flex-col gap-2 h-full">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("admin.teams.leaders")}</p>
-                  <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2">
-                    {users
-                      .filter((user) => (user.role === "leader" || user.role === "admin") && user._id !== formData.leaderId)
-                      .map((user) => (
-                        <div key={user._id} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`member-leader-${user._id}`}
-                            checked={formData.memberIds.includes(user._id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setFormData({
-                                  ...formData,
-                                  memberIds: [...formData.memberIds, user._id],
-                                });
-                              } else {
-                                setFormData({
-                                  ...formData,
-                                  memberIds: formData.memberIds.filter(
-                                    (id) => id !== user._id
-                                  ),
-                                });
-                              }
-                            }}
-                          />
-                          <label
-                            htmlFor={`member-leader-${user._id}`}
-                            className="text-sm cursor-pointer flex-1"
-                          >
-                            {user.name}
-                            <Badge variant="secondary" className="ml-2 text-xs">
-                              {t(`roles.${user.role}`)}
-                            </Badge>
-                          </label>
-                        </div>
-                      ))}
-                    {users.filter((user) => (user.role === "leader" || user.role === "admin") && user._id !== formData.leaderId).length === 0 && (
-                      <p className="text-sm text-muted-foreground">{t("admin.teams.noLeaders")}</p>
-                    )}
+              ) : (
+                // Admins: Show two columns (Users and Leaders)
+                <div className="grid grid-cols-2 gap-4 h-56">
+                  {/* Left column: Regular Users */}
+                  <div className="flex flex-col gap-2 h-full">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("admin.teams.users")}</p>
+                    <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2">
+                      {users
+                        .filter((user) => (!user.role || user.role === "user") && user._id !== formData.leaderId)
+                        .map((user) => (
+                          <div key={user._id} className="flex items-center gap-2">
+                            <Checkbox
+                              id={`member-${user._id}`}
+                              checked={formData.memberIds.includes(user._id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setFormData({
+                                    ...formData,
+                                    memberIds: [...formData.memberIds, user._id],
+                                  });
+                                } else {
+                                  setFormData({
+                                    ...formData,
+                                    memberIds: formData.memberIds.filter(
+                                      (id) => id !== user._id
+                                    ),
+                                  });
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`member-${user._id}`}
+                              className="text-sm cursor-pointer flex-1"
+                            >
+                              {user.name}
+                            </label>
+                          </div>
+                        ))}
+                      {users.filter((user) => (!user.role || user.role === "user") && user._id !== formData.leaderId).length === 0 && (
+                        <p className="text-sm text-muted-foreground">{t("admin.teams.noUsers")}</p>
+                      )}
+                    </div>
+                  </div>
+                  {/* Right column: Leaders (can be members in other teams) */}
+                  <div className="flex flex-col gap-2 h-full">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("admin.teams.leaders")}</p>
+                    <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-2">
+                      {users
+                        .filter((user) => (user.role === "leader" || user.role === "admin") && user._id !== formData.leaderId)
+                        .map((user) => (
+                          <div key={user._id} className="flex items-center gap-2">
+                            <Checkbox
+                              id={`member-leader-${user._id}`}
+                              checked={formData.memberIds.includes(user._id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setFormData({
+                                    ...formData,
+                                    memberIds: [...formData.memberIds, user._id],
+                                  });
+                                } else {
+                                  setFormData({
+                                    ...formData,
+                                    memberIds: formData.memberIds.filter(
+                                      (id) => id !== user._id
+                                    ),
+                                  });
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`member-leader-${user._id}`}
+                              className="text-sm cursor-pointer flex-1"
+                            >
+                              {user.name}
+                              <Badge variant="secondary" className="ml-2 text-xs">
+                                {t(`roles.${user.role}`)}
+                              </Badge>
+                            </label>
+                          </div>
+                        ))}
+                      {users.filter((user) => (user.role === "leader" || user.role === "admin") && user._id !== formData.leaderId).length === 0 && (
+                        <p className="text-sm text-muted-foreground">{t("admin.teams.noLeaders")}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
           <DialogFooter>
