@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -80,7 +80,12 @@ function LoginForm() {
 
   return (
     <Card className="w-full max-w-md">
-      <CardHeader className="text-center">
+      <CardHeader className="text-center relative">
+        <Link href="/" className="absolute left-4 top-4">
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
         <CardTitle className="text-2xl font-bold">{t("common.appName")}</CardTitle>
         <CardDescription>
           {t("auth.signInDescription")}
@@ -235,7 +240,7 @@ function LoginFormFallback() {
 export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
-      <div className="absolute top-4 right-4 flex items-center gap-2">
+      <div className="absolute top-4 right-4 flex items-center gap-2" suppressHydrationWarning>
         <ThemeToggle />
         <LanguageSwitcher />
       </div>

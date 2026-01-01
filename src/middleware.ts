@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
 
   // Allow public paths
   const publicPaths = ["/login", "/register", "/api/auth"];
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
+  const isPublicPath = publicPaths.some(path => pathname.startsWith(path)) || pathname === "/";
 
   // Allow static files and API routes
   if (
