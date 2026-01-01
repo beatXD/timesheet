@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ interface PlanOption {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("auth");
   const tSub = useTranslations("subscription");
   const tLanding = useTranslations("landing");
@@ -43,6 +44,16 @@ export default function RegisterPage() {
 
   const [step, setStep] = useState<Step>("plan");
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+
+  // Check for plan in URL query params
+  useEffect(() => {
+    const planFromUrl = searchParams.get("plan") as SubscriptionPlan | null;
+    if (planFromUrl && ["free", "pro", "enterprise"].includes(planFromUrl)) {
+      setSelectedPlan(planFromUrl);
+      setStep("details");
+    }
+  }, [searchParams]);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

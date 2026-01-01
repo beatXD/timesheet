@@ -10,17 +10,20 @@ import { Check } from "lucide-react";
 const tiers = [
   {
     key: "starter",
-    price: "$9",
+    plan: "free",
+    price: "฿0",
     popular: false,
   },
   {
     key: "pro",
-    price: "$19",
+    plan: "pro",
+    price: "฿990",
     popular: true,
   },
   {
     key: "enterprise",
-    price: "$29",
+    plan: "enterprise",
+    price: "฿4,990",
     popular: false,
   },
 ];
@@ -90,7 +93,7 @@ export function PricingSection() {
               </CardContent>
 
               <CardFooter>
-                <Link href="/login" className="w-full">
+                <Link href={`/register?plan=${tier.plan}`} className="w-full">
                   <Button
                     className="w-full"
                     variant={tier.popular ? "default" : "outline"}
