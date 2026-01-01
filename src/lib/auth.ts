@@ -28,6 +28,7 @@ declare module "next-auth" {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: MongoDBAdapter(clientPromise),
+  trustHost: true, // Required for Vercel deployment
   session: {
     strategy: "jwt", // Use JWT for Credentials provider
   },
