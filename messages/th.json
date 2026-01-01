@@ -278,6 +278,7 @@
     "teamSubmittedToAdmin": "ส่งไทม์ชีททีมให้ Admin แล้ว",
     "confirmSubmitToAdmin": "ส่งไทม์ชีทที่อนุมัติแล้วทั้งหมดให้ Admin เพื่ออนุมัติขั้นสุดท้าย?",
     "noTeams": "คุณยังไม่ได้ถูกกำหนดเป็นหัวหน้าทีมใด",
+    "noTeamsAssigned": "คุณยังไม่ได้ถูกกำหนดเป็นหัวหน้าทีมใด",
     "teamLeader": "หัวหน้าทีม",
     "memberCount": "สมาชิก"
   },
@@ -411,7 +412,9 @@
       "title": "คำขอลา",
       "description": "ดูคำขอลาทั้งหมดขององค์กร",
       "totalRequests": "คำขอทั้งหมด",
-      "allRequests": "ทั้งหมด"
+      "allRequests": "ทั้งหมด",
+      "viewRecords": "ดูประวัติการลาจากทุกทีม",
+      "viewAllRequests": "ดูคำขอลาทั้งหมดจากทุกทีม"
     },
     "auditLogs": {
       "title": "ประวัติการเปลี่ยนแปลง",
