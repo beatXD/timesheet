@@ -8,13 +8,13 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { format } from "date-fns";
-import type { ITimesheet, ITimesheetEntry, IUser, IVendor, IProject, ITeam } from "@/types";
+import type { ITimesheet, ITimesheetEntry, IUser, IVendor, ITeam } from "@/types";
 
 interface TimesheetExportData {
   timesheet: ITimesheet;
   user: IUser;
   vendor?: IVendor;
-  project?: IProject;
+  project?: { name?: string } | null;
   team?: ITeam;
 }
 

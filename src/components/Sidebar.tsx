@@ -143,12 +143,6 @@ const navSections: NavSection[] = [
         icon: <Users className="w-4 h-4" />,
         roles: ["leader"],
       },
-      {
-        href: "/admin/projects",
-        labelKey: "nav.projects",
-        icon: <FolderKanban className="w-4 h-4" />,
-        roles: ["leader"],
-      },
     ],
   },
   {

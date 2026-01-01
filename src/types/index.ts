@@ -56,7 +56,6 @@ export interface ITeam {
   name: string;
   leaderId: Types.ObjectId;
   memberIds: Types.ObjectId[];
-  projectId?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,15 +65,6 @@ export interface IVendor {
   _id: Types.ObjectId;
   name: string;
   contractNo?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Project
-export interface IProject {
-  _id: Types.ObjectId;
-  name: string;
-  description?: string;
   createdAt: Date;
   updatedAt: Date;
 }

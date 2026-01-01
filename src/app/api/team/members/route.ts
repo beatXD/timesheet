@@ -23,7 +23,6 @@ export async function GET() {
     const teams = await Team.find({ leaderId: session.user.id })
       .populate("memberIds", "name email image role")
       .populate("leaderId", "name email image role")
-      .populate("projectId", "name")
       .lean();
 
     // Get available users (not in any of leader's teams)
@@ -119,7 +118,6 @@ export async function PUT(request: NextRequest) {
     // Get updated team
     const updatedTeam = await Team.findById(teamId)
       .populate("memberIds", "name email image role")
-      .populate("projectId", "name")
       .lean();
 
     return NextResponse.json({ data: updatedTeam });

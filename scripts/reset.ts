@@ -10,12 +10,17 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
-// Collections to delete (keep users and teams)
+// Collections to delete (all data)
 const COLLECTIONS_TO_DELETE = [
+  "users",
+  "teams",
+  "vendors",
   "timesheets",
+  "personaltimesheets",
   "leaverequests",
   "leavebalances",
   "leavesettings",
+  "holidays",
   "notifications",
   "auditlogs",
 ];
@@ -32,7 +37,7 @@ async function reset() {
   }
 
   console.log("========================================");
-  console.log("Reset Data (Keep Users & Teams)");
+  console.log("Reset All Data");
   console.log("========================================\n");
 
   for (const collectionName of COLLECTIONS_TO_DELETE) {
@@ -55,12 +60,7 @@ async function reset() {
   console.log("\n========================================");
   console.log("Reset completed!");
   console.log("========================================");
-  console.log("\nKept:");
-  console.log("  - users");
-  console.log("  - teams");
-  console.log("  - vendors");
-  console.log("  - projects");
-  console.log("\nDeleted:");
+  console.log("\nDeleted collections:");
   COLLECTIONS_TO_DELETE.forEach((c) => console.log(`  - ${c}`));
   console.log("========================================\n");
 

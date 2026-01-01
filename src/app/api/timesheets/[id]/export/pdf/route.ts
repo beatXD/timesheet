@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, User, Vendor, Project, Team } from "@/models";
+import { Timesheet, User, Vendor, Team } from "@/models";
 import { generateTimesheetPDF } from "@/lib/export/pdf";
 import { format } from "date-fns";
 
@@ -56,21 +56,17 @@ export async function GET(
       ? await Vendor.findById(user.vendorId).lean()
       : undefined;
 
-    // Find user's team and its associated project
+    // Find user's team
     let team = null;
-    let project = null;
     if (user.teamIds && user.teamIds.length > 0) {
       team = await Team.findById(user.teamIds[0]).lean();
-      if (team?.projectId) {
-        project = await Project.findById(team.projectId).lean();
-      }
     }
 
     const buffer = await generateTimesheetPDF({
       timesheet: timesheet as any,
       user: user as any,
       vendor: vendor as any,
-      project: project as any,
+      project: null,
       team: team as any,
     });
 

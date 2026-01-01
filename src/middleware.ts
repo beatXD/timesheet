@@ -5,7 +5,7 @@ import { defaultLocale, locales, type Locale } from "./i18n/config";
 
 // Role-based path access control
 const adminOnlyPaths = ["/admin/users", "/admin/vendors", "/admin/holidays", "/admin/leave-settings", "/admin/leaves", "/admin/timesheets", "/admin/reports", "/admin/audit-logs"];
-const leaderPaths = ["/team", "/admin/teams", "/admin/projects"];
+const leaderPaths = ["/team", "/admin/teams"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

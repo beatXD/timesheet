@@ -21,7 +21,6 @@ export async function GET() {
     const teams = await Team.find(query)
       .populate("leaderId", "_id name email")
       .populate("memberIds", "_id name email")
-      .populate("projectId", "_id name")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -39,10 +38,6 @@ export async function GET() {
         ...m,
         _id: m._id?.toString(),
       })),
-      projectId: team.projectId ? {
-        ...team.projectId,
-        _id: team.projectId._id?.toString(),
-      } : null,
     }));
 
     return NextResponse.json({ data: serializedTeams });
@@ -66,7 +61,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { name, leaderId, memberIds, projectId } = body;
+    const { name, leaderId, memberIds } = body;
 
     if (!name || !leaderId) {
       return NextResponse.json(
@@ -93,7 +88,6 @@ export async function POST(request: NextRequest) {
       name,
       leaderId,
       memberIds: memberIds || [],
-      projectId,
     });
 
     // Add team to leader's teamIds
@@ -128,7 +122,7 @@ export async function PUT(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { _id, name, leaderId, memberIds, projectId } = body;
+    const { _id, name, leaderId, memberIds } = body;
 
     if (!_id) {
       return NextResponse.json(
@@ -175,7 +169,7 @@ export async function PUT(request: NextRequest) {
     // Update team
     const team = await Team.findByIdAndUpdate(
       _id,
-      { name, leaderId, memberIds, projectId },
+      { name, leaderId, memberIds },
       { new: true }
     );
 

@@ -25,25 +25,48 @@ const UserSchema = new mongoose.Schema({
   contractRole: { type: String },
 }, { timestamps: true });
 
-const TeamSchema = new mongoose.Schema({
+// Holiday Schema
+const HolidaySchema = new mongoose.Schema({
   name: { type: String, required: true },
-  leaderId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  memberIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-  projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project" },
+  date: { type: Date, required: true },
+  type: { type: String, enum: ["public", "company"], default: "public" },
 }, { timestamps: true });
 
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
-const Team = mongoose.models.Team || mongoose.model("Team", TeamSchema);
+const Holiday = mongoose.models.Holiday || mongoose.model("Holiday", HolidaySchema);
+
+// Thai public holidays for 2025
+const thaiHolidays2025 = [
+  { name: "วันขึ้นปีใหม่", date: new Date("2025-01-01"), type: "public" },
+  { name: "วันมาฆบูชา", date: new Date("2025-02-12"), type: "public" },
+  { name: "วันจักรี", date: new Date("2025-04-06"), type: "public" },
+  { name: "วันสงกรานต์", date: new Date("2025-04-13"), type: "public" },
+  { name: "วันสงกรานต์", date: new Date("2025-04-14"), type: "public" },
+  { name: "วันสงกรานต์", date: new Date("2025-04-15"), type: "public" },
+  { name: "วันแรงงานแห่งชาติ", date: new Date("2025-05-01"), type: "public" },
+  { name: "วันฉัตรมงคล", date: new Date("2025-05-04"), type: "public" },
+  { name: "วันวิสาขบูชา", date: new Date("2025-05-11"), type: "public" },
+  { name: "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าฯ", date: new Date("2025-06-03"), type: "public" },
+  { name: "วันอาสาฬหบูชา", date: new Date("2025-07-10"), type: "public" },
+  { name: "วันเข้าพรรษา", date: new Date("2025-07-11"), type: "public" },
+  { name: "วันเฉลิมพระชนมพรรษา ร.10", date: new Date("2025-07-28"), type: "public" },
+  { name: "วันแม่แห่งชาติ", date: new Date("2025-08-12"), type: "public" },
+  { name: "วันคล้ายวันสวรรคต ร.9", date: new Date("2025-10-13"), type: "public" },
+  { name: "วันปิยมหาราช", date: new Date("2025-10-23"), type: "public" },
+  { name: "วันพ่อแห่งชาติ", date: new Date("2025-12-05"), type: "public" },
+  { name: "วันรัฐธรรมนูญ", date: new Date("2025-12-10"), type: "public" },
+  { name: "วันสิ้นปี", date: new Date("2025-12-31"), type: "public" },
+];
 
 async function seed() {
   console.log("Connecting to MongoDB...");
   await mongoose.connect(MONGODB_URI);
   console.log("Connected!");
 
-  // Default password for all users: "password123"
+  // Default password for admin: "password123"
   const hashedPassword = await bcrypt.hash("password123", 12);
 
-  console.log("\nCreating users...");
+  console.log("\nCreating admin user...");
 
   // Admin
   const admin = await User.findOneAndUpdate(
@@ -58,132 +81,29 @@ async function seed() {
   );
   console.log(`  Admin: ${admin.email}`);
 
-  // Team 1 - Leader
-  const leader1 = await User.findOneAndUpdate(
-    { email: "leader1@example.com" },
-    {
-      name: "Leader Team A",
-      email: "leader1@example.com",
-      password: hashedPassword,
-      role: "leader",
+  console.log("\nCreating holidays...");
+
+  // Clear existing holidays for 2025
+  await Holiday.deleteMany({
+    date: {
+      $gte: new Date("2025-01-01"),
+      $lte: new Date("2025-12-31"),
     },
-    { upsert: true, new: true }
-  );
-  console.log(`  Leader 1: ${leader1.email}`);
+  });
 
-  // Team 1 - Members
-  const user1 = await User.findOneAndUpdate(
-    { email: "user1@example.com" },
-    {
-      name: "User A1",
-      email: "user1@example.com",
-      password: hashedPassword,
-      role: "user",
-    },
-    { upsert: true, new: true }
-  );
-  console.log(`  User 1: ${user1.email}`);
-
-  const user2 = await User.findOneAndUpdate(
-    { email: "user2@example.com" },
-    {
-      name: "User A2",
-      email: "user2@example.com",
-      password: hashedPassword,
-      role: "user",
-    },
-    { upsert: true, new: true }
-  );
-  console.log(`  User 2: ${user2.email}`);
-
-  // Team 2 - Leader
-  const leader2 = await User.findOneAndUpdate(
-    { email: "leader2@example.com" },
-    {
-      name: "Leader Team B",
-      email: "leader2@example.com",
-      password: hashedPassword,
-      role: "leader",
-    },
-    { upsert: true, new: true }
-  );
-  console.log(`  Leader 2: ${leader2.email}`);
-
-  // Team 2 - Members
-  const user3 = await User.findOneAndUpdate(
-    { email: "user3@example.com" },
-    {
-      name: "User B1",
-      email: "user3@example.com",
-      password: hashedPassword,
-      role: "user",
-    },
-    { upsert: true, new: true }
-  );
-  console.log(`  User 3: ${user3.email}`);
-
-  const user4 = await User.findOneAndUpdate(
-    { email: "user4@example.com" },
-    {
-      name: "User B2",
-      email: "user4@example.com",
-      password: hashedPassword,
-      role: "user",
-    },
-    { upsert: true, new: true }
-  );
-  console.log(`  User 4: ${user4.email}`);
-
-  console.log("\nCreating teams...");
-
-  // Team A
-  const teamA = await Team.findOneAndUpdate(
-    { name: "Team A" },
-    {
-      name: "Team A",
-      leaderId: leader1._id,
-      memberIds: [user1._id, user2._id],
-    },
-    { upsert: true, new: true }
-  );
-  console.log(`  Team A: ${teamA.name} (Leader: ${leader1.name})`);
-
-  // Update team members and leader with teamIds
-  await User.updateMany(
-    { _id: { $in: [leader1._id, user1._id, user2._id] } },
-    { $addToSet: { teamIds: teamA._id } }
-  );
-
-  // Team B
-  const teamB = await Team.findOneAndUpdate(
-    { name: "Team B" },
-    {
-      name: "Team B",
-      leaderId: leader2._id,
-      memberIds: [user3._id, user4._id],
-    },
-    { upsert: true, new: true }
-  );
-  console.log(`  Team B: ${teamB.name} (Leader: ${leader2.name})`);
-
-  // Update team members and leader with teamIds
-  await User.updateMany(
-    { _id: { $in: [leader2._id, user3._id, user4._id] } },
-    { $addToSet: { teamIds: teamB._id } }
-  );
+  // Insert holidays
+  for (const holiday of thaiHolidays2025) {
+    await Holiday.create(holiday);
+    console.log(`  ${holiday.name} (${holiday.date.toISOString().split("T")[0]})`);
+  }
 
   console.log("\n========================================");
   console.log("Seed completed!");
   console.log("========================================");
-  console.log("\nAll users password: password123");
-  console.log("\nAccounts created:");
+  console.log("\nAdmin password: password123");
+  console.log("\nCreated:");
   console.log("  - admin@example.com (Admin)");
-  console.log("  - leader1@example.com (Leader Team A)");
-  console.log("  - leader2@example.com (Leader Team B)");
-  console.log("  - user1@example.com (User Team A)");
-  console.log("  - user2@example.com (User Team A)");
-  console.log("  - user3@example.com (User Team B)");
-  console.log("  - user4@example.com (User Team B)");
+  console.log(`  - ${thaiHolidays2025.length} Thai holidays for 2025`);
   console.log("========================================\n");
 
   await mongoose.disconnect();
