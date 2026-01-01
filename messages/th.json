@@ -235,6 +235,7 @@
     "reason": "เหตุผล...",
     "status": {
       "draft": "ฉบับร่าง",
+      "pending": "รอดำเนินการ",
       "submitted": "ส่งแล้ว",
       "approved": "อนุมัติแล้ว",
       "rejected": "ถูกปฏิเสธ",
@@ -429,12 +430,14 @@
       "reason": "เหตุผล",
       "timesheet": "ไทม์ชีท",
       "leaveRequest": "คำขอลา",
+      "leave_request": "คำขอลา",
       "actions": {
         "submit": "ส่ง",
         "approve": "อนุมัติ",
         "reject": "ปฏิเสธ",
         "team_submit": "ส่งจากทีม",
-        "final_approve": "อนุมัติขั้นสุดท้าย"
+        "final_approve": "อนุมัติขั้นสุดท้าย",
+        "auto_approve": "อนุมัติอัตโนมัติ"
       }
     },
     "reports": {

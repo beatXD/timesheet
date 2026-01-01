@@ -241,6 +241,7 @@
     "reason": "Reason...",
     "status": {
       "draft": "Draft",
+      "pending": "Pending",
       "submitted": "Submitted",
       "approved": "Approved",
       "rejected": "Rejected",
@@ -436,12 +437,14 @@
       "reason": "Reason",
       "timesheet": "Timesheet",
       "leaveRequest": "Leave Request",
+      "leave_request": "Leave Request",
       "actions": {
         "submit": "Submit",
         "approve": "Approve",
         "reject": "Reject",
         "team_submit": "Team Submit",
-        "final_approve": "Final Approve"
+        "final_approve": "Final Approve",
+        "auto_approve": "Auto Approve"
       }
     },
     "reports": {
