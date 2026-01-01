@@ -747,6 +747,10 @@
   "teamMembers": {
     "title": "สมาชิกทีม",
     "description": "จัดการสมาชิกในทีมของคุณ",
+    "allTeams": "ทีมทั้งหมด",
+    "viewTeamsDescription": "เลือกทีมเพื่อดูสมาชิก",
+    "viewDescription": "ดูสมาชิกทีม (อ่านอย่างเดียว)",
+    "viewOnly": "โหมดดูอย่างเดียว",
     "members": "สมาชิก",
     "member": "สมาชิก",
     "allMembers": "สมาชิกทั้งหมด",

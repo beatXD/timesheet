@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -39,7 +40,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, X, Search } from "lucide-react";
+import { UserPlus, X, Search, ChevronRight, Users } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
@@ -73,6 +74,10 @@ export default function TeamMembersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Check if user is admin (view-only mode)
+  const isAdmin = session?.user?.role === "admin";
+  const canEdit = !isAdmin; // Leaders can edit, admins cannot
+
   // Filter states
   const [filterTeam, setFilterTeam] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -85,18 +90,26 @@ export default function TeamMembersPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/team/members");
+      // Admin uses different endpoint to get all teams
+      const endpoint = isAdmin ? "/api/admin/teams" : "/api/team/members";
+      const res = await fetch(endpoint);
       const data = await res.json();
 
       if (data.data) {
-        setTeams(data.data.teams);
-        setAvailableUsers(data.data.availableUsers);
+        if (isAdmin) {
+          // Admin endpoint returns teams directly
+          setTeams(data.data);
+          setAvailableUsers([]);
+        } else {
+          setTeams(data.data.teams);
+          setAvailableUsers(data.data.availableUsers);
 
-        // Redirect leader with no teams to dashboard
-        if (session?.user?.role === "leader" && data.data.teams.length === 0) {
-          toast.error(t("team.noTeamsAssigned") || "You are not assigned to lead any team");
-          router.push("/calendar");
-          return;
+          // Redirect leader with no teams to dashboard
+          if (session?.user?.role === "leader" && data.data.teams.length === 0) {
+            toast.error(t("team.noTeamsAssigned") || "You are not assigned to lead any team");
+            router.push("/calendar");
+            return;
+          }
         }
       }
     } catch (error) {
@@ -104,7 +117,7 @@ export default function TeamMembersPage() {
     } finally {
       setLoading(false);
     }
-  }, [t, session?.user?.role, router]);
+  }, [t, session?.user?.role, router, isAdmin]);
 
   useEffect(() => {
     fetchData();
@@ -262,12 +275,70 @@ export default function TeamMembersPage() {
     );
   }
 
+  // For admin: show team list view when no team is selected
+  if (isAdmin && filterTeam === "all") {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">{t("teamMembers.allTeams")}</h1>
+            <p className="text-muted-foreground">{t("teamMembers.viewTeamsDescription")}</p>
+          </div>
+          <Badge variant="secondary" className="text-sm px-3 py-1">
+            {teams.length} {t("common.teams")}
+          </Badge>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {teams.map((team) => (
+            <Card
+              key={team._id}
+              className="cursor-pointer hover:border-primary transition-colors"
+              onClick={() => setFilterTeam(team._id)}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="w-5 h-5 text-muted-foreground" />
+                    {team.name}
+                  </CardTitle>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {team.leaderId && (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={team.leaderId.image} />
+                        <AvatarFallback className="text-xs">
+                          {team.leaderId.name?.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">{team.leaderId.name}</span>
+                      <Badge variant="secondary" className="text-xs">{t("roles.leader")}</Badge>
+                    </div>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    {team.memberIds.length} {t("teamMembers.members")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("teamMembers.title")}</h1>
-          <p className="text-muted-foreground">{t("teamMembers.description")}</p>
+          <p className="text-muted-foreground">
+            {isAdmin ? t("teamMembers.viewDescription") : t("teamMembers.description")}
+          </p>
         </div>
         <Badge variant="secondary" className="text-sm px-3 py-1">
           {allMembers.length} {t("teamMembers.members")}
@@ -279,7 +350,9 @@ export default function TeamMembersPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>{t("teamMembers.allMembers")}</CardTitle>
-              <CardDescription>{t("teamMembers.manageMembers")}</CardDescription>
+              <CardDescription>
+                {isAdmin ? t("teamMembers.viewOnly") : t("teamMembers.manageMembers")}
+              </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
@@ -304,7 +377,7 @@ export default function TeamMembersPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {filterTeam !== "all" && (
+              {canEdit && filterTeam !== "all" && (
                 <Button
                   onClick={() => {
                     const team = teams.find((t) => t._id === filterTeam);
@@ -326,7 +399,7 @@ export default function TeamMembersPage() {
                 <TableHead>{t("teamMembers.member")}</TableHead>
                 <TableHead>{t("common.team")}</TableHead>
                 <TableHead>{t("common.email")}</TableHead>
-                <TableHead className="text-right">{t("common.actions")}</TableHead>
+                {canEdit && <TableHead className="text-right">{t("common.actions")}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -361,23 +434,25 @@ export default function TeamMembersPage() {
                   <TableCell className="text-muted-foreground">
                     {member.email}
                   </TableCell>
-                  <TableCell className="text-right">
-                    {!member.isLeader && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => removeMember(member.teamId, member._id)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </TableCell>
+                  {canEdit && (
+                    <TableCell className="text-right">
+                      {!member.isLeader && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => removeMember(member.teamId, member._id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
               {filteredMembers.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={canEdit ? 4 : 3} className="text-center py-8 text-muted-foreground">
                     {t("teamMembers.noMembers")}
                   </TableCell>
                 </TableRow>

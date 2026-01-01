@@ -66,6 +66,12 @@ const navSections: NavSection[] = [
         roles: ["admin"],
       },
       {
+        href: "/team/members",
+        labelKey: "nav.teamMembers",
+        icon: <UsersRound className="w-4 h-4" />,
+        roles: ["admin"],
+      },
+      {
         href: "/admin/reports",
         labelKey: "nav.reports",
         icon: <BarChart3 className="w-4 h-4" />,

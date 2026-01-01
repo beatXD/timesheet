@@ -754,6 +754,10 @@
   "teamMembers": {
     "title": "Team Members",
     "description": "Manage members in your team",
+    "allTeams": "All Teams",
+    "viewTeamsDescription": "Select a team to view its members",
+    "viewDescription": "View team members (read-only)",
+    "viewOnly": "View-only mode",
     "members": "members",
     "member": "Member",
     "allMembers": "All Members",
