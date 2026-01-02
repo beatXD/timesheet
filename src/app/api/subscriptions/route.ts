@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case "upgrade": {
         const targetPlan = plan as SubscriptionPlan;
-        if (!["pro", "enterprise"].includes(targetPlan)) {
+        if (!["team", "enterprise"].includes(targetPlan)) {
           return NextResponse.json(
             { error: "Invalid plan" },
             { status: 400 }
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
       case "change": {
         const targetPlan = plan as SubscriptionPlan;
-        if (!["free", "pro", "enterprise"].includes(targetPlan)) {
+        if (!["free", "team", "enterprise"].includes(targetPlan)) {
           return NextResponse.json(
             { error: "Invalid plan" },
             { status: 400 }

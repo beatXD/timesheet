@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,8 @@ interface PageProps {
 
 export default function InvitePage({ params }: PageProps) {
   const { token } = use(params);
+  const searchParams = useSearchParams();
+  const inviteEmail = searchParams.get("email") || "";
   const t = useTranslations();
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -231,10 +233,14 @@ export default function InvitePage({ params }: PageProps) {
           ) : (
             <>
               <Button className="w-full" asChild>
-                <Link href="/login">{t("auth.signIn")}</Link>
+                <Link href={`/login?callbackUrl=${encodeURIComponent(`/invite/${token}${inviteEmail ? `?email=${encodeURIComponent(inviteEmail)}` : ""}`)}`}>
+                  {t("auth.signIn")}
+                </Link>
               </Button>
               <Button variant="outline" className="w-full" asChild>
-                <Link href="/register">{t("auth.signUp")}</Link>
+                <Link href={`/register?invite=${token}${inviteEmail ? `&email=${encodeURIComponent(inviteEmail)}` : ""}`}>
+                  {t("auth.signUp")}
+                </Link>
               </Button>
             </>
           )}

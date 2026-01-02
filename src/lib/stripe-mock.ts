@@ -22,14 +22,14 @@ interface MockSubscription {
 // Default plan pricing (fallback, prefer database)
 export const planPricing: Record<string, { monthly: number; name: string }> = {
   free: { monthly: 0, name: "Free" },
-  pro: { monthly: 990, name: "Pro" },
+  team: { monthly: 990, name: "Team" },
   enterprise: { monthly: 4990, name: "Enterprise" },
 };
 
 // Default plan limits (fallback, prefer database)
 export const planLimits: Record<string, { maxUsers: number; maxTeams: number }> = {
   free: { maxUsers: 1, maxTeams: 1 },
-  pro: { maxUsers: 5, maxTeams: 1 },
+  team: { maxUsers: 5, maxTeams: 1 },
   enterprise: { maxUsers: 100, maxTeams: 10 },
 };
 
@@ -134,7 +134,7 @@ export const StripeMock = {
     return {
       subscriptionId,
       customerId: `cus_mock_${Date.now()}`,
-      plan: "pro",
+      plan: "team",
       status: "active",
       currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     };
@@ -155,7 +155,7 @@ export const StripeMock = {
         amount: 990,
         currency: "thb",
         status: "succeeded",
-        description: "Pro Plan - Monthly",
+        description: "Team Plan - Monthly",
         created: new Date(now - 30 * 24 * 60 * 60 * 1000),
       },
       {
@@ -163,7 +163,7 @@ export const StripeMock = {
         amount: 990,
         currency: "thb",
         status: "succeeded",
-        description: "Pro Plan - Monthly",
+        description: "Team Plan - Monthly",
         created: new Date(now - 60 * 24 * 60 * 60 * 1000),
       },
       {
@@ -171,7 +171,7 @@ export const StripeMock = {
         amount: 990,
         currency: "thb",
         status: "succeeded",
-        description: "Pro Plan - Monthly",
+        description: "Team Plan - Monthly",
         created: new Date(now - 90 * 24 * 60 * 60 * 1000),
       },
     ];

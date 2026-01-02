@@ -654,7 +654,7 @@
   },
   "subscription": {
     "free": "Free",
-    "pro": "Pro",
+    "team": "Team",
     "enterprise": "Enterprise",
     "currentPlan": "Current Plan",
     "upgrade": "Upgrade",
@@ -916,13 +916,22 @@
     "member": "Member",
     "allMembers": "All Members",
     "manageMembers": "Manage and view all team members",
+    "addMember": "Add Member",
+    "addMemberDescription": "Enter email to add a member or send an invite",
+    "addMemberHint": "If the user exists, they will be added directly. Otherwise, they will be added when they register with this email.",
+    "memberAdded": "Member added to team",
+    "invitationSent": "Invitation sent to {email}",
     "addMembers": "Add Members",
     "editMembers": "Edit Members",
     "selectMembers": "Select team members",
     "noMembers": "No members found",
     "noUsersAvailable": "No users available to add",
     "confirmRemove": "Are you sure you want to remove this member from the team?",
-    "memberRemoved": "Member removed from team"
+    "memberRemoved": "Member removed from team",
+    "statusActive": "Active",
+    "statusPending": "Pending",
+    "pendingInvite": "Pending Invite",
+    "copyInviteLink": "Copy invite link"
   },
   "bulkAction": {
     "selectAll": "Select all pending items",
@@ -1081,8 +1090,8 @@
           "features": ["1 User", "Personal time tracking", "Thai holidays included", "PDF & Excel export", "Email support"],
           "cta": "Start Free Trial"
         },
-        "pro": {
-          "name": "Pro",
+        "team": {
+          "name": "Team",
           "description": "For small teams",
           "period": "/month",
           "features": ["Up to 5 users", "1 Team", "Approval workflow", "Leave management", "Priority support"],

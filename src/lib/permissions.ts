@@ -17,25 +17,25 @@ export const Permissions = {
   canManageSystemSettings: (role: UserRole) => role === "super_admin",
 
   // Timesheet permissions (admin = team leader)
-  canApproveTimesheet: (role: UserRole) => role === "super_admin",
-  canViewTeamTimesheets: (role: UserRole) => ["super_admin", "super_admin"].includes(role),
+  canApproveTimesheet: (role: UserRole) => role === "admin",
+  canViewTeamTimesheets: (role: UserRole) => ["super_admin", "admin"].includes(role),
 
   // Team permissions (admin = team leader)
-  canManageTeam: (role: UserRole) => role === "super_admin",
+  canManageTeam: (role: UserRole) => role === "admin",
   canViewAllTeams: (role: UserRole) => role === "super_admin",
-  canManageTeamMembers: (role: UserRole) => role === "super_admin",
-  canInviteMembers: (role: UserRole) => role === "super_admin",
+  canManageTeamMembers: (role: UserRole) => role === "admin",
+  canInviteMembers: (role: UserRole) => role === "admin",
 
   // Admin settings permissions (super_admin only)
   canAccessAdminSettings: (role: UserRole) => role === "super_admin",
   canManageUsers: (role: UserRole) => role === "super_admin",
-  canManageHolidays: (role: UserRole) => role === "super_admin", // Admin can manage holidays for their team
-  canManageVendors: (role: UserRole) => role === "super_admin",
+  canManageHolidays: (role: UserRole) => ["super_admin", "admin"].includes(role), // Admin can manage holidays for their team
+  canManageVendors: (role: UserRole) => ["super_admin", "admin"].includes(role),
 
   // Leave permissions
-  canApproveLeave: (role: UserRole) => role === "super_admin",
+  canApproveLeave: (role: UserRole) => role === "admin",
   canViewAllLeaves: (role: UserRole) => role === "super_admin",
-  canViewTeamLeaves: (role: UserRole) => ["super_admin", "super_admin"].includes(role),
+  canViewTeamLeaves: (role: UserRole) => ["super_admin", "admin"].includes(role),
 };
 
 /**
@@ -49,16 +49,16 @@ export const PathAccess: Record<string, UserRole[]> = {
   "/super-admin/subscriptions": ["super_admin"],
   "/super-admin/reports": ["super_admin"],
 
-  // Admin paths (team management) - admin = old leader
-  "/team": ["super_admin"],
-  "/team/members": ["super_admin"],
-  "/team/leaves": ["super_admin"],
-  "/team/calendar": ["super_admin"],
-  "/team/timesheets": ["super_admin"],
-  "/admin/teams": ["super_admin"],
+  // Admin paths (team management) - admin = old leader, super_admin can view
+  "/team": ["super_admin", "admin"],
+  "/team/members": ["super_admin", "admin"],
+  "/team/leaves": ["super_admin", "admin"],
+  "/team/calendar": ["super_admin", "admin"],
+  "/team/timesheets": ["super_admin", "admin"],
+  "/admin/teams": ["super_admin", "admin"],
 
   // Settings paths
-  "/settings/billing": ["super_admin"], // Only admins (team owners) have billing
+  "/settings/billing": ["admin"], // Only admins (team owners) have billing
 };
 
 /**

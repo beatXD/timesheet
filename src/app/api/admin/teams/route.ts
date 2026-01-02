@@ -75,6 +75,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Check subscription team limit for admin users
+    if (session.user.role === "admin") {
+      const currentUser = await User.findById(session.user.id);
+      const maxTeams = currentUser?.subscription?.maxTeams || 1;
+      const currentTeamCount = await Team.countDocuments({ adminId: session.user.id });
+
+      if (currentTeamCount >= maxTeams) {
+        return NextResponse.json(
+          { error: `Team limit reached. Your plan allows ${maxTeams} team(s). Please upgrade to create more teams.` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Check for duplicate team name
     const existingTeam = await Team.findOne({ name });
     if (existingTeam) {

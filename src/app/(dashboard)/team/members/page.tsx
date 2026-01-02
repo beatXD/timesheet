@@ -48,6 +48,7 @@ interface Invite {
   token: string;
   teamId: string;
   teamName: string;
+  email?: string;
   expiresAt: string;
   maxUses: number;
   usedCount: number;
@@ -70,10 +71,16 @@ interface Team {
   projectId?: { _id: string; name: string };
 }
 
+type MemberStatus = "active" | "pending";
+
 interface MemberWithTeam extends User {
   teamId: string;
   teamName: string;
   isLeader?: boolean;
+  status: MemberStatus;
+  inviteId?: string; // For pending invites
+  expiresAt?: string; // For pending invites
+  token?: string; // For pending invites - to copy invite link
 }
 
 export default function TeamMembersPage() {
@@ -104,6 +111,11 @@ export default function TeamMembersPage() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [generatingInvite, setGeneratingInvite] = useState(false);
   const [newInviteUrl, setNewInviteUrl] = useState<string | null>(null);
+
+  // Add member by email dialog state
+  const [isAddByEmailDialogOpen, setIsAddByEmailDialogOpen] = useState(false);
+  const [addEmail, setAddEmail] = useState("");
+  const [addingMember, setAddingMember] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -143,7 +155,14 @@ export default function TeamMembersPage() {
     fetchData();
   }, [fetchData]);
 
-  // Flatten members with team info (including leader)
+  // Auto-select first team for admin users
+  useEffect(() => {
+    if (isTeamAdmin && teams.length > 0 && filterTeam === "all") {
+      setFilterTeam(teams[0]._id);
+    }
+  }, [isTeamAdmin, teams, filterTeam]);
+
+  // Flatten members with team info (including leader and pending invites)
   const allMembers = useMemo(() => {
     const members: MemberWithTeam[] = [];
     teams.forEach((team) => {
@@ -154,6 +173,7 @@ export default function TeamMembersPage() {
           teamId: team._id,
           teamName: team.name,
           isLeader: true,
+          status: "active",
         });
       }
       // Add team members
@@ -163,11 +183,31 @@ export default function TeamMembersPage() {
           teamId: team._id,
           teamName: team.name,
           isLeader: false,
+          status: "active",
         });
       });
     });
+
+    // Add pending invites as "pending" members
+    invites
+      .filter((inv) => !inv.isExpired && inv.usedCount < inv.maxUses)
+      .forEach((invite) => {
+        members.push({
+          _id: `invite-${invite._id}`,
+          name: invite.email || t("teamMembers.pendingInvite"),
+          email: invite.email || "-",
+          teamId: invite.teamId,
+          teamName: invite.teamName,
+          isLeader: false,
+          status: "pending",
+          inviteId: invite._id,
+          expiresAt: invite.expiresAt,
+          token: invite.token, // Include token for copying invite link
+        });
+      });
+
     return members;
-  }, [teams]);
+  }, [teams, invites]);
 
   // Filter members
   const filteredMembers = useMemo(() => {
@@ -304,6 +344,43 @@ export default function TeamMembersPage() {
     const url = `${window.location.origin}/invite/${token}`;
     await navigator.clipboard.writeText(url);
     toast.success(t("invite.linkCopied"));
+  };
+
+  const handleAddMemberByEmail = async () => {
+    if (!addEmail.trim() || !filterTeam || filterTeam === "all") return;
+
+    setAddingMember(true);
+    try {
+      const res = await fetch("/api/team/members/add-by-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teamId: filterTeam,
+          email: addEmail.trim(),
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || t("errors.generic"));
+        return;
+      }
+
+      // Unified response - show appropriate toast
+      if (data.data.status === "added") {
+        toast.success(t("teamMembers.memberAdded"));
+      } else {
+        toast.success(t("teamMembers.invitationSent", { email: data.data.email }));
+      }
+
+      setIsAddByEmailDialogOpen(false);
+      setAddEmail("");
+      fetchData();
+    } catch {
+      toast.error(t("errors.generic"));
+    } finally {
+      setAddingMember(false);
+    }
   };
 
   // Combine current team members and available users for the dialog
@@ -450,34 +527,13 @@ export default function TeamMembersPage() {
                 </SelectContent>
               </Select>
               {canEdit && filterTeam !== "all" && (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const team = teams.find((t) => t._id === filterTeam);
-                      if (team) generateInvite(team._id);
-                    }}
-                    disabled={generatingInvite}
-                    className="gap-2"
-                  >
-                    {generatingInvite ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Link2 className="w-4 h-4" />
-                    )}
-                    {t("invite.generateLink")}
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      const team = teams.find((t) => t._id === filterTeam);
-                      if (team) openAddDialog(team);
-                    }}
-                    className="gap-2"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    {t("teamMembers.addMembers")}
-                  </Button>
-                </>
+                <Button
+                  onClick={() => setIsAddByEmailDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  {t("teamMembers.addMember")}
+                </Button>
               )}
             </div>
           </div>
@@ -489,27 +545,32 @@ export default function TeamMembersPage() {
                 <TableHead>{t("teamMembers.member")}</TableHead>
                 <TableHead>{t("common.team")}</TableHead>
                 <TableHead>{t("common.email")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
                 {canEdit && <TableHead className="text-right">{t("common.actions")}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredMembers.map((member) => (
-                <TableRow key={`${member.teamId}-${member._id}`}>
+                <TableRow key={`${member.teamId}-${member._id}`} className={member.status === "pending" ? "opacity-70" : ""}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={member.image} />
-                        <AvatarFallback>
-                          {member.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()
-                            .slice(0, 2)}
+                      <Avatar className={`h-8 w-8 ${member.status === "pending" ? "opacity-50" : ""}`}>
+                        <AvatarImage src={member.status === "active" ? member.image : undefined} />
+                        <AvatarFallback className={member.status === "pending" ? "bg-muted" : ""}>
+                          {member.status === "pending"
+                            ? member.email.charAt(0).toUpperCase()
+                            : member.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()
+                              .slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">{member.name}</p>
+                        <p className={`font-medium ${member.status === "pending" ? "text-muted-foreground" : ""}`}>
+                          {member.status === "pending" ? member.email : member.name}
+                        </p>
                         {member.isLeader && (
                           <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
                             {t("roles.admin")}
@@ -524,6 +585,18 @@ export default function TeamMembersPage() {
                   <TableCell className="text-muted-foreground">
                     {member.email}
                   </TableCell>
+                  <TableCell>
+                    {member.status === "active" ? (
+                      <Badge className="bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300">
+                        {t("teamMembers.statusActive")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="gap-1">
+                        <Clock className="w-3 h-3" />
+                        {t("teamMembers.statusPending")}
+                      </Badge>
+                    )}
+                  </TableCell>
                   {canEdit && (
                     <TableCell className="text-right">
                       {!member.isLeader && (
@@ -531,7 +604,13 @@ export default function TeamMembersPage() {
                           variant="ghost"
                           size="sm"
                           className="text-muted-foreground hover:text-destructive"
-                          onClick={() => removeMember(member.teamId, member._id)}
+                          onClick={() => {
+                            if (member.status === "pending" && member.inviteId) {
+                              deleteInvite(member.inviteId);
+                            } else {
+                              removeMember(member.teamId, member._id);
+                            }
+                          }}
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -542,7 +621,7 @@ export default function TeamMembersPage() {
               ))}
               {filteredMembers.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={canEdit ? 4 : 3} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={canEdit ? 5 : 4} className="text-center py-8 text-muted-foreground">
                     {t("teamMembers.noMembers")}
                   </TableCell>
                 </TableRow>
@@ -551,72 +630,6 @@ export default function TeamMembersPage() {
           </Table>
         </CardContent>
       </Card>
-
-      {/* Active Invites Section */}
-      {canEdit && invites.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Link2 className="w-5 h-5" />
-              {t("invite.activeInvites")}
-            </CardTitle>
-            <CardDescription>{t("invite.activeInvitesDescription")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {invites.filter(inv => !inv.isExpired && inv.usedCount < inv.maxUses).map((invite) => {
-                const expiresAt = new Date(invite.expiresAt);
-                const hoursLeft = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60)));
-                const minutesLeft = Math.max(0, Math.floor(((expiresAt.getTime() - Date.now()) % (1000 * 60 * 60)) / (1000 * 60)));
-
-                return (
-                  <div
-                    key={invite._id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Link2 className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{invite.teamName}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          <span>{hoursLeft}h {minutesLeft}m {t("invite.remaining")}</span>
-                          <span>•</span>
-                          <span>{invite.usedCount}/{invite.maxUses} {t("invite.used")}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyInviteLink(invite.token)}
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteInvite(invite._id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-              {invites.filter(inv => !inv.isExpired && inv.usedCount < inv.maxUses).length === 0 && (
-                <p className="text-center text-muted-foreground py-4">
-                  {t("invite.noActiveInvites")}
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Edit Members Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -678,6 +691,47 @@ export default function TeamMembersPage() {
             </Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? t("common.saving") : t("common.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Member by Email Dialog */}
+      <Dialog open={isAddByEmailDialogOpen} onOpenChange={setIsAddByEmailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5" />
+              {t("teamMembers.addMember")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("teamMembers.addMemberDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("common.email")}</label>
+              <Input
+                type="email"
+                placeholder="user@example.com"
+                value={addEmail}
+                onChange={(e) => setAddEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddMemberByEmail();
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("teamMembers.addMemberHint")}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddByEmailDialogOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button onClick={handleAddMemberByEmail} disabled={addingMember || !addEmail.trim()}>
+              {addingMember && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {t("teamMembers.addMember")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -31,9 +31,9 @@ export async function GET() {
     const totalTeams = await Team.countDocuments();
 
     // Get subscription stats
-    const [freeCount, proCount, enterpriseCount] = await Promise.all([
+    const [freeCount, teamCount, enterpriseCount] = await Promise.all([
       User.countDocuments({ "subscription.plan": "free" }),
-      User.countDocuments({ "subscription.plan": "pro" }),
+      User.countDocuments({ "subscription.plan": "team" }),
       User.countDocuments({ "subscription.plan": "enterprise" }),
     ]);
 
@@ -44,8 +44,8 @@ export async function GET() {
       Timesheet.countDocuments({ status: "submitted" }),
     ]);
 
-    // Calculate mock revenue (Pro = 990 THB, Enterprise = 4990 THB)
-    const monthlyRevenue = proCount * 990 + enterpriseCount * 4990;
+    // Calculate mock revenue (Team = 990 THB, Enterprise = 4990 THB)
+    const monthlyRevenue = teamCount * 990 + enterpriseCount * 4990;
 
     // Get recent signups (last 30 days)
     const thirtyDaysAgo = new Date();
@@ -87,7 +87,7 @@ export async function GET() {
         },
         subscriptions: {
           free: freeCount,
-          pro: proCount,
+          team: teamCount,
           enterprise: enterpriseCount,
         },
         timesheets: {

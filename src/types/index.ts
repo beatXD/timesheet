@@ -10,7 +10,7 @@ export type SubscriptionStatus = "active" | "cancelled" | "past_due";
 // Plan (stored in database)
 export interface IPlan {
   _id: Types.ObjectId;
-  slug: string; // unique identifier (e.g., "free", "pro", "enterprise")
+  slug: string; // unique identifier (e.g., "free", "team", "enterprise")
   name: string;
   description?: string;
   monthlyPrice: number; // in THB
@@ -100,6 +100,7 @@ export interface IInvite {
   teamId: Types.ObjectId;
   adminId: Types.ObjectId;
   token: string;
+  email?: string;
   expiresAt: Date;
   maxUses: number;
   usedCount: number;

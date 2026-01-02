@@ -31,17 +31,21 @@ export async function GET() {
       .sort({ createdAt: -1 });
 
     return NextResponse.json({
-      data: invites.map((invite) => ({
-        _id: invite._id,
-        token: invite.token,
-        teamId: invite.teamId._id,
-        teamName: (invite.teamId as unknown as { name: string }).name,
-        expiresAt: invite.expiresAt,
-        maxUses: invite.maxUses,
-        usedCount: invite.usedCount,
-        isExpired: new Date() > invite.expiresAt,
-        createdAt: invite.createdAt,
-      })),
+      data: invites.map((invite) => {
+        const teamDoc = invite.teamId as unknown as { _id: { toString: () => string }; name: string };
+        return {
+          _id: invite._id.toString(),
+          token: invite.token,
+          teamId: teamDoc._id.toString(),
+          teamName: teamDoc.name,
+          email: invite.email,
+          expiresAt: invite.expiresAt,
+          maxUses: invite.maxUses,
+          usedCount: invite.usedCount,
+          isExpired: new Date() > invite.expiresAt,
+          createdAt: invite.createdAt,
+        };
+      }),
     });
   } catch (error) {
     console.error("Get invites error:", error);

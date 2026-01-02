@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Team, User } from "@/models";
-import mongoose from "mongoose";
 
 // GET /api/team/members - Get leader's teams with members
 export async function GET() {
@@ -20,22 +19,41 @@ export async function GET() {
     await connectDB();
 
     // Get teams where user is leader
-    const teams = await Team.find({ adminId: session.user.id })
+    const teamsRaw = await Team.find({ adminId: session.user.id })
       .populate("memberIds", "name email image role")
       .populate("adminId", "name email image role")
       .lean();
 
     // Get available users (not in any of leader's teams)
-    const teamMemberIds = teams.flatMap((t: { memberIds: { _id: { toString: () => string } }[] }) =>
+    const teamMemberIds = teamsRaw.flatMap((t: { memberIds: { _id: { toString: () => string } }[] }) =>
       t.memberIds.map((m) => m._id.toString())
     );
 
-    const availableUsers = await User.find({
+    const availableUsersRaw = await User.find({
       _id: { $nin: [...teamMemberIds, session.user.id] },
       role: "user", // Only regular users can be added as team members
     })
       .select("name email image")
       .lean();
+
+    // Serialize _id to string for consistent comparison with invites
+    const teams = teamsRaw.map((team) => ({
+      ...team,
+      _id: team._id.toString(),
+      adminId: team.adminId ? {
+        ...(team.adminId as unknown as Record<string, unknown>),
+        _id: (team.adminId as unknown as { _id: { toString: () => string } })._id.toString(),
+      } : null,
+      memberIds: (team.memberIds as unknown as Array<{ _id: { toString: () => string } } & Record<string, unknown>>).map((m) => ({
+        ...m,
+        _id: m._id.toString(),
+      })),
+    }));
+
+    const availableUsers = availableUsersRaw.map((user) => ({
+      ...user,
+      _id: user._id.toString(),
+    }));
 
     return NextResponse.json({
       data: {

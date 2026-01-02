@@ -108,22 +108,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check if user is already in a team (for now, users can only be in one team)
-    if (user.teamIds && user.teamIds.length > 0) {
-      return NextResponse.json(
-        { error: "You are already a member of a team" },
-        { status: 400 }
-      );
-    }
-
-    // Check if user is an admin (admins can't join other teams)
-    if (user.role === "admin") {
-      return NextResponse.json(
-        { error: "Admins cannot join other teams" },
-        { status: 400 }
-      );
-    }
-
     // Get the team
     const team = await Team.findById(invite.teamId);
     if (!team) {
@@ -143,9 +127,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     team.memberIds.push(user._id);
     await team.save();
 
-    // Update user's teamIds and invitedBy
-    user.teamIds = [team._id];
+    // Update user's teamIds (add to existing, support multiple teams)
+    user.teamIds = user.teamIds || [];
+    if (!user.teamIds.some((id: { toString: () => string }) => id.toString() === team._id.toString())) {
+      user.teamIds.push(team._id);
+    }
     user.invitedBy = invite.adminId;
+
+    // Clear user's own subscription - they now use admin's subscription
+    user.subscription = undefined;
     await user.save();
 
     // Increment invite usage

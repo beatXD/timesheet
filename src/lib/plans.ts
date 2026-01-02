@@ -25,8 +25,8 @@ export const DEFAULT_PLANS = [
     sortOrder: 0,
   },
   {
-    slug: "pro",
-    name: "Pro",
+    slug: "team",
+    name: "Team",
     description: "For small teams",
     monthlyPrice: 990,
     maxUsers: 5,

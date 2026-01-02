@@ -381,7 +381,7 @@ export default function PlansPage() {
                       slug: e.target.value.toLowerCase().replace(/\s+/g, "-"),
                     })
                   }
-                  placeholder="pro"
+                  placeholder="team"
                   disabled={!!editingPlan}
                 />
               </div>

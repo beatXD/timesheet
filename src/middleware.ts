@@ -87,9 +87,9 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // Admin paths (team management) - only admins (team leaders) can access
+    // Admin paths (team management) - admins (team leaders) and super_admin can access
     const isAdminPath = adminPaths.some(p => pathname.startsWith(p));
-    if (isAdminPath && userRole !== "super_admin") {
+    if (isAdminPath && userRole !== "super_admin" && userRole !== "admin") {
       const response = NextResponse.redirect(new URL("/unauthorized", request.url));
       if (!localeCookie) {
         response.cookies.set("NEXT_LOCALE", locale, { path: "/" });

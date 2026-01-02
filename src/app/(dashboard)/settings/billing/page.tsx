@@ -78,12 +78,12 @@ export default function BillingPage() {
   const [paymentHistory, setPaymentHistory] = useState<Payment[]>([]);
   const [planPricing, setPlanPricing] = useState<Record<SubscriptionPlan, PlanPricing>>({
     free: { monthly: 0, name: "Free" },
-    pro: { monthly: 990, name: "Pro" },
+    team: { monthly: 990, name: "Team" },
     enterprise: { monthly: 4990, name: "Enterprise" },
   });
   const [planLimits, setPlanLimits] = useState<Record<SubscriptionPlan, PlanLimits>>({
     free: { maxUsers: 1, maxTeams: 1 },
-    pro: { maxUsers: 5, maxTeams: 1 },
+    team: { maxUsers: 5, maxTeams: 1 },
     enterprise: { maxUsers: 100, maxTeams: 10 },
   });
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
@@ -170,7 +170,7 @@ export default function BillingPage() {
     switch (plan) {
       case "enterprise":
         return <Building2 className="w-5 h-5" />;
-      case "pro":
+      case "team":
         return <Crown className="w-5 h-5" />;
       default:
         return <Users className="w-5 h-5" />;
@@ -181,7 +181,7 @@ export default function BillingPage() {
     switch (plan) {
       case "enterprise":
         return "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300";
-      case "pro":
+      case "team":
         return "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300";
       default:
         return "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300";
@@ -261,8 +261,8 @@ export default function BillingPage() {
                     {t("subscription.upgrade")}
                   </Button>
                 )}
-                {subscription?.plan !== "pro" && subscription?.plan !== "free" && (
-                  <Button variant="outline" onClick={() => openUpgradeDialog("pro")}>
+                {subscription?.plan !== "team" && subscription?.plan !== "free" && (
+                  <Button variant="outline" onClick={() => openUpgradeDialog("team")}>
                     {t("subscription.downgrade")}
                   </Button>
                 )}
@@ -292,7 +292,7 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
-              {(["free", "pro", "enterprise"] as SubscriptionPlan[]).map((plan) => (
+              {(["free", "team", "enterprise"] as SubscriptionPlan[]).map((plan) => (
                 <div
                   key={plan}
                   className={`p-6 rounded-lg border-2 ${

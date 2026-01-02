@@ -34,7 +34,7 @@ interface Stats {
   };
   subscriptions: {
     free: number;
-    pro: number;
+    team: number;
     enterprise: number;
   };
   timesheets: {
@@ -131,7 +131,7 @@ export default function SuperAdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(stats?.revenue.monthly || 0)}</div>
             <p className="text-xs text-muted-foreground">
-              {(stats?.subscriptions.pro || 0) + (stats?.subscriptions.enterprise || 0)} {t("superAdmin.paidSubscriptions")}
+              {(stats?.subscriptions.team || 0) + (stats?.subscriptions.enterprise || 0)} {t("superAdmin.paidSubscriptions")}
             </p>
           </CardContent>
         </Card>
@@ -175,10 +175,10 @@ export default function SuperAdminDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-amber-400" />
-                  <span>{t("subscription.pro")}</span>
+                  <span>{t("subscription.team")}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{stats?.subscriptions.pro || 0}</span>
+                  <span className="font-medium">{stats?.subscriptions.team || 0}</span>
                   <Badge variant="secondary">{t("superAdmin.users")}</Badge>
                 </div>
               </div>

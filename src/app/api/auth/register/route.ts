@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Team from "@/models/Team";
+import Invite from "@/models/Invite";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import {
@@ -16,14 +17,14 @@ const registerSchema = z.object({
   name: z.string().min(2, "ชื่อต้องมีอย่างน้อย 2 ตัวอักษร"),
   email: z.string().email("รูปแบบ Email ไม่ถูกต้อง"),
   password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
-  plan: z.enum(["free", "pro", "enterprise"]).default("free"),
+  plan: z.enum(["free", "team", "enterprise"]).default("free"),
   teamName: z.string().optional(),
 });
 
 // Subscription plan limits
 const planLimits: Record<SubscriptionPlan, { maxUsers: number; maxTeams: number }> = {
   free: { maxUsers: 1, maxTeams: 1 },
-  pro: { maxUsers: 5, maxTeams: 1 },
+  team: { maxUsers: 5, maxTeams: 1 },
   enterprise: { maxUsers: 100, maxTeams: 10 },
 };
 
@@ -60,10 +61,10 @@ export async function POST(request: NextRequest) {
 
     const { name, email, password, plan, teamName } = result.data;
 
-    // Validate team name for Pro plan
-    if (plan === "pro" && !teamName?.trim()) {
+    // Validate team name for Team plan
+    if (plan === "team" && !teamName?.trim()) {
       return NextResponse.json(
-        { error: "Team name is required for Pro plan" },
+        { error: "Team name is required for Team plan" },
         { status: 400 }
       );
     }
@@ -92,8 +93,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if team name already exists (for Pro plan)
-    if (plan === "pro" && teamName) {
+    // Check if team name already exists (for Team plan)
+    if (plan === "team" && teamName) {
       const existingTeam = await Team.findOne({ name: teamName.trim() });
       if (existingTeam) {
         return NextResponse.json(
@@ -132,8 +133,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create team for Pro plan
-    if (plan === "pro" && teamName) {
+    // Create team for Team plan
+    if (plan === "team" && teamName) {
       const team = await Team.create({
         name: teamName.trim(),
         adminId: user._id,
@@ -145,17 +146,65 @@ export async function POST(request: NextRequest) {
       await user.save();
     }
 
+    // Check for pending invites for this email and auto-join teams
+    const pendingInvites = await Invite.find({
+      email: email.toLowerCase(),
+      expiresAt: { $gt: new Date() },
+      $expr: { $lt: ["$usedCount", "$maxUses"] },
+    });
+
+    const joinedTeams: string[] = [];
+
+    for (const invite of pendingInvites) {
+      const team = await Team.findById(invite.teamId);
+      if (!team) continue;
+
+      // Check if user is already in team
+      const isAlreadyMember =
+        team.adminId?.toString() === user._id.toString() ||
+        team.memberIds.some((id: { toString: () => string }) => id.toString() === user._id.toString());
+
+      if (!isAlreadyMember) {
+        // Add user to team
+        team.memberIds.push(user._id);
+        await team.save();
+
+        // Add team to user's teamIds
+        user.teamIds = user.teamIds || [];
+        if (!user.teamIds.some((id: { toString: () => string }) => id.toString() === team._id.toString())) {
+          user.teamIds.push(team._id);
+        }
+        user.invitedBy = invite.adminId;
+
+        joinedTeams.push(team.name);
+
+        // Mark invite as used
+        invite.usedCount += 1;
+        await invite.save();
+      }
+    }
+
+    // If user joined teams via invite, clear their subscription
+    // (they use the admin's subscription, not their own)
+    if (joinedTeams.length > 0) {
+      user.subscription = undefined;
+      await user.save();
+    }
+
     return NextResponse.json({
       success: true,
-      message: plan === "pro"
+      message: plan === "team"
         ? "สร้างบัญชีและทีมสำเร็จ"
-        : "สร้างบัญชีสำเร็จ",
+        : joinedTeams.length > 0
+          ? `สร้างบัญชีสำเร็จ และเข้าร่วมทีม: ${joinedTeams.join(", ")}`
+          : "สร้างบัญชีสำเร็จ",
       data: {
         id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
         plan: user.subscription?.plan,
+        joinedTeams,
       },
     });
   } catch (error) {

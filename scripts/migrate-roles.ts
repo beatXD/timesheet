@@ -37,14 +37,14 @@ async function migrate() {
   console.log(`  Updated ${adminResult.modifiedCount} users from 'admin' to 'super_admin'\n`);
 
   // Step 2: Migrate leader → admin with Pro subscription
-  console.log("Step 2: Migrating 'leader' → 'admin' with Pro subscription...");
+  console.log("Step 2: Migrating 'leader' → 'admin' with Team subscription...");
   const leaderResult = await usersCollection.updateMany(
     { role: "leader" },
     {
       $set: {
         role: "admin",
         subscription: {
-          plan: "pro",
+          plan: "team",
           status: "active",
           maxUsers: 5,
           maxTeams: 1,
@@ -108,13 +108,13 @@ async function migrate() {
   console.log(`  user: ${userCount}`);
 
   const freePlanCount = await usersCollection.countDocuments({ "subscription.plan": "free" });
-  const proPlanCount = await usersCollection.countDocuments({ "subscription.plan": "pro" });
+  const teamPlanCount = await usersCollection.countDocuments({ "subscription.plan": "team" });
   const enterprisePlanCount = await usersCollection.countDocuments({ "subscription.plan": "enterprise" });
 
   console.log("");
   console.log("Subscription Plans:");
   console.log(`  free: ${freePlanCount}`);
-  console.log(`  pro: ${proPlanCount}`);
+  console.log(`  team: ${teamPlanCount}`);
   console.log(`  enterprise: ${enterprisePlanCount}`);
 
   console.log("\n========================================");

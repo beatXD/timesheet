@@ -44,16 +44,7 @@ export default function RegisterPage() {
 
   const [step, setStep] = useState<Step>("plan");
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-
-  // Check for plan in URL query params
-  useEffect(() => {
-    const planFromUrl = searchParams.get("plan") as SubscriptionPlan | null;
-    if (planFromUrl && ["free", "pro", "enterprise"].includes(planFromUrl)) {
-      setSelectedPlan(planFromUrl);
-      setStep("details");
-    }
-  }, [searchParams]);
-
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -68,6 +59,26 @@ export default function RegisterPage() {
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvc, setCardCvc] = useState("");
+
+  // Check for plan or invite in URL query params
+  useEffect(() => {
+    const planFromUrl = searchParams.get("plan") as SubscriptionPlan | null;
+    const inviteFromUrl = searchParams.get("invite");
+    const emailFromUrl = searchParams.get("email");
+
+    if (inviteFromUrl) {
+      // Coming from invite - register as free user (will join team after)
+      setInviteToken(inviteFromUrl);
+      setSelectedPlan("free");
+      setStep("details");
+      if (emailFromUrl) {
+        setEmail(emailFromUrl);
+      }
+    } else if (planFromUrl && ["free", "team", "enterprise"].includes(planFromUrl)) {
+      setSelectedPlan(planFromUrl);
+      setStep("details");
+    }
+  }, [searchParams]);
 
   const plans: PlanOption[] = [
     {
@@ -84,9 +95,9 @@ export default function RegisterPage() {
       icon: <User className="w-6 h-6" />,
     },
     {
-      id: "pro",
-      name: tSub("pro"),
-      description: tLanding("pricing.tiers.pro.description"),
+      id: "team",
+      name: tSub("team"),
+      description: tLanding("pricing.tiers.team.description"),
       price: "299",
       features: [
         "Up to 5 users",
@@ -117,13 +128,13 @@ export default function RegisterPage() {
       return;
     }
 
-    if (selectedPlan === "pro" && !teamName.trim()) {
-      toast.error("Team name is required for Pro plan");
+    if (selectedPlan === "team" && !teamName.trim()) {
+      toast.error("Team name is required for Team plan");
       return;
     }
 
-    // For Pro plan, go to payment step
-    if (selectedPlan === "pro") {
+    // For Team plan, go to payment step
+    if (selectedPlan === "team") {
       setStep("payment");
       return;
     }
@@ -161,7 +172,7 @@ export default function RegisterPage() {
           email,
           password,
           plan: selectedPlan,
-          teamName: selectedPlan === "pro" ? teamName : undefined,
+          teamName: selectedPlan === "team" ? teamName : undefined,
         }),
       });
 
@@ -184,6 +195,7 @@ export default function RegisterPage() {
       if (signInResult?.error) {
         router.push("/login");
       } else {
+        // Auto-join happens during registration, just redirect to calendar
         router.push("/calendar");
         router.refresh();
       }
@@ -247,7 +259,7 @@ export default function RegisterPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="p-2 bg-primary/10 rounded-lg">{plan.icon}</div>
-                    {plan.id === "pro" && (
+                    {plan.id === "team" && (
                       <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
                         Popular
                       </span>
@@ -271,8 +283,8 @@ export default function RegisterPage() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full" variant={plan.id === "pro" ? "default" : "outline"}>
-                    {plan.id === "free" ? "Start Free" : "Start Pro Trial"}
+                  <Button className="w-full" variant={plan.id === "team" ? "default" : "outline"}>
+                    {plan.id === "free" ? "Start Free" : "Start Team Trial"}
                   </Button>
                 </CardFooter>
               </Card>
@@ -290,7 +302,7 @@ export default function RegisterPage() {
     );
   }
 
-  // Payment Step (Pro plan only)
+  // Payment Step (Team plan only)
   if (step === "payment") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/50 px-4 relative">
@@ -310,7 +322,7 @@ export default function RegisterPage() {
             </Button>
             <CardTitle className="text-2xl font-bold">Payment Details</CardTitle>
             <CardDescription>
-              Pro Plan - ฿299/month
+              Team Plan - ฿990/month
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -384,7 +396,7 @@ export default function RegisterPage() {
           </Button>
           <CardTitle className="text-2xl font-bold">{t("createAccount")}</CardTitle>
           <CardDescription>
-            {selectedPlan === "free" ? tSub("free") : tSub("pro")} Plan
+            {selectedPlan === "free" ? tSub("free") : tSub("team")} Plan
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -415,8 +427,8 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Team name for Pro plan */}
-            {selectedPlan === "pro" && (
+            {/* Team name for Team plan */}
+            {selectedPlan === "team" && (
               <div className="space-y-2">
                 <Label htmlFor="teamName">Team Name</Label>
                 <Input
@@ -487,7 +499,7 @@ export default function RegisterPage() {
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {selectedPlan === "pro" ? "Continue to Payment" : t("createAccount")}
+              {selectedPlan === "team" ? "Continue to Payment" : t("createAccount")}
             </Button>
           </form>
 

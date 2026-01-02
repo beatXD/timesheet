@@ -356,13 +356,15 @@ export default function TimesheetDetailPage() {
     toast.success(t("template.applied"));
   };
 
-  // Sync holidays function (for personal mode)
+  // Sync holidays function (works for both personal and team modes)
   const syncHolidays = async () => {
-    if (!isPersonalMode) return;
-
     setSyncingHolidays(true);
     try {
-      const res = await fetch(`/api/personal-timesheets/${params.id}/sync-holidays`, {
+      const endpoint = isPersonalMode
+        ? `/api/personal-timesheets/${params.id}/sync-holidays`
+        : `/api/timesheets/${params.id}/sync-holidays`;
+
+      const res = await fetch(endpoint, {
         method: "POST",
       });
 
@@ -468,8 +470,8 @@ export default function TimesheetDetailPage() {
             </DropdownMenu>
           )}
 
-          {/* Sync Holidays button - only for personal mode when editable */}
-          {isEditable && isPersonalMode && (
+          {/* Sync Holidays button - when editable (both personal and team modes) */}
+          {isEditable && (
             <Button
               variant="outline"
               onClick={syncHolidays}

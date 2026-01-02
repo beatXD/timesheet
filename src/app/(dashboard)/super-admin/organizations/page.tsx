@@ -120,7 +120,7 @@ export default function OrganizationsPage() {
     switch (plan) {
       case "enterprise":
         return "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300";
-      case "pro":
+      case "team":
         return "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300";
       default:
         return "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300";
@@ -169,7 +169,7 @@ export default function OrganizationsPage() {
           <SelectContent>
             <SelectItem value="all">{t("superAdmin.allPlans")}</SelectItem>
             <SelectItem value="free">{t("subscription.free")}</SelectItem>
-            <SelectItem value="pro">{t("subscription.pro")}</SelectItem>
+            <SelectItem value="team">{t("subscription.team")}</SelectItem>
             <SelectItem value="enterprise">{t("subscription.enterprise")}</SelectItem>
           </SelectContent>
         </Select>

@@ -5,7 +5,7 @@ const SubscriptionSchema = new Schema(
   {
     plan: {
       type: String,
-      enum: ["free", "pro", "enterprise"] as SubscriptionPlan[],
+      enum: ["free", "team", "enterprise"] as SubscriptionPlan[],
       default: "free",
     },
     status: {

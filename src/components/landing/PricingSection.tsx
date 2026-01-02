@@ -15,8 +15,8 @@ const tiers = [
     popular: false,
   },
   {
-    key: "pro",
-    plan: "pro",
+    key: "team",
+    plan: "team",
     price: "฿990",
     popular: true,
   },

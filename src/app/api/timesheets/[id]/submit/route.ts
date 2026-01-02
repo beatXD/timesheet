@@ -60,21 +60,28 @@ export async function POST(
     const previousStatus = timesheet.status;
     const user = await User.findById(session.user.id);
 
-    // Determine if this is a Free plan user (auto-approve) or Pro/Enterprise (needs approval)
-    // Free plan users: Auto-approve their own timesheets
-    // Pro/Enterprise team members: Submit for admin approval
-    // Admins: Auto-approve their own timesheets
+    // Determine if this is a Free plan user (auto-approve) or team member (needs approval)
+    // - Admin (team leader): Auto-approve their own timesheets
+    // - Team members (user has teamIds and is not the admin): Submit for admin approval
+    // - Standalone Free plan users (no team): Auto-approve
     let shouldAutoApprove = false;
 
     // Check if user is an admin (team leader) - they auto-approve their own timesheets
     if (session.user.role === "admin") {
       shouldAutoApprove = true;
-    } else if (user?.subscription?.plan === "free") {
-      // Free plan users auto-approve (self-managed)
-      shouldAutoApprove = true;
     } else {
-      // Regular users in Pro/Enterprise teams need approval
-      shouldAutoApprove = false;
+      // Check if user belongs to any team as a member (not as admin)
+      const userTeams = await Team.find({
+        memberIds: session.user.id,
+      }).lean();
+
+      if (userTeams.length > 0) {
+        // User is a team member - needs admin approval
+        shouldAutoApprove = false;
+      } else {
+        // User is standalone (Free plan, no team) - auto-approve
+        shouldAutoApprove = true;
+      }
     }
 
     if (shouldAutoApprove) {

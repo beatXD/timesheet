@@ -163,12 +163,6 @@ const navSections: NavSection[] = [
         icon: <UsersRound className="w-4 h-4" />,
         roles: ["admin"],
       },
-      {
-        href: "/admin/teams",
-        labelKey: "nav.teams",
-        icon: <Users className="w-4 h-4" />,
-        roles: ["admin"],
-      },
     ],
   },
   {

@@ -6,6 +6,7 @@ const InviteSchema = new Schema<IInvite>(
     teamId: { type: Schema.Types.ObjectId, ref: "Team", required: true },
     adminId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     token: { type: String, required: true, unique: true },
+    email: { type: String }, // Optional: email the invite was sent to
     expiresAt: { type: Date, required: true },
     maxUses: { type: Number, required: true },
     usedCount: { type: Number, default: 0 },
