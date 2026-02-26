@@ -46,20 +46,13 @@ interface Team {
   name: string;
 }
 
-interface Vendor {
-  _id: string;
-  name: string;
-}
-
 interface User {
   _id: string;
   name: string;
   email: string;
   image?: string;
   role: UserRole;
-  contractRole?: string;
   teamIds?: { _id: string; name: string }[];
-  vendorId?: { _id: string; name: string };
 }
 
 const roleColors: Record<UserRole, string> = {
@@ -72,7 +65,6 @@ export default function UsersPage() {
   const t = useTranslations();
   const [users, setUsers] = useState<User[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [saving, setSaving] = useState(false);
@@ -123,17 +115,14 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const [usersRes, teamsRes, vendorsRes] = await Promise.all([
+      const [usersRes, teamsRes] = await Promise.all([
         fetch("/api/admin/users"),
         fetch("/api/admin/teams"),
-        fetch("/api/admin/vendors"),
       ]);
       const usersData = await usersRes.json();
       const teamsData = await teamsRes.json();
-      const vendorsData = await vendorsRes.json();
       if (usersData.data) setUsers(usersData.data);
       if (teamsData.data) setTeams(teamsData.data);
-      if (vendorsData.data) setVendors(vendorsData.data);
     } catch (error) {
       toast.error(t("errors.failedToFetch"));
     } finally {
@@ -148,10 +137,7 @@ export default function UsersPage() {
       const res = await fetch("/api/admin/users", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...editUser,
-          vendorId: editUser.vendorId?._id || null,
-        }),
+        body: JSON.stringify(editUser),
       });
 
       if (!res.ok) {
@@ -250,9 +236,7 @@ export default function UsersPage() {
               <TableRow>
                 <TableHead>{t("common.user")}</TableHead>
                 <TableHead>{t("admin.users.role")}</TableHead>
-                <TableHead>{t("admin.users.contractRole")}</TableHead>
                 <TableHead>{t("admin.users.teams")}</TableHead>
-                <TableHead>{t("admin.users.vendor")}</TableHead>
                 <TableHead className="text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -281,7 +265,6 @@ export default function UsersPage() {
                   <TableCell>
                     <Badge className={roleColors[user.role]}>{t(`roles.${user.role}`)}</Badge>
                   </TableCell>
-                  <TableCell>{user.contractRole || "-"}</TableCell>
                   <TableCell>
                     {user.teamIds && user.teamIds.length > 0 ? (
                       <div className="flex gap-1 flex-wrap">
@@ -295,7 +278,6 @@ export default function UsersPage() {
                       "-"
                     )}
                   </TableCell>
-                  <TableCell>{user.vendorId?.name || "-"}</TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
@@ -339,43 +321,6 @@ export default function UsersPage() {
                     <SelectItem value="user">{t("roles.user")}</SelectItem>
                     <SelectItem value="admin">{t("roles.admin")}</SelectItem>
                     <SelectItem value="super_admin">{t("roles.super_admin")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label>{t("admin.users.contractRole")}</Label>
-                <Input
-                  value={editUser.contractRole || ""}
-                  onChange={(e) =>
-                    setEditUser({ ...editUser, contractRole: e.target.value })
-                  }
-                  placeholder={t("admin.users.contractRolePlaceholder")}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>{t("admin.users.vendor")}</Label>
-                <Select
-                  value={editUser.vendorId?._id || "none"}
-                  onValueChange={(v) =>
-                    setEditUser({
-                      ...editUser,
-                      vendorId:
-                        v === "none"
-                          ? undefined
-                          : vendors.find((vendor) => vendor._id === v),
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t("admin.users.noVendor")}</SelectItem>
-                    {vendors.map((vendor) => (
-                      <SelectItem key={vendor._id} value={vendor._id}>
-                        {vendor.name}
-                      </SelectItem>
-                    ))}
                   </SelectContent>
                 </Select>
               </div>

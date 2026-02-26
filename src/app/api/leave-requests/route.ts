@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { LeaveRequest, Team, User, LeaveBalance, LeaveSettings, Timesheet, AuditLog } from "@/models";
+import { LeaveRequest, Team, User, LeaveBalance, LeaveSettings, Timesheet } from "@/models";
 import type { LeaveType } from "@/types";
 import { parsePaginationParams, createPaginationMeta } from "@/lib/pagination";
 import { sendLeaveRequestEmail } from "@/lib/email";
@@ -255,17 +255,6 @@ export async function POST(request: NextRequest) {
       balance.quotas[leaveTypeKey].used += requestedDays;
       balance.markModified("quotas");
       await balance.save();
-
-      // Log the auto-approval
-      await AuditLog.logAction({
-        entityType: "leave_request",
-        entityId: leaveRequest._id,
-        action: "auto_approve",
-        fromStatus: "pending",
-        toStatus: "approved",
-        performedBy: session.user.id,
-        metadata: { daysApproved: requestedDays, leaveType },
-      });
 
       // Add leave entries to timesheet
       await addLeaveToTimesheet({

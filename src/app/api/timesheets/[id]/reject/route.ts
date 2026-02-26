@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, Team, AuditLog, User } from "@/models";
+import { Timesheet, Team, User } from "@/models";
 import { sendTimesheetStatusEmail } from "@/lib/email";
 import { notifyTimesheetRejected } from "@/lib/notifications";
 import { timesheetRejectSchema, validateRequest } from "@/lib/validation/schemas";
@@ -78,17 +78,6 @@ export async function POST(
     timesheet.submittedAt = undefined;
 
     await timesheet.save();
-
-    // Log the rejection
-    await AuditLog.logAction({
-      entityType: "timesheet",
-      entityId: timesheet._id,
-      action: "reject",
-      fromStatus: previousStatus,
-      toStatus: "rejected",
-      performedBy: session.user.id,
-      reason,
-    });
 
     // Send email notification
     try {

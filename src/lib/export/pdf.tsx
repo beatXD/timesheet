@@ -8,12 +8,11 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { format } from "date-fns";
-import type { ITimesheet, ITimesheetEntry, IUser, IVendor, ITeam } from "@/types";
+import type { ITimesheet, ITimesheetEntry, IUser, ITeam } from "@/types";
 
 interface TimesheetExportData {
   timesheet: ITimesheet;
   user: IUser;
-  vendor?: IVendor;
   project?: { name?: string } | null;
   team?: ITeam;
 }
@@ -216,7 +215,7 @@ const entryTypeLabels: Record<string, string> = {
 };
 
 const TimesheetPDF = ({ data }: { data: TimesheetExportData }) => {
-  const { timesheet, user, vendor, project, team } = data;
+  const { timesheet, user, project, team } = data;
   const monthYear = format(
     new Date(timesheet.year, timesheet.month - 1),
     "MMMM yyyy"
@@ -243,16 +242,8 @@ const TimesheetPDF = ({ data }: { data: TimesheetExportData }) => {
               <Text style={styles.infoLabel}>Name</Text>
               <Text style={styles.infoValue}>{user.name}</Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Role</Text>
-              <Text style={styles.infoValue}>{user.contractRole || "-"}</Text>
-            </View>
           </View>
           <View style={styles.infoBlock}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Vendor</Text>
-              <Text style={styles.infoValue}>{vendor?.name || "-"}</Text>
-            </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Project / Team</Text>
               <Text style={styles.infoValue}>{projectTeamDisplay}</Text>

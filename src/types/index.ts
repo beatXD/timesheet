@@ -61,8 +61,6 @@ export interface IUser {
   password?: string;
   role: UserRole;
   teamIds?: Types.ObjectId[];
-  vendorId?: Types.ObjectId;
-  contractRole?: string;
   subscription?: ISubscription;
   invitedBy?: Types.ObjectId;
   createdAt: Date;
@@ -105,15 +103,6 @@ export interface IInvite {
   maxUses: number;
   usedCount: number;
   createdAt: Date;
-}
-
-// Vendor
-export interface IVendor {
-  _id: Types.ObjectId;
-  name: string;
-  contractNo?: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 // Timesheet Entry (embedded in Timesheet)
@@ -223,23 +212,6 @@ export interface ILeaveSettings {
   updatedAt: Date;
 }
 
-// Audit Log
-export type AuditEntityType = "timesheet" | "leave_request";
-export type AuditAction = "create" | "submit" | "approve" | "reject" | "cancel" | "auto_approve";
-
-export interface IAuditLog {
-  _id: Types.ObjectId;
-  entityType: AuditEntityType;
-  entityId: Types.ObjectId;
-  action: AuditAction;
-  fromStatus?: string;
-  toStatus: string;
-  performedBy: Types.ObjectId;
-  reason?: string;
-  metadata?: Record<string, unknown>;
-  createdAt: Date;
-}
-
 // API Response types
 export interface ApiResponse<T = unknown> {
   success: boolean;
@@ -291,35 +263,3 @@ export interface SessionUser {
   subscriptionPlan?: SubscriptionPlan;
 }
 
-// GitHub Integration Types
-export interface IGitHubRepository {
-  owner: string;
-  name: string;
-  fullName: string; // "owner/name"
-  isPrivate: boolean;
-  enabled: boolean;
-}
-
-export interface IGitHubRepoSettings {
-  _id: Types.ObjectId;
-  userId: Types.ObjectId;
-  repositories: IGitHubRepository[];
-  lastSyncedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface IGitHubCommit {
-  sha: string;
-  message: string;
-  originalMessage?: string; // Original message before AI summarization
-  date: Date;
-  repo: string; // "owner/name"
-  url: string;
-}
-
-export interface IGitHubStatus {
-  connected: boolean;
-  hasRepoScope: boolean;
-  username?: string;
-}

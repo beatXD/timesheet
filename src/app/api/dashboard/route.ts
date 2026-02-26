@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
     const yearParam = searchParams.get("year");
     const monthParam = searchParams.get("month");
     const teamIdParam = searchParams.get("teamId");
-    const vendorIdParam = searchParams.get("vendorId");
 
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
@@ -277,20 +276,6 @@ export async function GET(request: NextRequest) {
         } else {
           userFilter = { userId: { $in: teamMemberIds } };
         }
-      }
-    }
-
-    // Apply vendor filter (admin/leader only)
-    if (vendorIdParam && session.user.role !== "user") {
-      const usersWithVendor = await User.find({ vendorId: vendorIdParam }, "_id").lean();
-      const vendorUserIds = usersWithVendor.map((u: { _id: { toString: () => string } }) => u._id.toString());
-
-      if (userFilter.userId) {
-        const existingIds = (userFilter.userId as { $in: string[] }).$in || [];
-        const intersection = vendorUserIds.filter((id: string) => existingIds.includes(id));
-        userFilter = { userId: { $in: intersection } };
-      } else {
-        userFilter = { userId: { $in: vendorUserIds } };
       }
     }
 

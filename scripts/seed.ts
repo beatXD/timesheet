@@ -21,8 +21,6 @@ const UserSchema = new mongoose.Schema({
   password: { type: String },
   role: { type: String, enum: ["super_admin", "admin", "user"], default: "user" },
   teamIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Team" }],
-  vendorId: { type: mongoose.Schema.Types.ObjectId, ref: "Vendor" },
-  contractRole: { type: String },
 }, { timestamps: true });
 
 // Holiday Schema

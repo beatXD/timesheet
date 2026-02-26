@@ -30,7 +30,6 @@ export const Permissions = {
   canAccessAdminSettings: (role: UserRole) => role === "super_admin",
   canManageUsers: (role: UserRole) => role === "super_admin",
   canManageHolidays: (role: UserRole) => ["super_admin", "admin"].includes(role), // Admin can manage holidays for their team
-  canManageVendors: (role: UserRole) => ["super_admin", "admin"].includes(role),
 
   // Leave permissions
   canApproveLeave: (role: UserRole) => role === "admin",

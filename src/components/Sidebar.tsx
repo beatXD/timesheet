@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   Clock,
   Building2,
-  FolderKanban,
   Calendar,
   UserCog,
   ChevronLeft,
@@ -23,9 +22,7 @@ import {
   UsersRound,
   FileSpreadsheet,
   Settings2,
-  History,
   BarChart3,
-  Users,
   CreditCard,
   Package,
 } from "lucide-react";
@@ -103,12 +100,6 @@ const navSections: NavSection[] = [
         icon: <BarChart3 className="w-4 h-4" />,
         roles: ["super_admin"],
       },
-      {
-        href: "/admin/audit-logs",
-        labelKey: "nav.auditLogs",
-        icon: <History className="w-4 h-4" />,
-        roles: ["super_admin"],
-      },
     ],
   },
   {
@@ -173,12 +164,6 @@ const navSections: NavSection[] = [
         href: "/admin/users",
         labelKey: "nav.users",
         icon: <UserCog className="w-4 h-4" />,
-        roles: ["super_admin"],
-      },
-      {
-        href: "/admin/vendors",
-        labelKey: "nav.vendors",
-        icon: <Building2 className="w-4 h-4" />,
         roles: ["super_admin"],
       },
       {

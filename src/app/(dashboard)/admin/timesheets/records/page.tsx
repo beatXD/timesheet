@@ -48,7 +48,6 @@ interface TimesheetRecord {
     email: string;
     image?: string;
     teamIds?: { _id: string; name: string }[];
-    vendorId?: { _id: string; name: string };
   };
   month: number;
   year: number;
