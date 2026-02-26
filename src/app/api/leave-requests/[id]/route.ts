@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { LeaveRequest, Team, Timesheet, LeaveBalance, LeaveSettings, AuditLog, User } from "@/models";
+import { LeaveRequest, Team, Timesheet, LeaveBalance, LeaveSettings, User } from "@/models";
 import { sendLeaveStatusEmail } from "@/lib/email";
 import { notifyLeaveApproved, notifyLeaveRejected } from "@/lib/notifications";
 import type { LeaveType } from "@/types";
@@ -216,17 +216,6 @@ export async function POST(
       leaveRequest.daysApproved = daysUsed;
       await leaveRequest.save();
 
-      // Log the approval action
-      await AuditLog.logAction({
-        entityType: "leave_request",
-        entityId: leaveRequest._id,
-        action: "approve",
-        fromStatus: "pending",
-        toStatus: "approved",
-        performedBy: session.user.id,
-        metadata: { daysApproved: daysUsed, leaveType: leaveRequest.leaveType },
-      });
-
       // Auto-add to timesheet
       await addLeaveToTimesheet(leaveRequest);
 
@@ -279,17 +268,6 @@ export async function POST(
       leaveRequest.reviewedAt = new Date();
       leaveRequest.rejectionReason = rejectionReason;
       await leaveRequest.save();
-
-      // Log the rejection action
-      await AuditLog.logAction({
-        entityType: "leave_request",
-        entityId: leaveRequest._id,
-        action: "reject",
-        fromStatus: "pending",
-        toStatus: "rejected",
-        performedBy: session.user.id,
-        reason: rejectionReason,
-      });
 
       // Send email notification
       try {

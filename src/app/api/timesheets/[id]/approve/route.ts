@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, Team, AuditLog, User } from "@/models";
+import { Timesheet, Team, User } from "@/models";
 import { sendTimesheetStatusEmail } from "@/lib/email";
 import { notifyTimesheetApproved } from "@/lib/notifications";
 
@@ -63,16 +63,6 @@ export async function POST(
     timesheet.approvedBy = session.user.id as any;
 
     await timesheet.save();
-
-    // Log the approval
-    await AuditLog.logAction({
-      entityType: "timesheet",
-      entityId: timesheet._id,
-      action: "approve",
-      fromStatus: previousStatus,
-      toStatus: "approved",
-      performedBy: session.user.id,
-    });
 
     // Send email notification
     try {

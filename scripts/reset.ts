@@ -15,7 +15,6 @@ const COLLECTIONS_TO_DELETE = [
   "users",
   "accounts",
   "teams",
-  "vendors",
   "timesheets",
   "personaltimesheets",
   "leaverequests",
@@ -23,8 +22,6 @@ const COLLECTIONS_TO_DELETE = [
   "leavesettings",
   "holidays",
   "notifications",
-  "auditlogs",
-  "githubreposettings",
   "plans",
   "invites",
 ];

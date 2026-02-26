@@ -11,12 +11,11 @@ interface NotificationsState {
 }
 
 interface UseNotificationsOptions {
-  pollingInterval?: number; // in milliseconds
   limit?: number;
 }
 
 export function useNotifications(options: UseNotificationsOptions = {}) {
-  const { pollingInterval = 30000, limit = 20 } = options;
+  const { limit = 20 } = options;
 
   const [state, setState] = useState<NotificationsState>({
     notifications: [],
@@ -115,14 +114,6 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
-
-  // Polling
-  useEffect(() => {
-    if (pollingInterval <= 0) return;
-
-    const interval = setInterval(fetchNotifications, pollingInterval);
-    return () => clearInterval(interval);
-  }, [fetchNotifications, pollingInterval]);
 
   // Refetch on window focus
   useEffect(() => {

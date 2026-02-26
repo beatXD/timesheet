@@ -45,12 +45,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText, Layout, Bookmark, GitCommit, RefreshCw } from "lucide-react";
+import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText, Layout, Bookmark, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
-import { CommitImportDialog } from "@/components/github";
 import { useModeStore } from "@/store";
-import type { ITimesheet, IPersonalTimesheet, ITimesheetEntry, EntryType, TimesheetStatus, LeaveType, IGitHubStatus } from "@/types";
+import type { ITimesheet, IPersonalTimesheet, ITimesheetEntry, EntryType, TimesheetStatus, LeaveType } from "@/types";
 
 interface Template {
   _id: string;
@@ -108,10 +107,6 @@ export default function TimesheetDetailPage() {
   const [isDefaultTemplate, setIsDefaultTemplate] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
 
-  // GitHub integration states
-  const [githubStatus, setGithubStatus] = useState<IGitHubStatus | null>(null);
-  const [showCommitImportDialog, setShowCommitImportDialog] = useState(false);
-
   // Sync holidays state (for personal mode)
   const [syncingHolidays, setSyncingHolidays] = useState(false);
 
@@ -139,20 +134,7 @@ export default function TimesheetDetailPage() {
 
   useEffect(() => {
     fetchTimesheet();
-    fetchGitHubStatus();
   }, [fetchTimesheet]);
-
-  const fetchGitHubStatus = async () => {
-    try {
-      const res = await fetch("/api/github/status");
-      const data = await res.json();
-      if (res.ok) {
-        setGithubStatus(data.data);
-      }
-    } catch {
-      // Silently fail - GitHub integration is optional
-    }
-  };
 
   const updateEntry = (index: number, field: keyof ITimesheetEntry, value: string | number) => {
     const newEntries = [...entries];
@@ -479,17 +461,6 @@ export default function TimesheetDetailPage() {
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${syncingHolidays ? "animate-spin" : ""}`} />
               {syncingHolidays ? t("common.syncing") : t("timesheet.syncHolidays")}
-            </Button>
-          )}
-
-          {/* GitHub Import button - only when editable and GitHub connected with repo scope */}
-          {isEditable && githubStatus?.connected && githubStatus?.hasRepoScope && (
-            <Button
-              variant="outline"
-              onClick={() => setShowCommitImportDialog(true)}
-            >
-              <GitCommit className="w-4 h-4 mr-2" />
-              {t("github.importCommits")}
             </Button>
           )}
 
@@ -921,17 +892,6 @@ export default function TimesheetDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* GitHub Commit Import Dialog */}
-      {timesheet && (
-        <CommitImportDialog
-          open={showCommitImportDialog}
-          onOpenChange={setShowCommitImportDialog}
-          timesheetId={timesheet._id.toString()}
-          month={timesheet.month}
-          year={timesheet.year}
-          onImportComplete={fetchTimesheet}
-        />
-      )}
     </div>
   );
 }

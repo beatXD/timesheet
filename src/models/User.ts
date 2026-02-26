@@ -35,8 +35,6 @@ const UserSchema = new Schema<IUser>(
       default: "user",
     },
     teamIds: [{ type: Schema.Types.ObjectId, ref: "Team" }],
-    vendorId: { type: Schema.Types.ObjectId, ref: "Vendor" },
-    contractRole: { type: String },
     subscription: { type: SubscriptionSchema },
     invitedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },

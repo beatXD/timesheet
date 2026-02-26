@@ -4,7 +4,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SessionProvider } from "@/components/SessionProvider";
-import { Analytics } from "@/components/Analytics";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
@@ -58,7 +57,6 @@ export default async function RootLayout({
           >
             <NextIntlClientProvider messages={messages}>
               {children}
-              <Analytics />
               <ServiceWorkerRegister />
             </NextIntlClientProvider>
           </ThemeProvider>

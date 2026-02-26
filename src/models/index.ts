@@ -1,15 +1,12 @@
 export { default as User } from "./User";
 export { default as Team } from "./Team";
-export { default as Vendor } from "./Vendor";
 export { default as Timesheet } from "./Timesheet";
 export { default as PersonalTimesheet } from "./PersonalTimesheet";
 export { default as Holiday } from "./Holiday";
 export { default as LeaveRequest } from "./LeaveRequest";
 export { default as LeaveBalance } from "./LeaveBalance";
 export { default as LeaveSettings } from "./LeaveSettings";
-export { default as AuditLog } from "./AuditLog";
 export { default as TimesheetTemplate } from "./TimesheetTemplate";
 export { default as Notification } from "./Notification";
-export { default as GitHubRepoSettings } from "./GitHubRepoSettings";
 export { default as Plan } from "./Plan";
 export { default as Invite } from "./Invite";

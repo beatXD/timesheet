@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, Team, User, AuditLog } from "@/models";
+import { Timesheet, Team, User } from "@/models";
 import { validateForSubmission } from "@/lib/validation/timesheet";
 import { notifyPendingApproval } from "@/lib/notifications";
 
@@ -96,16 +96,6 @@ export async function POST(
     timesheet.rejectedReason = undefined;
 
     await timesheet.save();
-
-    // Log the submission/approval
-    await AuditLog.logAction({
-      entityType: "timesheet",
-      entityId: timesheet._id,
-      action: shouldAutoApprove ? "auto_approve" : "submit",
-      fromStatus: previousStatus,
-      toStatus: timesheet.status,
-      performedBy: session.user.id,
-    });
 
     // Notify leaders if regular user submits timesheet (needs approval)
     if (!shouldAutoApprove) {

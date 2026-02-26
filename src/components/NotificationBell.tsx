@@ -58,7 +58,7 @@ export function NotificationBell() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
-  } = useNotifications({ pollingInterval: 30000 });
+  } = useNotifications();
 
   const handleNotificationClick = async (notification: INotification) => {
     if (!notification.read) {

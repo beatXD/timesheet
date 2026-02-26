@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, User, Vendor, Team } from "@/models";
+import { Timesheet, User, Team } from "@/models";
 import { generateTimesheetPDF } from "@/lib/export/pdf";
 import { format } from "date-fns";
 
@@ -52,10 +52,6 @@ export async function GET(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const vendor = user.vendorId
-      ? await Vendor.findById(user.vendorId).lean()
-      : undefined;
-
     // Find user's team
     let team = null;
     if (user.teamIds && user.teamIds.length > 0) {
@@ -65,7 +61,6 @@ export async function GET(
     const buffer = await generateTimesheetPDF({
       timesheet: timesheet as any,
       user: user as any,
-      vendor: vendor as any,
       project: null,
       team: team as any,
     });
