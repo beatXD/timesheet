@@ -39,11 +39,23 @@ import {
   X,
   Search,
   Filter,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { TimesheetStatus } from "@/types";
 import { TeamSubmissionSummary } from "@/components/team";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface TeamMember {
   _id: string;
@@ -119,6 +131,9 @@ export default function TeamPage() {
   const [filterTeam, setFilterTeam] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [bulkApproving, setBulkApproving] = useState(false);
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -247,6 +262,73 @@ export default function TeamPage() {
       return true;
     });
   }, [timesheets, filterTeam, filterStatus, searchQuery]);
+
+  // Bulk approve helpers
+  const selectableTimesheets = useMemo(
+    () => filteredTimesheets.filter((ts) => ts.status === "submitted"),
+    [filteredTimesheets]
+  );
+
+  const allSubmittedSelected =
+    selectableTimesheets.length > 0 &&
+    selectableTimesheets.every((ts) => selectedIds.has(ts._id));
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allSubmittedSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(selectableTimesheets.map((ts) => ts._id)));
+    }
+  };
+
+  const bulkApprove = async () => {
+    setBulkApproving(true);
+    try {
+      const res = await fetch("/api/team/timesheets/bulk-approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ timesheetIds: Array.from(selectedIds) }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || t("errors.failedToApprove"));
+        return;
+      }
+
+      if (data.data.failed > 0) {
+        toast.warning(
+          t("bulkApprove.partialSuccess", {
+            approved: data.data.approved,
+            total: data.data.approved + data.data.failed,
+          })
+        );
+      } else {
+        toast.success(t("bulkApprove.success", { count: data.data.approved }));
+      }
+
+      setSelectedIds(new Set());
+      fetchData();
+    } catch {
+      toast.error(t("errors.failedToApprove"));
+    } finally {
+      setBulkApproving(false);
+      setShowConfirm(false);
+    }
+  };
 
   // Count pending based on filtered timesheets
   const pendingCount = filteredTimesheets.filter((ts) => ts.status === "submitted").length;
@@ -427,6 +509,15 @@ export default function TeamPage() {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-10 text-xs font-medium">
+                    {selectableTimesheets.length > 0 && (
+                      <Checkbox
+                        checked={allSubmittedSelected}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all submitted"
+                      />
+                    )}
+                  </TableHead>
                   <TableHead className="text-xs font-medium">{t("team.member")}</TableHead>
                   {teams.length > 1 && <TableHead className="text-xs font-medium">{t("common.team")}</TableHead>}
                   {filterMonth === "all" && <TableHead className="text-xs font-medium">{t("common.month")}</TableHead>}
@@ -439,6 +530,15 @@ export default function TeamPage() {
               <TableBody>
                 {filteredTimesheets.map((ts) => (
                   <TableRow key={ts._id} className="group">
+                    <TableCell className="py-2 w-10">
+                      {ts.status === "submitted" ? (
+                        <Checkbox
+                          checked={selectedIds.has(ts._id)}
+                          onCheckedChange={() => toggleSelect(ts._id)}
+                          aria-label={`Select ${ts.userId.name}`}
+                        />
+                      ) : null}
+                    </TableCell>
                     <TableCell className="py-2">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
@@ -523,7 +623,7 @@ export default function TeamPage() {
                 ))}
                 {filteredTimesheets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={(teams.length > 1 ? 6 : 5) + (filterMonth === "all" ? 1 : 0)} className="text-center py-8 text-muted-foreground text-sm">
+                    <TableCell colSpan={(teams.length > 1 ? 7 : 6) + (filterMonth === "all" ? 1 : 0)} className="text-center py-8 text-muted-foreground text-sm">
                       {t("team.noTimesheetsFound")}
                     </TableCell>
                   </TableRow>
@@ -533,6 +633,59 @@ export default function TeamPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-background border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3">
+          <span className="text-sm font-medium">
+            {t("bulkApprove.selected", { count: selectedIds.size })}
+          </span>
+          <Button
+            size="sm"
+            onClick={() => setShowConfirm(true)}
+            disabled={bulkApproving}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            {bulkApproving && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
+            {t("bulkApprove.approve")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedIds(new Set())}
+            disabled={bulkApproving}
+          >
+            {t("bulkApprove.cancel")}
+          </Button>
+        </div>
+      )}
+
+      {/* Bulk Approve Confirmation Dialog */}
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("bulkApprove.confirm", { count: selectedIds.size })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("bulkApprove.confirmDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkApproving}>
+              {t("bulkApprove.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={bulkApprove}
+              disabled={bulkApproving}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {bulkApproving && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
+              {t("bulkApprove.approve")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
