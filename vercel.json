@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/reset-leave-balance",
       "schedule": "0 0 1 * *"
+    },
+    {
+      "path": "/api/cron/deadline-reminder",
+      "schedule": "0 2 * * *"
     }
   ]
 }
