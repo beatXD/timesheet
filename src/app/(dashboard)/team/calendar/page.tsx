@@ -111,9 +111,6 @@ export default function TeamCalendarPage() {
     if (!session?.user) {
       redirect("/login");
     }
-    if (session.user.role === "user") {
-      redirect("/calendar");
-    }
   }, [session, status]);
 
   const fetchData = useCallback(async () => {
@@ -132,7 +129,9 @@ export default function TeamCalendarPage() {
       if (teamsData.data) {
         const myTeams = teamsData.data.filter(
           (team: Team) =>
-            team.adminId?._id === session?.user?.id || session?.user?.role === "super_admin"
+            session?.user?.role === "super_admin" ||
+            team.adminId?._id === session?.user?.id ||
+            team.memberIds.some((m) => m._id === session?.user?.id)
         );
         setTeams(myTeams);
       }
@@ -152,7 +151,7 @@ export default function TeamCalendarPage() {
   }, [session?.user?.id, session?.user?.role, t]);
 
   useEffect(() => {
-    if (session?.user?.role === "admin" || session?.user?.role === "super_admin") {
+    if (session?.user) {
       fetchData();
     }
   }, [session, fetchData]);

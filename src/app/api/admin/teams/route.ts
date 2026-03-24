@@ -3,20 +3,25 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Team, User, Timesheet, LeaveRequest } from "@/models";
 
-// GET /api/admin/teams - List teams (admin sees all, leader sees their teams)
+// GET /api/admin/teams - List teams (super_admin sees all, admin sees their teams, user sees teams they belong to)
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || !["super_admin", "admin"].includes(session.user.role || "")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await connectDB();
 
-    // Admin sees all teams, leader sees only teams they lead
-    const query = session.user.role === "super_admin"
-      ? {}
-      : { adminId: session.user.id };
+    // super_admin sees all, admin sees teams they lead, user sees teams they belong to
+    let query = {};
+    if (session.user.role === "super_admin") {
+      query = {};
+    } else if (session.user.role === "admin") {
+      query = { adminId: session.user.id };
+    } else {
+      query = { memberIds: session.user.id };
+    }
 
     const teams = await Team.find(query)
       .populate("adminId", "_id name email")

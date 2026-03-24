@@ -68,8 +68,8 @@ const navSections: NavSection[] = [
     roles: ["user", "admin"],
     items: [
       {
-        href: "/calendar",
-        labelKey: "nav.myCalendar",
+        href: "/team/calendar",
+        labelKey: "nav.teamCalendar",
         icon: <CalendarDays className="w-4 h-4" />,
         roles: ["user", "admin"],
       },
@@ -91,12 +91,6 @@ const navSections: NavSection[] = [
     titleKey: "nav.sections.teamManagement",
     roles: ["admin"],
     items: [
-      {
-        href: "/team/calendar",
-        labelKey: "nav.teamCalendar",
-        icon: <CalendarDays className="w-4 h-4" />,
-        roles: ["admin"],
-      },
       {
         href: "/team",
         labelKey: "nav.teamTimesheets",

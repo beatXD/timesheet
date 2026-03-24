@@ -55,24 +55,30 @@ export async function GET(request: NextRequest) {
     }
 
     // Role-based filtering
-    if (session.user.role === "user" || scope === "own") {
-      // Regular users can only see their own requests
+    if (scope === "own") {
       filter.userId = session.user.id;
-    } else if (session.user.role === "admin" && scope === "team") {
-      // Leaders can see their own and their team members' requests
-      const teams = await Team.find({ adminId: session.user.id });
+    } else if (scope === "team") {
+      // Find teams the user belongs to (as leader or member)
+      const teams = await Team.find({
+        $or: [
+          { adminId: session.user.id },
+          { memberIds: session.user.id },
+        ],
+      });
       if (teams.length > 0) {
-        const allMemberIds = teams.flatMap((t: { memberIds: { toString: () => string }[] }) =>
-          t.memberIds.map((id) => id.toString())
-        );
-        // Include leader's own ID in the filter
-        filter.userId = { $in: [...allMemberIds, session.user.id] };
+        const allMemberIds = new Set<string>();
+        teams.forEach((t: { adminId?: { toString: () => string }; memberIds: { toString: () => string }[] }) => {
+          if (t.adminId) allMemberIds.add(t.adminId.toString());
+          t.memberIds.forEach((id) => allMemberIds.add(id.toString()));
+        });
+        filter.userId = { $in: Array.from(allMemberIds) };
       } else {
-        // If not leading any team, show only own requests
         filter.userId = session.user.id;
       }
+    } else if (session.user.role === "user") {
+      // Default for user role: own requests only
+      filter.userId = session.user.id;
     }
-    // Admin with scope "team" can see all
 
     // Parse pagination params
     const { page, limit, skip } = parsePaginationParams(request);
