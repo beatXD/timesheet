@@ -32,6 +32,42 @@ Add 6 new sections to the existing landing page to increase conversions and cred
 - **i18n:** All visible text must have both Thai and English translations
 - **Responsive:** Mobile-first, matching existing breakpoints (`sm:`, `md:`, `lg:`)
 
+## Global Conventions
+
+### Client Directive
+All new section components use `"use client"` for consistency with existing landing sections (HeroSection, FeaturesSection, etc. all use it).
+
+### i18n Array Access Pattern
+Translation arrays are stored as objects with numeric keys and accessed via `t.raw()` cast to array, matching the existing pattern in `FeaturesSection.tsx`. Example:
+```json
+{ "items": { "0": { "question": "..." }, "1": { "question": "..." } } }
+```
+Access: `const items = t.raw("faq.items") as Array<{ question: string; answer: string }>`
+
+### Section Wrapper Pattern
+All sections follow the existing pattern:
+```tsx
+<section id="section-id" className="py-20 px-4 [bg-muted/50]">
+  <div className="container mx-auto">
+    {/* content */}
+  </div>
+</section>
+```
+
+### Section IDs for Anchor Navigation
+- `trusted-by` — no Navbar link (trust bar, not a navigable section)
+- `screenshots` — no Navbar link
+- `use-cases` — no Navbar link
+- `comparison` — no Navbar link
+- `testimonials` — no Navbar link
+- `faq` — no Navbar link (but can be deeplinked)
+
+### Inline Bold in Quotes
+Testimonial quotes contain bold segments. Split the quote into separate translation keys (`quoteBefore`, `quoteBold`, `quoteAfter`) and render the bold part with `<strong>` in JSX. This avoids innerHTML and keeps it type-safe.
+
+### Styling-Only Data in Components
+Avatar colors, comparison cell icons, and other styling-related data live in component code (not in translation files). Only user-visible text goes in `messages/*.json`.
+
 ---
 
 ## Section 1: Trusted By (Logo Wall)
@@ -64,13 +100,19 @@ TrustedBySection.tsx
 - Logos: `bg-muted rounded-lg px-6 py-3 text-muted-foreground font-semibold`
 - Responsive: logos wrap on mobile, single row on desktop
 
+### Note on Hero Stats Overlap
+
+The Hero section already shows "10k+ Users". The Trusted By stat "10,000+ timesheets submitted monthly" is a different metric (activity volume, not user count). Both are intentional — Hero shows vanity metrics, Trusted By shows usage proof.
+
 ### Translation Keys
 
 ```
 landing.trustedBy.stat: "10,000+"
 landing.trustedBy.statLabel: "timesheets submitted monthly"
-landing.trustedBy.companies: ["TechCorp", "SiamDev", "BangkokSoft", "CloudThai", "DataWorks"]
+landing.trustedBy.company0 through landing.trustedBy.company4
 ```
+
+Company names are individual keys (`company0`..`company4`) iterated with a hardcoded count of 5 in the component.
 
 ---
 
@@ -110,11 +152,41 @@ ProductScreenshotsSection.tsx
 
 ### Tab Mockup Details
 
-Each tab shows a **CSS-only mockup** (no actual screenshots) that represents the UI:
+Each tab shows a **CSS-only mockup** (no actual screenshots) inside a browser chrome frame (3 colored dots header). These are decorative illustrations, not functional UI.
 
-- **Calendar:** 7-column grid for days, colored cells for entry types, month/year header
-- **Approval:** Table-like rows with user name, month, status badge, action buttons
-- **Leave:** Form fields (date range, type select) + summary card with balances
+#### Calendar Mockup
+
+- **Header row:** Month/Year label centered (e.g., "March 2026")
+- **Day labels row:** 7 columns — Mon, Tue, Wed, Thu, Fri, Sat, Sun
+- **5 weeks of cells** (35 cells total): each cell is a small colored square
+  - `bg-green-100` = working day (with "8h" text)
+  - `bg-muted` = weekend (gray, "OFF" text)
+  - `bg-red-100` = holiday (red tint, "Holiday" text)
+  - `bg-yellow-100` = leave (amber tint, "Leave" text)
+- First few days may be empty (previous month)
+- Font size: `text-[10px]` for cell content
+
+#### Approval Mockup
+
+- **Header:** "Pending Approvals" title
+- **4 rows** in a table-like layout, each row contains:
+  - User avatar (initials circle, 24px)
+  - Name (e.g., "สมชาย ว.")
+  - Month label (e.g., "Mar 2026")
+  - Status badge: `bg-yellow-100 text-yellow-700` for "Pending", `bg-green-100 text-green-700` for "Approved"
+  - Action buttons: small "Approve" (primary) and "Reject" (outline) buttons (non-functional, decorative only)
+- Rows separated by `border-b border-border`
+
+#### Leave Mockup
+
+- **Left half:** Form mockup
+  - "New Leave Request" title
+  - Fake form fields: Leave Type dropdown (showing "Annual Leave"), Date From, Date To (gray input boxes with placeholder text)
+  - Submit button (primary, decorative)
+- **Right half:** Leave balance summary card
+  - "Leave Balance" title
+  - 3 items: Annual (10/15 days), Sick (2/30 days), Personal (1/5 days)
+  - Each with a small progress bar (`bg-primary` fill on `bg-muted` track)
 
 ### Translation Keys
 
@@ -188,13 +260,13 @@ landing.useCases.title
 landing.useCases.subtitle
 landing.useCases.tabs.employee.title
 landing.useCases.tabs.employee.description
-landing.useCases.tabs.employee.features (array of 5)
+landing.useCases.tabs.employee.features.0 through .4
 landing.useCases.tabs.leader.title
 landing.useCases.tabs.leader.description
-landing.useCases.tabs.leader.features (array of 5)
+landing.useCases.tabs.leader.features.0 through .4
 landing.useCases.tabs.admin.title
 landing.useCases.tabs.admin.description
-landing.useCases.tabs.admin.features (array of 5)
+landing.useCases.tabs.admin.features.0 through .4
 ```
 
 ---
@@ -242,7 +314,7 @@ ComparisonSection.tsx
 - Timesheet column: `bg-primary/5` background, `border-b-2 border-primary` on header
 - Header text: Timesheet in `text-primary font-bold`, others in `text-muted-foreground`
 - Cells: centered icons, `py-4` padding, `border-b border-border` between rows
-- Icons: ✅ = `text-green-500`, ❌ = `text-red-400`, ⚠️ = `text-yellow-500`
+- Icons from lucide-react: `Check` (`text-green-500`), `X` (`text-red-400`), `AlertTriangle` (`text-yellow-500`)
 - Responsive: horizontal scroll wrapper on mobile (`overflow-x-auto`)
 
 ### Translation Keys
@@ -253,7 +325,7 @@ landing.comparison.subtitle
 landing.comparison.columns.timesheet
 landing.comparison.columns.spreadsheet
 landing.comparison.columns.otherTools
-landing.comparison.criteria (array of 7 objects with label + 3 values)
+landing.comparison.criteria.0.label through .6.label (criteria names only — icon states are in component code)
 ```
 
 ---
@@ -315,9 +387,12 @@ TestimonialsSection.tsx
 ```
 landing.testimonials.title
 landing.testimonials.subtitle
-landing.testimonials.items (array of 3 objects)
-  .name, .role, .company, .quote, .initial, .avatarColor
+landing.testimonials.items.0.name, .role, .company, .quoteBefore, .quoteBold, .quoteAfter
+landing.testimonials.items.1.name, .role, .company, .quoteBefore, .quoteBold, .quoteAfter
+landing.testimonials.items.2.name, .role, .company, .quoteBefore, .quoteBold, .quoteAfter
 ```
+
+Avatar initials and colors are defined in component code (styling data, not translatable text).
 
 ---
 
@@ -362,8 +437,8 @@ FAQSection.tsx
 - Question text: `text-left font-semibold`
 - Toggle icon: `ChevronDown` from lucide-react, `transition-transform duration-200`, rotated 180deg when open
 - Answer: `px-4 pb-4 text-muted-foreground text-sm leading-relaxed`
-- Animation: CSS transition on `max-height` or use `data-[state=open]` pattern
-- State: `useState<number | null>` for currently open index (only one open at a time)
+- Animation: Custom accordion with `useState<number | null>` for currently open index (only one open at a time). Use CSS `grid-template-rows: 0fr` → `1fr` transition for smooth collapse/expand (avoids max-height hacks). Wrap answer in `overflow-hidden` div with `transition-[grid-template-rows] duration-200`.
+- Accessibility: Question button uses `<button>` with `aria-expanded={isOpen}`. Answer div has `role="region"`.
 - Responsive: full width, padding adjusts on mobile
 
 ### Translation Keys
@@ -402,9 +477,10 @@ landing.faq.items (array of 6 objects)
 - `Star` — testimonial ratings
 - `ChevronDown` — FAQ accordion toggle
 - `Shield` — admin role icon in Use Case
+- `X` — comparison table "not supported" icon
+- `AlertTriangle` — comparison table "partial" icon
 - `User`, `Users` — already imported, reuse for Use Case tabs
-- `Check` — already imported, reuse for feature lists
-- `Monitor` — optional, for screenshots tab indicator
+- `Check` — already imported, reuse for feature lists and comparison table
 
 ## No New Dependencies
 
