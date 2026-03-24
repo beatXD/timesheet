@@ -21,6 +21,7 @@ const categoryMap: Record<NotificationType, NotificationCategory> = {
   team_leave: "team",
   system_announcement: "system",
   holiday_added: "system",
+  deadline_reminder: "system",
 };
 
 export async function createNotification(params: CreateNotificationParams) {

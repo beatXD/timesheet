@@ -236,7 +236,8 @@ export type NotificationType =
   | "leave_pending"
   | "team_leave"
   | "system_announcement"
-  | "holiday_added";
+  | "holiday_added"
+  | "deadline_reminder";
 
 export type NotificationCategory = "approval" | "team" | "system";
 

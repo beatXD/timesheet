@@ -16,6 +16,7 @@ const NotificationSchema = new Schema<INotification>(
         "team_leave",
         "system_announcement",
         "holiday_added",
+        "deadline_reminder",
       ] as NotificationType[],
       required: true,
     },
