@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -62,7 +62,15 @@ function LoginForm() {
           : result.error;
         toast.error(errorMessage);
       } else if (result.ok) {
-        router.push(callbackUrl);
+        // Determine redirect based on role if no explicit callbackUrl
+        if (!searchParams.get("callbackUrl")) {
+          const session = await getSession();
+          const role = session?.user?.role;
+          const roleRedirect = role === "super_admin" ? "/super-admin" : "/calendar";
+          router.push(roleRedirect);
+        } else {
+          router.push(callbackUrl);
+        }
         router.refresh();
       }
     } catch (err) {
@@ -161,7 +169,7 @@ function LoginForm() {
         </div>
 
         {/* OAuth Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           <Button
             variant="outline"
             onClick={() => handleOAuthLogin("google")}

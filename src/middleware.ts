@@ -60,9 +60,15 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Redirect to calendar if logged in and accessing login/register page
+  // Redirect to appropriate page if logged in and accessing login/register page
   if (token && (pathname === "/login" || pathname === "/register")) {
-    const response = NextResponse.redirect(new URL("/calendar", request.url));
+    const jwtTokenForRedirect = await getToken({
+      req: request,
+      secret: process.env.AUTH_SECRET,
+    });
+    const redirectRole = jwtTokenForRedirect?.role as string;
+    const redirectUrl = redirectRole === "super_admin" ? "/super-admin" : "/calendar";
+    const response = NextResponse.redirect(new URL(redirectUrl, request.url));
     if (!localeCookie) {
       response.cookies.set("NEXT_LOCALE", locale, { path: "/" });
     }
