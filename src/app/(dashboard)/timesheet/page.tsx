@@ -44,6 +44,7 @@ import { Plus, FileEdit, Eye, Filter, X, Clock, CalendarCheck, FileText, AlertCi
 import { toast } from "sonner";
 import { useModeStore } from "@/store";
 import type { ITimesheet, IPersonalTimesheet, TimesheetStatus } from "@/types";
+import { DeadlineBadge } from "@/components/DeadlineBadge";
 
 const statusColors: Record<TimesheetStatus, string> = {
   draft: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",
@@ -438,6 +439,7 @@ export default function TimesheetListPage() {
                           <Badge className={statusColors[teamTs.status]}>
                             {t(`timesheet.status.${teamTs.status}`)}
                           </Badge>
+                          <DeadlineBadge month={ts.month} year={ts.year} timesheetStatus={teamTs.status} />
                         </TableCell>
                       )}
                       <TableCell>{ts.totalBaseHours} {t("common.hours")}</TableCell>
