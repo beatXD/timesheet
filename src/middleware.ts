@@ -8,6 +8,7 @@ import { defaultLocale, locales, type Locale } from "./i18n/config";
 // admin = team leader (old leader)
 const superAdminPaths = ["/super-admin"];
 const adminPaths = ["/team", "/admin/teams"];
+const publicTeamPaths = ["/team/calendar"]; // accessible by all authenticated users
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -67,7 +68,7 @@ export async function middleware(request: NextRequest) {
       secret: process.env.AUTH_SECRET,
     });
     const redirectRole = jwtTokenForRedirect?.role as string;
-    const redirectUrl = redirectRole === "super_admin" ? "/super-admin" : "/calendar";
+    const redirectUrl = redirectRole === "super_admin" ? "/super-admin" : "/team/calendar";
     const response = NextResponse.redirect(new URL(redirectUrl, request.url));
     if (!localeCookie) {
       response.cookies.set("NEXT_LOCALE", locale, { path: "/" });
@@ -94,8 +95,9 @@ export async function middleware(request: NextRequest) {
     }
 
     // Admin paths (team management) - admins (team leaders) and super_admin can access
+    const isPublicTeamPath = publicTeamPaths.some(p => pathname.startsWith(p));
     const isAdminPath = adminPaths.some(p => pathname.startsWith(p));
-    if (isAdminPath && userRole !== "super_admin" && userRole !== "admin") {
+    if (isAdminPath && !isPublicTeamPath && userRole !== "super_admin" && userRole !== "admin") {
       const response = NextResponse.redirect(new URL("/unauthorized", request.url));
       if (!localeCookie) {
         response.cookies.set("NEXT_LOCALE", locale, { path: "/" });

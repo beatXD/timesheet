@@ -52,7 +52,7 @@ export const PathAccess: Record<string, UserRole[]> = {
   "/team": ["super_admin", "admin"],
   "/team/members": ["super_admin", "admin"],
   "/team/leaves": ["super_admin", "admin"],
-  "/team/calendar": ["super_admin", "admin"],
+  "/team/calendar": ["super_admin", "admin", "user"],
   "/team/timesheets": ["super_admin", "admin"],
   "/admin/teams": ["super_admin", "admin"],
 

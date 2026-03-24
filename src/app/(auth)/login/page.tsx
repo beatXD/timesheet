@@ -26,7 +26,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations();
-  const callbackUrl = searchParams.get("callbackUrl") || "/calendar";
+  const callbackUrl = searchParams.get("callbackUrl") || "/team/calendar";
   const error = searchParams.get("error");
 
   const [email, setEmail] = useState("");
@@ -66,7 +66,7 @@ function LoginForm() {
         if (!searchParams.get("callbackUrl")) {
           const session = await getSession();
           const role = session?.user?.role;
-          const roleRedirect = role === "super_admin" ? "/super-admin" : "/calendar";
+          const roleRedirect = role === "super_admin" ? "/super-admin" : "/team/calendar";
           router.push(roleRedirect);
         } else {
           router.push(callbackUrl);

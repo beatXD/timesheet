@@ -104,7 +104,7 @@ export default function TeamPage() {
 
   // Redirect regular user to dashboard
   if (status !== "loading" && session?.user?.role === "user") {
-    redirect("/calendar");
+    redirect("/team/calendar");
   }
 
   const [teams, setTeams] = useState<Team[]>([]);

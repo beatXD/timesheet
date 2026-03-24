@@ -140,7 +140,7 @@ export default function TeamLeavesPage() {
       redirect("/login");
     }
     if (session.user.role === "user") {
-      redirect("/calendar");
+      redirect("/team/calendar");
     }
     if (session.user.role === "super_admin") {
       redirect("/admin/leave-requests");

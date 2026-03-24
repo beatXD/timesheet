@@ -201,7 +201,7 @@ export default function RegisterPage() {
         router.push("/login");
       } else {
         // Auto-join happens during registration, just redirect to calendar
-        router.push("/calendar");
+        router.push("/team/calendar");
         router.refresh();
       }
     } catch {
@@ -220,7 +220,7 @@ export default function RegisterPage() {
       }
     }
     setOauthLoading(provider);
-    signIn(provider, { callbackUrl: "/calendar" });
+    signIn(provider, { callbackUrl: "/team/calendar" });
   };
 
   const handleBack = () => {
