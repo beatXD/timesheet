@@ -1356,5 +1356,27 @@
     "confirmDescription": "All selected timesheets will be approved",
     "success": "{count} timesheets approved",
     "partialSuccess": "{approved} of {total} approved"
+  },
+  "activity": {
+    "title": "Activity Log",
+    "noActivity": "No activity",
+    "filterByAction": "Filter by type",
+    "filterByMember": "Filter by member",
+    "filterByDate": "Filter by date",
+    "allActions": "All",
+    "actions": {
+      "timesheet_created": "Created Timesheet",
+      "timesheet_updated": "Updated Timesheet",
+      "timesheet_submitted": "Submitted Timesheet",
+      "timesheet_approved": "Approved Timesheet",
+      "timesheet_rejected": "Rejected Timesheet",
+      "comment_added": "Added comment",
+      "comment_deleted": "Deleted comment",
+      "leave_requested": "Requested leave",
+      "leave_approved": "Approved leave",
+      "leave_rejected": "Rejected leave",
+      "member_added": "Added member",
+      "member_removed": "Removed member"
+    }
   }
 }
