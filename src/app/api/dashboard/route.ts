@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
-import { Timesheet, Team, User } from "@/models";
+import { Timesheet, Team, User, LeaveRequest, LeaveBalance } from "@/models";
 
 // Type guard for populated user
 interface PopulatedUser {
@@ -95,6 +95,7 @@ export async function GET(request: NextRequest) {
 
     // ===== TEAM SUMMARY (for leader) =====
     let teamSummary = null;
+    let teamDashboard = null;
     let leaderTeams: typeof Team.prototype[] = [];
 
     if (session.user.role === "admin") {
@@ -153,6 +154,105 @@ export async function GET(request: NextRequest) {
           submitted: submittedUserIds.size,
           pending: notSubmitted.length,
           notSubmitted: notSubmitted.map((m) => ({ name: m.name, email: m.email })),
+        };
+
+        // === Team Dashboard Data ===
+
+        // 1. Member status with timesheet info
+        const memberTimesheets = await Timesheet.find({
+          userId: { $in: Array.from(memberIdSet) },
+          year: currentYear,
+          month: currentMonth,
+        }).lean();
+
+        const timesheetMap = new Map(
+          memberTimesheets.map((ts) => [ts.userId.toString(), ts])
+        );
+
+        const memberStatus = allMembers.map((member) => {
+          const ts = timesheetMap.get(member._id);
+          return {
+            userId: member._id,
+            name: member.name,
+            timesheetStatus: ts?.status || null,
+            totalHours: (ts?.totalBaseHours || 0) + (ts?.totalAdditionalHours || 0),
+            leaveDaysThisMonth: ts?.entries?.filter(
+              (e: { type: string }) => e.type === "leave"
+            ).length || 0,
+          };
+        });
+
+        // 2. Timesheet summary counts
+        const statusCounts = { notCreated: 0, draft: 0, submitted: 0, approved: 0, rejected: 0 };
+        memberStatus.forEach((m) => {
+          if (!m.timesheetStatus) statusCounts.notCreated++;
+          else if (m.timesheetStatus in statusCounts) statusCounts[m.timesheetStatus as keyof typeof statusCounts]++;
+        });
+
+        // 3. Leave overview
+        const monthStart = new Date(currentYear, currentMonth - 1, 1);
+        const monthEnd = new Date(currentYear, currentMonth, 0);
+
+        const leaveRequests = await LeaveRequest.find({
+          userId: { $in: Array.from(memberIdSet) },
+          status: "approved",
+          startDate: { $lte: monthEnd },
+          endDate: { $gte: monthStart },
+        }).lean();
+
+        const leaveBalances = await LeaveBalance.find({
+          userId: { $in: Array.from(memberIdSet) },
+          year: currentYear,
+        }).lean();
+
+        const balanceMap = new Map(
+          leaveBalances.map((lb) => [lb.userId.toString(), lb])
+        );
+
+        const leaveOverview = allMembers.map((member) => {
+          const memberLeaves = leaveRequests.filter(
+            (lr) => lr.userId.toString() === member._id
+          );
+          const balance = balanceMap.get(member._id);
+          return {
+            userId: member._id,
+            name: member.name,
+            leaves: memberLeaves.map((lr) => ({
+              startDate: lr.startDate,
+              endDate: lr.endDate,
+              type: lr.leaveType,
+            })),
+            quotaRemaining: balance ? {
+              sick: (balance.quotas?.sick?.total || 0) - (balance.quotas?.sick?.used || 0),
+              personal: (balance.quotas?.personal?.total || 0) - (balance.quotas?.personal?.used || 0),
+              annual: (balance.quotas?.annual?.total || 0) - (balance.quotas?.annual?.used || 0),
+            } : { sick: 0, personal: 0, annual: 0 },
+          };
+        });
+
+        // 4. Recent activity from team member timesheets
+        const recentTeamTimesheets = await Timesheet.find({
+          userId: { $in: Array.from(memberIdSet) },
+        })
+          .populate("userId", "name email image")
+          .sort({ updatedAt: -1 })
+          .limit(10)
+          .lean();
+
+        const recentActivity = recentTeamTimesheets.map((ts) => ({
+          _id: ts._id,
+          userId: ts.userId,
+          status: ts.status,
+          month: ts.month,
+          year: ts.year,
+          updatedAt: ts.updatedAt,
+        }));
+
+        teamDashboard = {
+          timesheetSummary: statusCounts,
+          members: memberStatus,
+          leaveOverview,
+          recentActivity,
         };
       }
     }
@@ -411,6 +511,7 @@ export async function GET(request: NextRequest) {
         },
         // Role-specific data
         teamSummary,
+        teamDashboard,
         orgOverview,
         // Yearly stats (filtered)
         counts: {
