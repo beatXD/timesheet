@@ -77,9 +77,8 @@ export default function TimesheetRecordsPage() {
 
   // Filter states
   const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
   const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
-  const [filterMonth, setFilterMonth] = useState<string>(currentMonth.toString());
+  const [filterMonth, setFilterMonth] = useState<string>("all");
   const [filterTeam, setFilterTeam] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -112,7 +111,10 @@ export default function TimesheetRecordsPage() {
     try {
       const params = new URLSearchParams();
       params.set("year", filterYear);
-      params.set("month", filterMonth);
+      params.set("limit", "100");
+      if (filterMonth !== "all") {
+        params.set("month", filterMonth);
+      }
 
       const res = await fetch(`/api/admin/timesheets/all?${params}`);
       const data = await res.json();
@@ -224,11 +226,13 @@ export default function TimesheetRecordsPage() {
                 {t("admin.timesheetRecords.allRecords")}
               </CardTitle>
               <CardDescription>
-                {format(
-                  new Date(parseInt(filterYear), parseInt(filterMonth) - 1),
-                  "MMMM yyyy",
-                  { locale: dateLocale }
-                )}
+                {filterMonth !== "all"
+                  ? format(
+                      new Date(parseInt(filterYear), parseInt(filterMonth) - 1),
+                      "MMMM yyyy",
+                      { locale: dateLocale }
+                    )
+                  : `${t("common.allMonths")} ${filterYear}`}
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -271,6 +275,7 @@ export default function TimesheetRecordsPage() {
                   <SelectValue placeholder={t("common.month")} />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">{t("common.allMonths")}</SelectItem>
                   {months.map((m) => (
                     <SelectItem key={m} value={m.toString()}>
                       {format(new Date(2024, m - 1), "MMMM", { locale: dateLocale })}
@@ -309,6 +314,7 @@ export default function TimesheetRecordsPage() {
                 <TableRow>
                   <TableHead>{t("common.user")}</TableHead>
                   <TableHead>{t("common.team")}</TableHead>
+                  {filterMonth === "all" && <TableHead>{t("common.month")}</TableHead>}
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead>{t("team.baseHours")}</TableHead>
                   <TableHead>{t("admin.timesheetRecords.additionalHours")}</TableHead>
@@ -345,6 +351,13 @@ export default function TimesheetRecordsPage() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
+                    {filterMonth === "all" && (
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {format(new Date(ts.year, ts.month - 1), "MMM yyyy", { locale: dateLocale })}
+                        </span>
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Badge className={statusColors[ts.status]}>
                         {t(`timesheet.status.${ts.status}`)}
@@ -368,7 +381,7 @@ export default function TimesheetRecordsPage() {
                 ))}
                 {filteredTimesheets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={filterMonth === "all" ? 8 : 7} className="text-center py-8 text-muted-foreground">
                       {t("common.noData")}
                     </TableCell>
                   </TableRow>

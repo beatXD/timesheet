@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const timesheets: any[] = await Timesheet.find(query)
       .populate("userId", "name email image")
-      .sort({ submittedAt: -1 })
+      .sort({ year: -1, month: -1, "userId.name": 1 })
       .lean();
 
     // Add team info to each timesheet

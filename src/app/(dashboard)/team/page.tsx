@@ -113,9 +113,8 @@ export default function TeamPage() {
 
   // Filter states
   const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
   const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
-  const [filterMonth, setFilterMonth] = useState<string>(currentMonth.toString());
+  const [filterMonth, setFilterMonth] = useState<string>("all");
   const [filterTeam, setFilterTeam] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,14 +124,14 @@ export default function TeamPage() {
 
   const hasActiveFilters =
     filterYear !== currentYear.toString() ||
-    filterMonth !== currentMonth.toString() ||
+    filterMonth !== "all" ||
     filterTeam !== "all" ||
     filterStatus !== "all" ||
     searchQuery !== "";
 
   const clearFilters = () => {
     setFilterYear(currentYear.toString());
-    setFilterMonth(currentMonth.toString());
+    setFilterMonth("all");
     setFilterTeam("all");
     setFilterStatus("all");
     setSearchQuery("");
@@ -143,7 +142,7 @@ export default function TeamPage() {
     try {
       const [teamsRes, timesheetsRes] = await Promise.all([
         fetch("/api/admin/teams"),
-        fetch(`/api/team/timesheets?year=${filterYear}&month=${filterMonth}`),
+        fetch(`/api/team/timesheets?year=${filterYear}${filterMonth !== "all" ? `&month=${filterMonth}` : ""}`),
       ]);
 
       const teamsData = await teamsRes.json();
@@ -248,8 +247,8 @@ export default function TeamPage() {
     });
   }, [timesheets, filterTeam, filterStatus, searchQuery]);
 
-  // Count pending
-  const pendingCount = timesheets.filter((ts) => ts.status === "submitted").length;
+  // Count pending based on filtered timesheets
+  const pendingCount = filteredTimesheets.filter((ts) => ts.status === "submitted").length;
 
   // Calculate submission stats for leader view
   const submissionStats = useMemo(() => {
@@ -280,24 +279,29 @@ export default function TeamPage() {
       });
     });
 
-    // Find members who have submitted/approved timesheets
-    const submittedUserIds = new Set(
-      timesheets
-        .filter((ts) => ["submitted", "approved"].includes(ts.status))
+    // Count total timesheets and submitted/approved ones
+    const totalTimesheets = filteredTimesheets.length;
+    const submittedTimesheets = filteredTimesheets.filter((ts) =>
+      ["submitted", "approved"].includes(ts.status)
+    ).length;
+
+    // Find members who have any non-submitted timesheets (rejected/draft)
+    const membersWithIssues = new Set(
+      filteredTimesheets
+        .filter((ts) => ["rejected", "draft"].includes(ts.status))
         .map((ts) => ts.userId._id)
     );
 
-    // Find members who haven't submitted
     const notSubmittedMembers = allMembers.filter(
-      (member) => !submittedUserIds.has(member._id)
+      (member) => membersWithIssues.has(member._id)
     );
 
     return {
-      totalMembers: allMembers.length,
-      submittedCount: submittedUserIds.size,
+      totalMembers: totalTimesheets > 0 ? totalTimesheets : allMembers.length,
+      submittedCount: totalTimesheets > 0 ? submittedTimesheets : 0,
       notSubmittedMembers,
     };
-  }, [teams, timesheets]);
+  }, [teams, filteredTimesheets]);
 
   // Show loading state
   if (status === "loading" || !session) {
@@ -336,7 +340,9 @@ export default function TeamPage() {
             <div>
               <CardTitle>{t("team.timesheets")}</CardTitle>
               <CardDescription>
-                {format(new Date(parseInt(filterYear), parseInt(filterMonth) - 1), "MMMM yyyy", { locale: dateLocale })}
+                {filterMonth !== "all"
+                  ? format(new Date(parseInt(filterYear), parseInt(filterMonth) - 1), "MMMM yyyy", { locale: dateLocale })
+                  : `${t("common.allMonths")} ${filterYear}`}
                 {" • "}
                 {filteredTimesheets.length} {t("common.records")}
               </CardDescription>
@@ -383,6 +389,7 @@ export default function TeamPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">{t("common.allMonths")}</SelectItem>
                   {months.map((m) => (
                     <SelectItem key={m} value={m.toString()}>
                       {format(new Date(2024, m - 1), "MMMM", { locale: dateLocale })}
@@ -421,6 +428,7 @@ export default function TeamPage() {
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="text-xs font-medium">{t("team.member")}</TableHead>
                   {teams.length > 1 && <TableHead className="text-xs font-medium">{t("common.team")}</TableHead>}
+                  {filterMonth === "all" && <TableHead className="text-xs font-medium">{t("common.month")}</TableHead>}
                   <TableHead className="text-xs font-medium">{t("common.status")}</TableHead>
                   <TableHead className="text-xs font-medium">{t("team.baseHours")}</TableHead>
                   <TableHead className="text-xs font-medium">{t("common.submitted")}</TableHead>
@@ -454,6 +462,13 @@ export default function TeamPage() {
                     {teams.length > 1 && (
                       <TableCell className="py-2">
                         <span className="text-xs text-muted-foreground">{ts.teamName || "-"}</span>
+                      </TableCell>
+                    )}
+                    {filterMonth === "all" && (
+                      <TableCell className="py-2">
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(ts.year, ts.month - 1), "MMM yyyy", { locale: dateLocale })}
+                        </span>
                       </TableCell>
                     )}
                     <TableCell className="py-2">
@@ -506,7 +521,7 @@ export default function TeamPage() {
                 ))}
                 {filteredTimesheets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={teams.length > 1 ? 6 : 5} className="text-center py-8 text-muted-foreground text-sm">
+                    <TableCell colSpan={(teams.length > 1 ? 6 : 5) + (filterMonth === "all" ? 1 : 0)} className="text-center py-8 text-muted-foreground text-sm">
                       {t("team.noTimesheetsFound")}
                     </TableCell>
                   </TableRow>
