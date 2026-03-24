@@ -56,12 +56,12 @@ export async function GET(request: NextRequest) {
     }).lean();
 
     const submittedUserIds = new Set(
-      existingTimesheets.map((ts: any) => ts.userId.toString())
+      existingTimesheets.map((ts) => String(ts.userId))
     );
 
     // Filter users who need reminders (no submitted/approved/rejected timesheet)
     const usersToRemind = users.filter(
-      (user: any) => !submittedUserIds.has(user._id.toString())
+      (user) => !submittedUserIds.has(String(user._id))
     );
 
     // Check for existing reminders to prevent duplicates
@@ -75,14 +75,14 @@ export async function GET(request: NextRequest) {
     }).lean();
 
     const alreadyRemindedUserIds = new Set(
-      existingReminders.map((n: any) => n.userId.toString())
+      existingReminders.map((n) => String(n.userId))
     );
 
     let sent = 0;
     let skipped = 0;
 
     for (const user of usersToRemind) {
-      const userId = (user as any)._id.toString();
+      const userId = String(user._id);
       if (alreadyRemindedUserIds.has(userId)) {
         skipped++;
         continue;
