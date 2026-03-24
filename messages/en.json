@@ -1356,5 +1356,34 @@
     "confirmDescription": "All selected timesheets will be approved",
     "success": "{count} timesheets approved",
     "partialSuccess": "{approved} of {total} approved"
+  },
+  "activity": {
+    "title": "Activity Log",
+    "timeline": "Activity Timeline",
+    "filterAction": "Action type",
+    "filterMember": "Member",
+    "allActions": "All Actions",
+    "allMembers": "All Members",
+    "from": "From",
+    "to": "To",
+    "noActivity": "No activity found",
+    "showing": "Showing {from}-{to} of {total}",
+    "actions": {
+      "timesheet_created": "created a timesheet",
+      "timesheet_updated": "updated a timesheet",
+      "timesheet_submitted": "submitted a timesheet",
+      "timesheet_approved": "approved a timesheet",
+      "timesheet_rejected": "rejected a timesheet",
+      "timesheet_comment": "commented on a timesheet",
+      "leave_requested": "requested leave",
+      "leave_approved": "approved a leave request",
+      "leave_rejected": "rejected a leave request",
+      "member_added": "added a member",
+      "member_removed": "removed a member"
+    },
+    "tabs": {
+      "timesheets": "Timesheets",
+      "activity": "Activity"
+    }
   }
 }

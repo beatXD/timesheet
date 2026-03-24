@@ -46,6 +46,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText, Layout, Bookmark, RefreshCw } from "lucide-react";
+import { ActivityTimeline } from "@/components/timesheet/ActivityTimeline";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { useModeStore } from "@/store";
@@ -748,6 +749,11 @@ export default function TimesheetDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Activity Timeline */}
+      {!isPersonalMode && (
+        <ActivityTimeline timesheetId={params.id as string} />
+      )}
 
       {/* Submit Confirmation Dialog */}
       <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>

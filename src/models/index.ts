@@ -10,3 +10,4 @@ export { default as TimesheetTemplate } from "./TimesheetTemplate";
 export { default as Notification } from "./Notification";
 export { default as Plan } from "./Plan";
 export { default as Invite } from "./Invite";
+export { default as ActivityLog } from "./ActivityLog";

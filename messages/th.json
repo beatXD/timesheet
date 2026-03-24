@@ -1356,5 +1356,34 @@
     "confirmDescription": "Timesheet ที่เลือกทั้งหมดจะถูกอนุมัติ",
     "success": "อนุมัติสำเร็จ {count} รายการ",
     "partialSuccess": "อนุมัติสำเร็จ {approved} จาก {total} รายการ"
+  },
+  "activity": {
+    "title": "บันทึกกิจกรรม",
+    "timeline": "ไทม์ไลน์กิจกรรม",
+    "filterAction": "ประเภทการกระทำ",
+    "filterMember": "สมาชิก",
+    "allActions": "การกระทำทั้งหมด",
+    "allMembers": "สมาชิกทั้งหมด",
+    "from": "ตั้งแต่",
+    "to": "ถึง",
+    "noActivity": "ไม่พบกิจกรรม",
+    "showing": "แสดง {from}-{to} จาก {total}",
+    "actions": {
+      "timesheet_created": "สร้าง Timesheet",
+      "timesheet_updated": "แก้ไข Timesheet",
+      "timesheet_submitted": "ส่ง Timesheet",
+      "timesheet_approved": "อนุมัติ Timesheet",
+      "timesheet_rejected": "ปฏิเสธ Timesheet",
+      "timesheet_comment": "แสดงความเห็นบน Timesheet",
+      "leave_requested": "ขอลา",
+      "leave_approved": "อนุมัติการลา",
+      "leave_rejected": "ปฏิเสธการลา",
+      "member_added": "เพิ่มสมาชิก",
+      "member_removed": "ลบสมาชิก"
+    },
+    "tabs": {
+      "timesheets": "Timesheets",
+      "activity": "กิจกรรม"
+    }
   }
 }

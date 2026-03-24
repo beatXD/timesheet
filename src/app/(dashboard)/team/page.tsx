@@ -43,8 +43,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { TimesheetStatus } from "@/types";
-import { TeamSubmissionSummary } from "@/components/team";
+import { TeamSubmissionSummary, ActivityTab } from "@/components/team";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
@@ -395,6 +396,28 @@ export default function TeamPage() {
     );
   }
 
+  // Collect all team members for the activity tab filter
+  const allTeamMembers = useMemo(() => {
+    const memberMap = new Map<string, { _id: string; name: string; email: string }>();
+    teams.forEach((team) => {
+      if (team.adminId) {
+        memberMap.set(team.adminId._id, {
+          _id: team.adminId._id,
+          name: team.adminId.name,
+          email: team.adminId.email,
+        });
+      }
+      team.memberIds.forEach((member) => {
+        memberMap.set(member._id, {
+          _id: member._id,
+          name: member.name,
+          email: member.email,
+        });
+      });
+    });
+    return Array.from(memberMap.values());
+  }, [teams]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -417,6 +440,13 @@ export default function TeamPage() {
         </div>
       </div>
 
+      <Tabs defaultValue="timesheets">
+        <TabsList>
+          <TabsTrigger value="timesheets">{t("activity.tabs.timesheets")}</TabsTrigger>
+          <TabsTrigger value="activity">{t("activity.tabs.activity")}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="timesheets">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -633,6 +663,12 @@ export default function TeamPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <ActivityTab members={allTeamMembers} />
+        </TabsContent>
+      </Tabs>
 
       {/* Floating Bulk Action Bar */}
       {selectedIds.size > 0 && (
