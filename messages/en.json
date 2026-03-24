@@ -1121,6 +1121,166 @@
       "privacy": "Privacy Policy",
       "terms": "Terms of Service",
       "copyright": "© {year} Timesheet. All rights reserved."
+    },
+    "trustedBy": {
+      "stat": "10,000+",
+      "statLabel": "timesheets submitted monthly",
+      "company0": "TechCorp",
+      "company1": "SiamDev",
+      "company2": "BangkokSoft",
+      "company3": "CloudThai",
+      "company4": "DataWorks"
+    },
+    "screenshots": {
+      "title": "See It in Action",
+      "subtitle": "Explore the key features of our platform",
+      "tabs": {
+        "calendar": "Calendar View",
+        "approval": "Approval Workflow",
+        "leave": "Leave Management"
+      },
+      "mockup": {
+        "calendar": {
+          "month": "March 2026",
+          "days": "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
+        },
+        "approval": {
+          "title": "Pending Approvals",
+          "approve": "Approve",
+          "reject": "Reject",
+          "pending": "Pending",
+          "approved": "Approved"
+        },
+        "leave": {
+          "formTitle": "New Leave Request",
+          "leaveType": "Leave Type",
+          "annualLeave": "Annual Leave",
+          "dateFrom": "Date From",
+          "dateTo": "Date To",
+          "submit": "Submit Request",
+          "balanceTitle": "Leave Balance",
+          "annual": "Annual",
+          "sick": "Sick",
+          "personal": "Personal"
+        }
+      }
+    },
+    "useCases": {
+      "title": "Built for Every Role",
+      "subtitle": "See how each role benefits from Timesheet",
+      "tabs": {
+        "employee": {
+          "title": "Employee",
+          "description": "Track time effortlessly and submit with one click",
+          "features": {
+            "0": "Log daily working hours",
+            "1": "Submit timesheets for approval",
+            "2": "Request sick, personal & annual leave",
+            "3": "Export personal reports (PDF & Excel)",
+            "4": "View Thai holidays automatically"
+          }
+        },
+        "leader": {
+          "title": "Team Leader",
+          "description": "Review, approve, and manage your team efficiently",
+          "features": {
+            "0": "Review team member timesheets",
+            "1": "Approve or request revisions",
+            "2": "Submit approved timesheets to admin",
+            "3": "Monitor team attendance",
+            "4": "Manage leave requests"
+          }
+        },
+        "admin": {
+          "title": "Admin",
+          "description": "Full oversight with powerful management tools",
+          "features": {
+            "0": "Final approval authority",
+            "1": "Organization-wide dashboard",
+            "2": "Manage teams and members",
+            "3": "Configure holidays and settings",
+            "4": "Export comprehensive reports"
+          }
+        }
+      }
+    },
+    "comparison": {
+      "title": "Why Choose Timesheet?",
+      "subtitle": "See how we compare to alternatives",
+      "columns": {
+        "timesheet": "Timesheet",
+        "spreadsheet": "Spreadsheet",
+        "otherTools": "Other Tools"
+      },
+      "criteria": {
+        "0": { "label": "Approval Workflow" },
+        "1": { "label": "Thai & English" },
+        "2": { "label": "Leave Management" },
+        "3": { "label": "Thai Holidays" },
+        "4": { "label": "PDF & Excel Export" },
+        "5": { "label": "Real-time Dashboard" },
+        "6": { "label": "Free Plan Available" }
+      }
+    },
+    "testimonials": {
+      "title": "Loved by Teams Everywhere",
+      "subtitle": "See what our users have to say",
+      "items": {
+        "0": {
+          "name": "Somchai Wongprasert",
+          "role": "HR Manager",
+          "company": "TechCorp Thailand",
+          "quoteBefore": "Reduced timesheet processing from ",
+          "quoteBold": "4 hours to just 20 minutes",
+          "quoteAfter": " per month. The entire HR team loves how easy it is to use."
+        },
+        "1": {
+          "name": "Priya Nakamura",
+          "role": "Team Lead",
+          "company": "SiamDev",
+          "quoteBefore": "The approval workflow means our team ",
+          "quoteBold": "no longer chases timesheets on LINE",
+          "quoteAfter": ". Everything is in one system."
+        },
+        "2": {
+          "name": "Wipa Chansawang",
+          "role": "CEO",
+          "company": "CloudThai",
+          "quoteBefore": "Leave management with Thai holidays means ",
+          "quoteBold": "no more checking separate calendars",
+          "quoteAfter": ". Saves our HR team so much time."
+        }
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Everything you need to know",
+      "items": {
+        "0": {
+          "question": "Can I try it for free?",
+          "answer": "Yes! The Free plan is available immediately with no time limit. It supports 1 user with PDF & Excel export. No credit card required."
+        },
+        "1": {
+          "question": "How secure is my data?",
+          "answer": "All data is encrypted at rest and in transit. Passwords use bcrypt hashing. We also support OAuth login via Google and GitHub for enhanced security."
+        },
+        "2": {
+          "question": "What languages are supported?",
+          "answer": "We support Thai and English. You can switch languages anytime via the button in the top-right corner. Both the UI and exported reports support both languages."
+        },
+        "3": {
+          "question": "Can I cancel my subscription?",
+          "answer": "Yes, you can cancel anytime. You'll continue to have access until the end of your billing period. No penalties or hidden fees."
+        },
+        "4": {
+          "question": "Does it work on mobile?",
+          "answer": "Yes! The website uses responsive design and works on all devices — mobile phones, tablets, and desktop computers."
+        },
+        "5": {
+          "question": "Are Thai holidays updated automatically?",
+          "answer": "Yes, the system includes all Thai public holidays and they are updated annually. You don't need to add them manually."
+        }
+      }
     }
   }
 }
