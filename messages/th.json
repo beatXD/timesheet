@@ -1421,5 +1421,33 @@
     "maxReached": "ความคิดเห็นเต็มแล้ว",
     "entryComment": "ความคิดเห็นสำหรับวันที่ {date}",
     "generalComment": "ความคิดเห็นทั่วไป"
+  },
+  "teamDashboard": {
+    "title": "ภาพรวมทีม",
+    "timesheetStatus": "สถานะ Timesheet",
+    "notCreated": "ยังไม่สร้าง",
+    "draft": "แบบร่าง",
+    "submitted": "ส่งแล้ว",
+    "approved": "อนุมัติแล้ว",
+    "rejected": "ปฏิเสธ",
+    "memberStatus": "สถานะสมาชิก",
+    "name": "ชื่อ",
+    "status": "สถานะ",
+    "totalHours": "ชั่วโมงรวม",
+    "leaveDays": "วันลา",
+    "leaveOverview": "ภาพรวมการลา",
+    "quotaRemaining": "โควต้าคงเหลือ",
+    "recentActivity": "กิจกรรมล่าสุด",
+    "noMembers": "ไม่มีสมาชิกในทีม",
+    "sick": "ลาป่วย",
+    "personal": "ลากิจ",
+    "annual": "ลาพักร้อน",
+    "noLeaves": "ไม่มีการลาในเดือนนี้",
+    "noActivity": "ไม่มีกิจกรรมล่าสุด",
+    "hoursUnit": "ชม.",
+    "daysUnit": "วัน",
+    "updatedTimesheet": "อัปเดต Timesheet",
+    "submittedTimesheet": "ส่ง Timesheet",
+    "approvedTimesheet": "อนุมัติ Timesheet"
   }
 }

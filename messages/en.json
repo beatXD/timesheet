@@ -1421,5 +1421,33 @@
     "maxReached": "Maximum comments reached",
     "entryComment": "Comment for day {date}",
     "generalComment": "General comment"
+  },
+  "teamDashboard": {
+    "title": "Team Overview",
+    "timesheetStatus": "Timesheet Status",
+    "notCreated": "Not Created",
+    "draft": "Draft",
+    "submitted": "Submitted",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "memberStatus": "Member Status",
+    "name": "Name",
+    "status": "Status",
+    "totalHours": "Total Hours",
+    "leaveDays": "Leave Days",
+    "leaveOverview": "Leave Overview",
+    "quotaRemaining": "Quota Remaining",
+    "recentActivity": "Recent Activity",
+    "noMembers": "No team members",
+    "sick": "Sick",
+    "personal": "Personal",
+    "annual": "Annual",
+    "noLeaves": "No leaves this month",
+    "noActivity": "No recent activity",
+    "hoursUnit": "hrs",
+    "daysUnit": "days",
+    "updatedTimesheet": "Updated timesheet",
+    "submittedTimesheet": "Submitted timesheet",
+    "approvedTimesheet": "Approved timesheet"
   }
 }

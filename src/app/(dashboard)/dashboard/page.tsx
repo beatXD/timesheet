@@ -26,6 +26,10 @@ import {
 import { toast } from "sonner";
 import type { TimesheetStatus } from "@/types";
 import { cn } from "@/lib/utils";
+import TimesheetStatusCards from "@/components/dashboard/TimesheetStatusCards";
+import MemberStatusTable from "@/components/dashboard/MemberStatusTable";
+import LeaveOverview from "@/components/dashboard/LeaveOverview";
+import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import {
   BarChart,
   Bar,
@@ -80,9 +84,41 @@ interface ChartData {
   statusDistribution: Array<{ status: string; count: number }>;
 }
 
+interface TeamDashboard {
+  timesheetSummary: {
+    notCreated: number;
+    draft: number;
+    submitted: number;
+    approved: number;
+    rejected: number;
+  };
+  members: Array<{
+    userId: string;
+    name: string;
+    timesheetStatus: string | null;
+    totalHours: number;
+    leaveDaysThisMonth: number;
+  }>;
+  leaveOverview: Array<{
+    userId: string;
+    name: string;
+    leaves: Array<{ startDate: string; endDate: string; type: string }>;
+    quotaRemaining: { sick: number; personal: number; annual: number };
+  }>;
+  recentActivity: Array<{
+    _id: string;
+    userId: { _id: string; name: string; email: string; image?: string };
+    status: string;
+    month: number;
+    year: number;
+    updatedAt: string;
+  }>;
+}
+
 interface DashboardData {
   currentMonth: CurrentMonthData;
   teamSummary: TeamSummary | null;
+  teamDashboard: TeamDashboard | null;
   orgOverview: OrgOverview | null;
   counts: {
     draft: number;
@@ -346,6 +382,17 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
+        </section>
+      )}
+
+      {/* Team Dashboard - Admin (Leader) Only */}
+      {userRole === "admin" && data?.teamDashboard && (
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold">{t("teamDashboard.title")}</h2>
+          <TimesheetStatusCards summary={data.teamDashboard.timesheetSummary} />
+          <MemberStatusTable members={data.teamDashboard.members} />
+          <LeaveOverview data={data.teamDashboard.leaveOverview} />
+          <ActivityFeed activities={data.teamDashboard.recentActivity} />
         </section>
       )}
 
