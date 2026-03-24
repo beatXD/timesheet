@@ -43,9 +43,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X, Search, CheckCheck, XCircle } from "lucide-react";
+import { Check, X, Search, CheckCheck, XCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface LeaveRequestUser {
   _id: string;
@@ -130,6 +140,7 @@ export default function TeamLeavesPage() {
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [showBulkApproveConfirm, setShowBulkApproveConfirm] = useState(false);
   const [isBulkRejectDialogOpen, setIsBulkRejectDialogOpen] = useState(false);
   const [bulkRejectionReason, setBulkRejectionReason] = useState("");
 
@@ -465,48 +476,7 @@ export default function TeamLeavesPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {/* Bulk Action Bar */}
-          {pendingFilteredRequests.length > 0 && (
-            <div className="flex items-center gap-4 mb-4 p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={selectedIds.size === pendingFilteredRequests.length && pendingFilteredRequests.length > 0}
-                  onCheckedChange={toggleSelectAll}
-                />
-                <span className="text-sm text-muted-foreground">
-                  {selectedIds.size > 0
-                    ? t("bulkAction.selected", { count: selectedIds.size })
-                    : t("bulkAction.selectAll")}
-                </span>
-              </div>
-              {selectedIds.size > 0 && (
-                <div className="flex items-center gap-2 ml-auto">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                    onClick={handleBulkApprove}
-                    disabled={bulkProcessing}
-                  >
-                    <CheckCheck className="w-4 h-4 mr-1" />
-                    {t("bulkAction.approveSelected")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => setIsBulkRejectDialogOpen(true)}
-                    disabled={bulkProcessing}
-                  >
-                    <XCircle className="w-4 h-4 mr-1" />
-                    {t("bulkAction.rejectSelected")}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
+        <CardContent className="p-0">
           {loading ? (
             <div className="flex items-center justify-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
@@ -514,9 +484,17 @@ export default function TeamLeavesPage() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10"></TableHead>
-                  <TableHead>{t("common.user")}</TableHead>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-10 text-xs font-medium">
+                    {pendingFilteredRequests.length > 0 && (
+                      <Checkbox
+                        checked={selectedIds.size === pendingFilteredRequests.length && pendingFilteredRequests.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all pending"
+                      />
+                    )}
+                  </TableHead>
+                  <TableHead className="text-xs font-medium">{t("common.user")}</TableHead>
                   {teams.length > 1 && <TableHead>{t("common.team")}</TableHead>}
                   <TableHead>{t("leaveRequest.dateRange")}</TableHead>
                   <TableHead>{t("leaveRequest.days")}</TableHead>
@@ -632,6 +610,59 @@ export default function TeamLeavesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-background border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3">
+          <span className="text-sm font-medium">
+            {t("bulkAction.selected", { count: selectedIds.size })}
+          </span>
+          <Button
+            size="sm"
+            onClick={() => setShowBulkApproveConfirm(true)}
+            disabled={bulkProcessing}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            {bulkProcessing && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
+            {t("bulkAction.approveSelected")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedIds(new Set())}
+            disabled={bulkProcessing}
+          >
+            {t("common.cancel")}
+          </Button>
+        </div>
+      )}
+
+      {/* Bulk Approve Confirmation Dialog */}
+      <AlertDialog open={showBulkApproveConfirm} onOpenChange={setShowBulkApproveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("bulkApprove.confirm", { count: selectedIds.size })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("bulkApprove.confirmDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkProcessing}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkApprove}
+              disabled={bulkProcessing}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {bulkProcessing && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
+              {t("bulkApprove.approve")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Reject Dialog */}
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
