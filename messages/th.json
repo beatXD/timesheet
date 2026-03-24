@@ -1283,5 +1283,19 @@
         }
       }
     }
+  },
+  "deadline": {
+    "daysLeft": "เหลือ {days} วัน",
+    "lastDay": "วันสุดท้าย!",
+    "overdue": "เลยกำหนด"
+  },
+  "bulkApprove": {
+    "selected": "เลือก {count} รายการ",
+    "approve": "อนุมัติที่เลือก",
+    "cancel": "ยกเลิก",
+    "confirm": "ต้องการอนุมัติ {count} รายการ?",
+    "confirmDescription": "Timesheet ที่เลือกทั้งหมดจะถูกอนุมัติ",
+    "success": "อนุมัติสำเร็จ {count} รายการ",
+    "partialSuccess": "อนุมัติสำเร็จ {approved} จาก {total} รายการ"
   }
 }

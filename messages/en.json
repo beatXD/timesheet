@@ -1284,5 +1284,19 @@
         }
       }
     }
+  },
+  "deadline": {
+    "daysLeft": "{days} days left",
+    "lastDay": "Last day!",
+    "overdue": "Overdue"
+  },
+  "bulkApprove": {
+    "selected": "{count} selected",
+    "approve": "Approve Selected",
+    "cancel": "Cancel",
+    "confirm": "Approve {count} timesheets?",
+    "confirmDescription": "All selected timesheets will be approved",
+    "success": "{count} timesheets approved",
+    "partialSuccess": "{approved} of {total} approved"
   }
 }
