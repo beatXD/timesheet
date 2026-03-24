@@ -1,6 +1,17 @@
 import mongoose, { Schema, Model } from "mongoose";
-import type { ITimesheet, ITimesheetEntry, EntryType, TimesheetStatus, LeaveType } from "@/types";
+import type { ITimesheet, ITimesheetEntry, ITimesheetComment, EntryType, TimesheetStatus, LeaveType } from "@/types";
 import { softDeletePlugin } from "@/lib/mongoose-plugins";
+
+const TimesheetCommentSchema = new Schema<ITimesheetComment>(
+  {
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    message: { type: String, required: true, maxlength: 500 },
+    entryDate: { type: Number, min: 1, max: 31 },
+  },
+  {
+    timestamps: { createdAt: true, updatedAt: false },
+  }
+);
 
 const TimesheetEntrySchema = new Schema<ITimesheetEntry>(
   {
@@ -43,6 +54,7 @@ const TimesheetSchema = new Schema<ITimesheet>(
     approvedAt: { type: Date },
     approvedBy: { type: Schema.Types.ObjectId, ref: "User" },
     rejectedReason: { type: String },
+    comments: { type: [TimesheetCommentSchema], default: [] },
   },
   {
     timestamps: true,

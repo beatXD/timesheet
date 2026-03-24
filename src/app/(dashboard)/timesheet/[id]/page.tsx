@@ -45,10 +45,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText, Layout, Bookmark, RefreshCw } from "lucide-react";
+import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText, Layout, Bookmark, RefreshCw, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
+import { Badge as CommentBadge } from "@/components/ui/badge";
 import { useModeStore } from "@/store";
+import { useSession } from "next-auth/react";
+import CommentSection from "@/components/timesheet/CommentSection";
+import type { CommentData } from "@/components/timesheet/CommentItem";
 import type { ITimesheet, IPersonalTimesheet, ITimesheetEntry, EntryType, TimesheetStatus, LeaveType } from "@/types";
 
 interface Template {
@@ -88,11 +92,13 @@ export default function TimesheetDetailPage() {
   const router = useRouter();
   const t = useTranslations();
   const locale = useLocale();
+  const { data: session } = useSession();
   const { mode } = useModeStore();
   const isPersonalMode = mode === "personal";
   const dateLocale = locale === "th" ? th : enUS;
   const [timesheet, setTimesheet] = useState<ITimesheet | IPersonalTimesheet | null>(null);
   const [entries, setEntries] = useState<ITimesheetEntry[]>([]);
+  const [comments, setComments] = useState<CommentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -124,6 +130,7 @@ export default function TimesheetDetailPage() {
       if (data.data) {
         setTimesheet(data.data);
         setEntries(data.data.entries);
+        setComments(data.data.comments || []);
       }
     } catch (error) {
       toast.error(t("errors.failedToFetch"));
@@ -613,6 +620,12 @@ export default function TimesheetDetailPage() {
                             {t("timesheet.leavePending")}
                           </Badge>
                         )}
+                        {!isPersonalMode && comments.filter((c) => c.entryDate === entry.date).length > 0 && (
+                          <CommentBadge variant="secondary" className="ml-1 text-[10px] px-1 py-0">
+                            <MessageSquare className="h-2.5 w-2.5 mr-0.5" />
+                            {comments.filter((c) => c.entryDate === entry.date).length}
+                          </CommentBadge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Select
@@ -748,6 +761,16 @@ export default function TimesheetDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Comments Section - only for team timesheets */}
+      {!isPersonalMode && session?.user?.id && (
+        <CommentSection
+          timesheetId={params.id as string}
+          comments={comments}
+          currentUserId={session.user.id}
+          onCommentsChange={setComments}
+        />
+      )}
 
       {/* Submit Confirmation Dialog */}
       <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>

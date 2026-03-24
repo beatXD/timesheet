@@ -120,6 +120,15 @@ export interface ITimesheetEntry {
   leavePending?: boolean;
 }
 
+// Timesheet Comment (embedded in Timesheet)
+export interface ITimesheetComment {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  message: string;
+  entryDate?: number;
+  createdAt: Date;
+}
+
 // Timesheet
 export interface ITimesheet {
   _id: Types.ObjectId;
@@ -128,6 +137,7 @@ export interface ITimesheet {
   year: number;
   status: TimesheetStatus;
   entries: ITimesheetEntry[];
+  comments?: ITimesheetComment[];
   totalBaseHours: number;
   totalAdditionalHours: number;
   submittedAt?: Date;
