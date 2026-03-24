@@ -19,7 +19,9 @@ export async function GET(
     await connectDB();
     const { id } = await params;
 
-    const timesheet = await Timesheet.findById(id).lean();
+    const timesheet = await Timesheet.findById(id)
+      .populate("comments.userId", "name email image")
+      .lean();
 
     if (!timesheet) {
       return NextResponse.json(

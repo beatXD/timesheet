@@ -98,6 +98,12 @@ export const holidaySchema = z.object({
   year: z.number().int().min(2020).max(2100, "Invalid year"),
 });
 
+// Timesheet Comment Schema
+export const timesheetCommentSchema = z.object({
+  message: z.string().min(1, "Comment cannot be empty").max(500, "Comment must be 500 characters or less"),
+  entryDate: z.number().int().min(1).max(31).optional(),
+});
+
 // Helper function to validate and parse
 export function validateRequest<T>(
   schema: z.ZodSchema<T>,
