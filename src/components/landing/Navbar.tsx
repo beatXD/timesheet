@@ -27,8 +27,14 @@ export function Navbar() {
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
               {t("nav.features")}
             </a>
+            <a href="#use-cases" className="text-muted-foreground hover:text-foreground transition-colors">
+              {t("nav.useCases")}
+            </a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
               {t("nav.pricing")}
+            </a>
+            <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">
+              {t("nav.faq")}
             </a>
           </div>
 
@@ -67,11 +73,25 @@ export function Navbar() {
                 {t("nav.features")}
               </a>
               <a
+                href="#use-cases"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t("nav.useCases")}
+              </a>
+              <a
                 href="#pricing"
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {t("nav.pricing")}
+              </a>
+              <a
+                href="#faq"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t("nav.faq")}
               </a>
               <div className="flex flex-col gap-2 pt-4 border-t">
                 <Link href="/login">

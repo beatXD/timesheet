@@ -1015,7 +1015,9 @@
   "landing": {
     "nav": {
       "features": "Features",
+      "useCases": "Use Cases",
       "pricing": "Pricing",
+      "faq": "FAQ",
       "login": "Login",
       "getStarted": "Get Started"
     },
