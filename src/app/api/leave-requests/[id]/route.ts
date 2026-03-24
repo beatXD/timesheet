@@ -7,6 +7,7 @@ import { notifyLeaveApproved, notifyLeaveRejected } from "@/lib/notifications";
 import { clearLeavePendingFlag, revertTimesheetLeaveEntry } from "@/lib/leave-sync";
 import type { LeaveType } from "@/types";
 import type { Types } from "mongoose";
+import { logActivity } from "@/lib/activity-log";
 
 // Helper function to calculate working days between two dates
 function calculateWorkingDays(startDate: Date, endDate: Date): number {
@@ -260,6 +261,18 @@ export async function POST(
         console.error("Failed to send notification:", notifError);
       }
 
+      logActivity({
+        userId: session.user.id!,
+        action: "leave_approved",
+        targetType: "leave_request",
+        targetId: leaveRequest._id.toString(),
+        metadata: {
+          leaveType: leaveRequest.leaveType,
+          startDate: leaveRequest.startDate,
+          endDate: leaveRequest.endDate,
+        },
+      });
+
       return NextResponse.json({
         message: "Leave request approved",
         data: leaveRequest,
@@ -316,6 +329,18 @@ export async function POST(
       } catch (notifError) {
         console.error("Failed to send notification:", notifError);
       }
+
+      logActivity({
+        userId: session.user.id!,
+        action: "leave_rejected",
+        targetType: "leave_request",
+        targetId: leaveRequest._id.toString(),
+        metadata: {
+          leaveType: leaveRequest.leaveType,
+          startDate: leaveRequest.startDate,
+          endDate: leaveRequest.endDate,
+        },
+      });
 
       return NextResponse.json({
         message: "Leave request rejected",

@@ -5,6 +5,7 @@ import { Timesheet, Team, User } from "@/models";
 import { sendTimesheetStatusEmail } from "@/lib/email";
 import { notifyTimesheetRejected } from "@/lib/notifications";
 import { timesheetRejectSchema, validateRequest } from "@/lib/validation/schemas";
+import { logActivity } from "@/lib/activity-log";
 
 // POST /api/timesheets/[id]/reject - Reject timesheet
 export async function POST(
@@ -109,6 +110,14 @@ export async function POST(
     } catch (notifError) {
       console.error("Failed to send notification:", notifError);
     }
+
+    logActivity({
+      userId: session.user.id!,
+      action: "timesheet_rejected",
+      targetType: "timesheet",
+      targetId: timesheet._id.toString(),
+      metadata: { month: timesheet.month, year: timesheet.year },
+    });
 
     return NextResponse.json({ data: timesheet });
   } catch (error) {

@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { Timesheet, Team, User } from "@/models";
 import { validateForSubmission } from "@/lib/validation/timesheet";
 import { notifyPendingApproval } from "@/lib/notifications";
+import { logActivity } from "@/lib/activity-log";
 
 // POST /api/timesheets/[id]/submit - Submit timesheet for approval
 export async function POST(
@@ -118,6 +119,14 @@ export async function POST(
         console.error("Failed to send notification:", notifyError);
       }
     }
+
+    logActivity({
+      userId: session.user.id!,
+      action: "timesheet_submitted",
+      targetType: "timesheet",
+      targetId: timesheet._id.toString(),
+      metadata: { month: timesheet.month, year: timesheet.year },
+    });
 
     return NextResponse.json({
       data: timesheet,

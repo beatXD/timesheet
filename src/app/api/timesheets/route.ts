@@ -10,6 +10,7 @@ import {
   isSameDay,
 } from "date-fns";
 import type { ITimesheetEntry, EntryType } from "@/types";
+import { logActivity } from "@/lib/activity-log";
 
 // GET /api/timesheets - List user's timesheets
 export async function GET(request: NextRequest) {
@@ -140,6 +141,14 @@ export async function POST(request: NextRequest) {
       entries,
       totalBaseHours: entries.reduce((sum, e) => sum + e.baseHours, 0),
       totalAdditionalHours: 0,
+    });
+
+    logActivity({
+      userId: session.user.id!,
+      action: "timesheet_created",
+      targetType: "timesheet",
+      targetId: timesheet._id.toString(),
+      metadata: { month, year },
     });
 
     return NextResponse.json({ data: timesheet }, { status: 201 });

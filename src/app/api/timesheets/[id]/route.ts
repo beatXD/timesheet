@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { Timesheet, Team } from "@/models";
 import { syncTimesheetLeavesToRequests } from "@/lib/leave-sync";
 import type { ITimesheetEntry } from "@/types";
+import { logActivity } from "@/lib/activity-log";
 
 // GET /api/timesheets/[id] - Get single timesheet
 export async function GET(
@@ -188,6 +189,14 @@ export async function PUT(
     }
 
     await timesheet.save();
+
+    logActivity({
+      userId: session.user.id!,
+      action: "timesheet_updated",
+      targetType: "timesheet",
+      targetId: timesheet._id.toString(),
+      metadata: { month: timesheet.month, year: timesheet.year },
+    });
 
     return NextResponse.json({ data: timesheet });
   } catch (error) {

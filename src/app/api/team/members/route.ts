@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Team, User } from "@/models";
+import { logActivity } from "@/lib/activity-log";
 
 // GET /api/team/members - Get leader's teams with members
 export async function GET() {
@@ -131,6 +132,30 @@ export async function PUT(request: NextRequest) {
         { _id: { $in: addedMembers } },
         { $addToSet: { teamIds: teamId } }
       );
+    }
+
+    // Log activity for added members
+    for (const memberId of addedMembers) {
+      logActivity({
+        userId: session.user.id!,
+        action: "member_added",
+        targetType: "team",
+        targetId: teamId,
+        metadata: { memberId },
+        teamId,
+      });
+    }
+
+    // Log activity for removed members
+    for (const memberId of removedMembers) {
+      logActivity({
+        userId: session.user.id!,
+        action: "member_removed",
+        targetType: "team",
+        targetId: teamId,
+        metadata: { memberId },
+        teamId,
+      });
     }
 
     // Get updated team

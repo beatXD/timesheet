@@ -7,6 +7,7 @@ import { parsePaginationParams, createPaginationMeta } from "@/lib/pagination";
 import { sendLeaveRequestEmail } from "@/lib/email";
 import { createLeaveRequestSchema, validateRequest } from "@/lib/validation/schemas";
 import { notifyPendingApproval } from "@/lib/notifications";
+import { logActivity } from "@/lib/activity-log";
 
 // Helper function to calculate working days between two dates
 function calculateWorkingDays(startDate: Date, endDate: Date): number {
@@ -321,6 +322,14 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+
+    logActivity({
+      userId: session.user.id!,
+      action: "leave_requested",
+      targetType: "leave_request",
+      targetId: leaveRequest._id.toString(),
+      metadata: { leaveType, startDate, endDate },
+    });
 
     return NextResponse.json({ data: leaveRequest }, { status: 201 });
   } catch (error) {
