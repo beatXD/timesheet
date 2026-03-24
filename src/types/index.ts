@@ -260,6 +260,34 @@ export interface INotificationPreferences {
   system: boolean;
 }
 
+// Activity Log
+export type ActivityAction =
+  | "timesheet_created"
+  | "timesheet_updated"
+  | "timesheet_submitted"
+  | "timesheet_approved"
+  | "timesheet_rejected"
+  | "comment_added"
+  | "comment_deleted"
+  | "leave_requested"
+  | "leave_approved"
+  | "leave_rejected"
+  | "member_added"
+  | "member_removed";
+
+export type ActivityTargetType = "timesheet" | "leave_request" | "team";
+
+export interface IActivityLog {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  action: ActivityAction;
+  targetType: ActivityTargetType;
+  targetId: Types.ObjectId;
+  metadata?: Record<string, unknown>;
+  teamId?: Types.ObjectId;
+  createdAt: Date;
+}
+
 // Extended User for NextAuth
 export interface SessionUser {
   id: string;
