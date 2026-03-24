@@ -16,7 +16,7 @@ const DEFAULT_PLANS = [
     slug: "free",
     name: "Free",
     description: "For individuals",
-    monthlyPrice: 0,
+    monthlyPrice: 20,
     maxUsers: 1,
     maxTeams: 1,
     features: [
@@ -31,7 +31,7 @@ const DEFAULT_PLANS = [
     slug: "team",
     name: "Team",
     description: "For small teams",
-    monthlyPrice: 990,
+    monthlyPrice: 40,
     maxUsers: 5,
     maxTeams: 1,
     features: [
@@ -48,7 +48,7 @@ const DEFAULT_PLANS = [
     slug: "enterprise",
     name: "Enterprise",
     description: "For large organizations",
-    monthlyPrice: 4990,
+    monthlyPrice: 99,
     maxUsers: 100,
     maxTeams: 10,
     features: [
@@ -124,7 +124,7 @@ async function seedPlans() {
   const allPlans = await plansCollection.find().sort({ sortOrder: 1 }).toArray();
   for (const plan of allPlans) {
     console.log(
-      `  ${plan.slug}: ${plan.name} - ฿${plan.monthlyPrice}/mo (${plan.maxUsers} users, ${plan.maxTeams} teams) ${plan.isActive ? "✓" : "✗"}`
+      `  ${plan.slug}: ${plan.name} - $${plan.monthlyPrice}/mo (${plan.maxUsers} users, ${plan.maxTeams} teams) ${plan.isActive ? "✓" : "✗"}`
     );
   }
 

@@ -343,7 +343,7 @@ export default function MyCalendarPage() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-lg overflow-hidden" style={{ minHeight: 'calc(6 * 80px + 40px)' }}>
               {/* Week day headers */}
               <div className="grid grid-cols-7 bg-muted/50">
                 {weekDays.map((day) => (
@@ -374,7 +374,7 @@ export default function MyCalendarPage() {
                           return (
                             <div
                               key={`empty-${weekIndex}-${dayIndex}`}
-                              className="min-h-[80px] p-2 border-b border-r bg-muted/20"
+                              className="min-h-20 p-2 border-b border-r bg-muted/20"
                             />
                           );
                         }
@@ -387,7 +387,7 @@ export default function MyCalendarPage() {
                           <div
                             key={day.toISOString()}
                             className={cn(
-                              "min-h-[80px] p-2 border-b border-r relative",
+                              "min-h-20 p-2 border-b border-r relative",
                               isWeekendDay && "bg-muted/20",
                               holiday && "bg-red-50 dark:bg-red-900/10"
                             )}
@@ -417,7 +417,7 @@ export default function MyCalendarPage() {
 
                     {/* Leave bars overlay */}
                     <div className="absolute inset-0 pointer-events-none">
-                      <div className="grid grid-cols-7 h-full">
+                      <div className="grid grid-cols-7">
                         {week.map((_, dayIndex) => (
                           <div key={dayIndex} className="relative" />
                         ))}

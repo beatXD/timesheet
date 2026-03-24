@@ -77,7 +77,7 @@ const defaultPlans = [
     slug: "free",
     name: "Free",
     description: "For individuals",
-    monthlyPrice: 0,
+    monthlyPrice: 20,
     maxUsers: 1,
     maxTeams: 1,
     features: [
@@ -92,7 +92,7 @@ const defaultPlans = [
     slug: "team",
     name: "Team",
     description: "For small teams",
-    monthlyPrice: 990,
+    monthlyPrice: 40,
     maxUsers: 5,
     maxTeams: 1,
     features: [
@@ -109,7 +109,7 @@ const defaultPlans = [
     slug: "enterprise",
     name: "Enterprise",
     description: "For large organizations",
-    monthlyPrice: 4990,
+    monthlyPrice: 99,
     maxUsers: 100,
     maxTeams: 10,
     features: [
@@ -169,7 +169,7 @@ async function seed() {
   await Plan.deleteMany({});
   for (const plan of defaultPlans) {
     await Plan.create(plan);
-    console.log(`  ${plan.name} (${plan.slug}) - ฿${plan.monthlyPrice}/mo`);
+    console.log(`  ${plan.name} (${plan.slug}) - $${plan.monthlyPrice}/mo`);
   }
 
   console.log("\n========================================");

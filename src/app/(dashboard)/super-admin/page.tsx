@@ -73,9 +73,9 @@ export default function SuperAdminDashboard() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("th-TH", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "THB",
+      currency: "USD",
       minimumFractionDigits: 0,
     }).format(amount);
   };

@@ -21,9 +21,9 @@ interface MockSubscription {
 
 // Default plan pricing (fallback, prefer database)
 export const planPricing: Record<string, { monthly: number; name: string }> = {
-  free: { monthly: 0, name: "Free" },
-  team: { monthly: 990, name: "Team" },
-  enterprise: { monthly: 4990, name: "Enterprise" },
+  free: { monthly: 20, name: "Free" },
+  team: { monthly: 40, name: "Team" },
+  enterprise: { monthly: 99, name: "Enterprise" },
 };
 
 // Default plan limits (fallback, prefer database)
@@ -152,24 +152,24 @@ export const StripeMock = {
     return [
       {
         id: `pi_mock_1`,
-        amount: 990,
-        currency: "thb",
+        amount: 40,
+        currency: "usd",
         status: "succeeded",
         description: "Team Plan - Monthly",
         created: new Date(now - 30 * 24 * 60 * 60 * 1000),
       },
       {
         id: `pi_mock_2`,
-        amount: 990,
-        currency: "thb",
+        amount: 40,
+        currency: "usd",
         status: "succeeded",
         description: "Team Plan - Monthly",
         created: new Date(now - 60 * 24 * 60 * 60 * 1000),
       },
       {
         id: `pi_mock_3`,
-        amount: 990,
-        currency: "thb",
+        amount: 40,
+        currency: "usd",
         status: "succeeded",
         description: "Team Plan - Monthly",
         created: new Date(now - 90 * 24 * 60 * 60 * 1000),

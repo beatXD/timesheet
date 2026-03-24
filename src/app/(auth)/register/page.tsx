@@ -25,21 +25,20 @@ import type { SubscriptionPlan } from "@/types";
 
 type Step = "plan" | "details" | "payment";
 
-interface PlanOption {
-  id: SubscriptionPlan;
+interface DBPlan {
+  slug: SubscriptionPlan;
   name: string;
   description: string;
-  price: string;
+  monthlyPrice: number;
   features: string[];
-  icon: React.ReactNode;
+  maxUsers: number;
+  maxTeams: number;
 }
 
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("auth");
-  const tSub = useTranslations("subscription");
-  const tLanding = useTranslations("landing");
   const tErrors = useTranslations("errors");
 
   const [step, setStep] = useState<Step>("plan");
@@ -54,11 +53,31 @@ export default function RegisterPage() {
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [dbPlans, setDbPlans] = useState<DBPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
 
   // Mock payment state
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvc, setCardCvc] = useState("");
+
+  // Fetch plans from database
+  useEffect(() => {
+    async function fetchPlans() {
+      try {
+        const res = await fetch("/api/plans");
+        const data = await res.json();
+        if (data.data) {
+          setDbPlans(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch plans:", error);
+      } finally {
+        setPlansLoading(false);
+      }
+    }
+    fetchPlans();
+  }, []);
 
   // Check for plan or invite in URL query params
   useEffect(() => {
@@ -80,35 +99,21 @@ export default function RegisterPage() {
     }
   }, [searchParams]);
 
-  const plans: PlanOption[] = [
-    {
-      id: "free",
-      name: tSub("free"),
-      description: tLanding("pricing.tiers.starter.description"),
-      price: "0",
-      features: [
-        "1 User",
-        "Personal time tracking",
-        "Thai holidays included",
-        "PDF & Excel export",
-      ],
-      icon: <User className="w-6 h-6" />,
-    },
-    {
-      id: "team",
-      name: tSub("team"),
-      description: tLanding("pricing.tiers.team.description"),
-      price: "299",
-      features: [
-        "Up to 5 users",
-        "1 Team",
-        "Approval workflow",
-        "Leave management",
-        "Invite members via link",
-      ],
-      icon: <Users className="w-6 h-6" />,
-    },
-  ];
+  const iconMap: Record<string, React.ReactNode> = {
+    free: <User className="w-6 h-6" />,
+    team: <Users className="w-6 h-6" />,
+    enterprise: <Users className="w-6 h-6" />,
+  };
+
+  const formatPrice = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const selectedDbPlan = dbPlans.find((p) => p.slug === selectedPlan);
 
   const handlePlanSelect = (plan: SubscriptionPlan) => {
     setSelectedPlan(plan);
@@ -128,18 +133,18 @@ export default function RegisterPage() {
       return;
     }
 
-    if (selectedPlan === "team" && !teamName.trim()) {
-      toast.error("Team name is required for Team plan");
+    if (selectedPlan !== "free" && !teamName.trim()) {
+      toast.error("Team name is required for paid plans");
       return;
     }
 
-    // For Team plan, go to payment step
-    if (selectedPlan === "team") {
+    // For paid plans, go to payment step
+    if (selectedDbPlan && selectedDbPlan.monthlyPrice > 0) {
       setStep("payment");
       return;
     }
 
-    // For Free plan, register directly
+    // For free plan, register directly
     await handleRegister();
   };
 
@@ -172,7 +177,7 @@ export default function RegisterPage() {
           email,
           password,
           plan: selectedPlan,
-          teamName: selectedPlan === "team" ? teamName : undefined,
+          teamName: selectedPlan !== "free" ? teamName : undefined,
         }),
       });
 
@@ -247,49 +252,57 @@ export default function RegisterPage() {
             <p className="text-muted-foreground mt-2">Choose your plan to get started</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {plans.map((plan) => (
-              <Card
-                key={plan.id}
-                className={`cursor-pointer transition-all hover:shadow-lg ${
-                  selectedPlan === plan.id ? "ring-2 ring-primary" : ""
-                }`}
-                onClick={() => handlePlanSelect(plan.id)}
-              >
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="p-2 bg-primary/10 rounded-lg">{plan.icon}</div>
-                    {plan.id === "team" && (
-                      <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
-                        Popular
-                      </span>
-                    )}
-                  </div>
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4">
-                    <span className="text-3xl font-bold">฿{plan.price}</span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                  <ul className="space-y-2">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm">
-                        <Check className="w-4 h-4 text-green-500" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full" variant={plan.id === "team" ? "default" : "outline"}>
-                    {plan.id === "free" ? "Start Free" : "Start Team Trial"}
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          {plansLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className={`grid gap-6 ${dbPlans.length >= 3 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+              {dbPlans.map((plan) => (
+                <Card
+                  key={plan.slug}
+                  className={`cursor-pointer transition-all hover:shadow-lg ${
+                    selectedPlan === plan.slug ? "ring-2 ring-primary" : ""
+                  }`}
+                  onClick={() => handlePlanSelect(plan.slug)}
+                >
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        {iconMap[plan.slug] || <User className="w-6 h-6" />}
+                      </div>
+                      {plan.slug === "team" && (
+                        <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
+                          Popular
+                        </span>
+                      )}
+                    </div>
+                    <CardTitle className="text-xl">{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4">
+                      <span className="text-3xl font-bold">{formatPrice(plan.monthlyPrice)}</span>
+                      <span className="text-muted-foreground">/month</span>
+                    </div>
+                    <ul className="space-y-2">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-center gap-2 text-sm">
+                          <Check className="w-4 h-4 text-green-500" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                  <CardFooter>
+                    <Button className="w-full" variant={plan.slug === "team" ? "default" : "outline"}>
+                      Get {plan.name}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             {t("hasAccount")}{" "}
@@ -322,7 +335,7 @@ export default function RegisterPage() {
             </Button>
             <CardTitle className="text-2xl font-bold">Payment Details</CardTitle>
             <CardDescription>
-              Team Plan - ฿990/month
+              {selectedDbPlan?.name || "Team"} Plan - {formatPrice(selectedDbPlan?.monthlyPrice || 0)}/month
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -368,7 +381,7 @@ export default function RegisterPage() {
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Pay ฿299 & Create Account
+                Pay {formatPrice(selectedDbPlan?.monthlyPrice || 0)} & Create Account
               </Button>
             </form>
           </CardContent>
@@ -396,7 +409,7 @@ export default function RegisterPage() {
           </Button>
           <CardTitle className="text-2xl font-bold">{t("createAccount")}</CardTitle>
           <CardDescription>
-            {selectedPlan === "free" ? tSub("free") : tSub("team")} Plan
+            {selectedDbPlan?.name || selectedPlan} Plan
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -427,8 +440,8 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Team name for Team plan */}
-            {selectedPlan === "team" && (
+            {/* Team name for paid plans */}
+            {selectedPlan !== "free" && (
               <div className="space-y-2">
                 <Label htmlFor="teamName">Team Name</Label>
                 <Input
@@ -499,7 +512,7 @@ export default function RegisterPage() {
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {selectedPlan === "team" ? "Continue to Payment" : t("createAccount")}
+              {selectedDbPlan && selectedDbPlan.monthlyPrice > 0 ? "Continue to Payment" : t("createAccount")}
             </Button>
           </form>
 
