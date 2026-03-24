@@ -3,18 +3,7 @@ import { connectDB } from "@/lib/db";
 import { User, Timesheet, Notification } from "@/models";
 import { notifyDeadlineReminder } from "@/lib/notifications";
 import { getDeadlineStatusTH } from "@/lib/deadline";
-
-// Verify cron secret to prevent unauthorized access
-function verifyCronSecret(request: NextRequest): boolean {
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret) {
-    return process.env.NODE_ENV === "development";
-  }
-
-  return authHeader === `Bearer ${cronSecret}`;
-}
+import { verifyCronSecret } from "@/lib/cron";
 
 // GET /api/cron/deadline-reminder
 export async function GET(request: NextRequest) {

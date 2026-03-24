@@ -1,19 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { User, LeaveBalance, LeaveSettings } from "@/models";
-
-// Verify cron secret to prevent unauthorized access
-function verifyCronSecret(request: NextRequest): boolean {
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  // If no secret is configured, allow in development only
-  if (!cronSecret) {
-    return process.env.NODE_ENV === "development";
-  }
-
-  return authHeader === `Bearer ${cronSecret}`;
-}
+import { verifyCronSecret } from "@/lib/cron";
 
 // GET /api/cron/reset-leave-balance
 // This endpoint should be called by a cron job (e.g., Vercel Cron) on the 1st of each month
