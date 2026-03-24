@@ -1391,11 +1391,18 @@
   },
   "activity": {
     "title": "Activity Log",
+    "timeline": "Activity Timeline",
     "noActivity": "No activity",
     "filterByAction": "Filter by type",
     "filterByMember": "Filter by member",
     "filterByDate": "Filter by date",
+    "filterAction": "Action type",
+    "filterMember": "Member",
     "allActions": "All",
+    "allMembers": "All Members",
+    "from": "From",
+    "to": "To",
+    "showing": "Showing {from}-{to} of {total}",
     "actions": {
       "timesheet_created": "Created Timesheet",
       "timesheet_updated": "Updated Timesheet",
@@ -1409,6 +1416,10 @@
       "leave_rejected": "Rejected leave",
       "member_added": "Added member",
       "member_removed": "Removed member"
+    },
+    "tabs": {
+      "timesheets": "Timesheets",
+      "activity": "Activity"
     }
   },
   "comments": {

@@ -46,6 +46,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, Save, Send, AlertCircle, Download, FileSpreadsheet, FileText, Layout, Bookmark, RefreshCw, MessageSquare } from "lucide-react";
+import { ActivityTimeline } from "@/components/timesheet/ActivityTimeline";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Badge as CommentBadge } from "@/components/ui/badge";
@@ -770,6 +771,11 @@ export default function TimesheetDetailPage() {
           currentUserId={session.user.id}
           onCommentsChange={setComments}
         />
+      )}
+
+      {/* Activity Timeline */}
+      {!isPersonalMode && (
+        <ActivityTimeline timesheetId={params.id as string} />
       )}
 
       {/* Submit Confirmation Dialog */}

@@ -1391,11 +1391,18 @@
   },
   "activity": {
     "title": "ประวัติกิจกรรม",
+    "timeline": "ไทม์ไลน์กิจกรรม",
     "noActivity": "ไม่มีกิจกรรม",
     "filterByAction": "กรองตามประเภท",
     "filterByMember": "กรองตามสมาชิก",
     "filterByDate": "กรองตามวันที่",
+    "filterAction": "ประเภทการกระทำ",
+    "filterMember": "สมาชิก",
     "allActions": "ทั้งหมด",
+    "allMembers": "สมาชิกทั้งหมด",
+    "from": "ตั้งแต่",
+    "to": "ถึง",
+    "showing": "แสดง {from}-{to} จาก {total}",
     "actions": {
       "timesheet_created": "สร้าง Timesheet",
       "timesheet_updated": "แก้ไข Timesheet",
@@ -1409,6 +1416,10 @@
       "leave_rejected": "ปฏิเสธใบลา",
       "member_added": "เพิ่มสมาชิก",
       "member_removed": "ลบสมาชิก"
+    },
+    "tabs": {
+      "timesheets": "Timesheets",
+      "activity": "กิจกรรม"
     }
   },
   "comments": {
