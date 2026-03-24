@@ -135,36 +135,37 @@ const navSections: NavSection[] = [
       },
     ],
   },
-  {
-    titleKey: "nav.sections.teamManagement",
-    roles: ["admin"],
-    items: [
-      {
-        href: "/team/calendar",
-        labelKey: "nav.teamCalendar",
-        icon: <CalendarDays className="w-4 h-4" />,
-        roles: ["admin"],
-      },
-      {
-        href: "/team",
-        labelKey: "nav.teamTimesheets",
-        icon: <ClipboardList className="w-4 h-4" />,
-        roles: ["admin"],
-      },
-      {
-        href: "/team/leaves",
-        labelKey: "nav.teamLeaves",
-        icon: <CalendarCheck className="w-4 h-4" />,
-        roles: ["admin"],
-      },
-      {
-        href: "/team/members",
-        labelKey: "nav.teamMembers",
-        icon: <UsersRound className="w-4 h-4" />,
-        roles: ["admin"],
-      },
-    ],
-  },
+  // TODO: Re-enable Team Management section when ready
+  // {
+  //   titleKey: "nav.sections.teamManagement",
+  //   roles: ["admin"],
+  //   items: [
+  //     {
+  //       href: "/team/calendar",
+  //       labelKey: "nav.teamCalendar",
+  //       icon: <CalendarDays className="w-4 h-4" />,
+  //       roles: ["admin"],
+  //     },
+  //     {
+  //       href: "/team",
+  //       labelKey: "nav.teamTimesheets",
+  //       icon: <ClipboardList className="w-4 h-4" />,
+  //       roles: ["admin"],
+  //     },
+  //     {
+  //       href: "/team/leaves",
+  //       labelKey: "nav.teamLeaves",
+  //       icon: <CalendarCheck className="w-4 h-4" />,
+  //       roles: ["admin"],
+  //     },
+  //     {
+  //       href: "/team/members",
+  //       labelKey: "nav.teamMembers",
+  //       icon: <UsersRound className="w-4 h-4" />,
+  //       roles: ["admin"],
+  //     },
+  //   ],
+  // },
   {
     titleKey: "nav.sections.settings",
     roles: ["super_admin"],
@@ -262,9 +263,10 @@ export function Sidebar({ userRole }: SidebarProps) {
         </Button>
       </div>
 
-      <div className="border-b border-sidebar-border">
+      {/* TODO: Re-enable ModeToggle when team features are ready */}
+      {/* <div className="border-b border-sidebar-border">
         <ModeToggle isExpanded={isOpen} />
-      </div>
+      </div> */}
 
       <nav className="p-1.5 space-y-3">
         {filteredSections.map((section, sectionIndex) => (
