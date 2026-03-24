@@ -43,6 +43,7 @@ import {
 import { toast } from "sonner";
 import type { TimesheetStatus } from "@/types";
 import { TeamSubmissionSummary } from "@/components/team";
+import { DeadlineBadge } from "@/components/DeadlineBadge";
 
 interface TeamMember {
   _id: string;
@@ -475,6 +476,7 @@ export default function TeamPage() {
                       <Badge className={`text-[10px] px-1.5 py-0 font-normal ${statusColors[ts.status]}`}>
                         {t(`timesheet.status.${ts.status}`)}
                       </Badge>
+                      <DeadlineBadge month={ts.month} year={ts.year} timesheetStatus={ts.status} />
                     </TableCell>
                     <TableCell className="py-2">
                       <span className="text-xs tabular-nums">
