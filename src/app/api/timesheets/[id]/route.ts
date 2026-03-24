@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Timesheet, Team } from "@/models";
+import { syncTimesheetLeavesToRequests } from "@/lib/leave-sync";
+import type { ITimesheetEntry } from "@/types";
 
 // GET /api/timesheets/[id] - Get single timesheet
 export async function GET(
@@ -147,12 +149,32 @@ export async function PUT(
         }
       }
 
-      timesheet.entries = entries;
-      timesheet.totalBaseHours = entries.reduce(
+      // Snapshot old entries for leave sync diff
+      const previousEntries = timesheet.entries.map((e: ITimesheetEntry) => ({ ...e }));
+
+      // Sync leave entries to LeaveRequest records
+      const syncResult = await syncTimesheetLeavesToRequests({
+        month: timesheet.month,
+        year: timesheet.year,
+        previousEntries,
+        newEntries: entries,
+        userId: session.user.id!,
+        userRole: session.user.role!,
+      });
+
+      if (syncResult.error) {
+        return NextResponse.json(
+          { error: syncResult.error },
+          { status: 400 }
+        );
+      }
+
+      timesheet.entries = syncResult.entries;
+      timesheet.totalBaseHours = syncResult.entries.reduce(
         (sum: number, e: { baseHours: number }) => sum + (e.baseHours || 0),
         0
       );
-      timesheet.totalAdditionalHours = entries.reduce(
+      timesheet.totalAdditionalHours = syncResult.entries.reduce(
         (sum: number, e: { additionalHours: number }) =>
           sum + (e.additionalHours || 0),
         0

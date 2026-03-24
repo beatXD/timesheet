@@ -259,7 +259,10 @@
     "completedThisYear": "เสร็จสมบูรณ์",
     "approvedOrHigher": "อนุมัติแล้วหรือสูงกว่า",
     "pendingAction": "ต้องดำเนินการ",
-    "allClear": "ไม่มีรายการค้าง"
+    "allClear": "ไม่มีรายการค้าง",
+    "leavePending": "รอการอนุมัติ",
+    "insufficientBalance": "วันลาคงเหลือไม่เพียงพอ",
+    "leaveAutoApproved": "ลาป่วยอนุมัติอัตโนมัติ"
   },
   "team": {
     "title": "อนุมัติไทม์ชีท",

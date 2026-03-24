@@ -265,7 +265,10 @@
     "completedThisYear": "Completed",
     "approvedOrHigher": "Approved or higher status",
     "pendingAction": "Needs Attention",
-    "allClear": "All clear!"
+    "allClear": "All clear!",
+    "leavePending": "Pending approval",
+    "insufficientBalance": "Insufficient leave balance",
+    "leaveAutoApproved": "Sick leave auto-approved"
   },
   "team": {
     "title": "Approve Timesheets",

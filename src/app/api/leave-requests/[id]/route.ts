@@ -4,7 +4,9 @@ import { connectDB } from "@/lib/db";
 import { LeaveRequest, Team, Timesheet, LeaveBalance, LeaveSettings, User } from "@/models";
 import { sendLeaveStatusEmail } from "@/lib/email";
 import { notifyLeaveApproved, notifyLeaveRejected } from "@/lib/notifications";
+import { clearLeavePendingFlag, revertTimesheetLeaveEntry } from "@/lib/leave-sync";
 import type { LeaveType } from "@/types";
+import type { Types } from "mongoose";
 
 // Helper function to calculate working days between two dates
 function calculateWorkingDays(startDate: Date, endDate: Date): number {
@@ -119,6 +121,11 @@ export async function DELETE(
       );
     }
 
+    // Revert timesheet entry if source is timesheet
+    if (leaveRequest.source === "timesheet") {
+      await revertTimesheetLeaveEntry(leaveRequest._id);
+    }
+
     await LeaveRequest.findByIdAndDelete(id);
 
     return NextResponse.json({ message: "Leave request cancelled" });
@@ -216,8 +223,12 @@ export async function POST(
       leaveRequest.daysApproved = daysUsed;
       await leaveRequest.save();
 
-      // Auto-add to timesheet
-      await addLeaveToTimesheet(leaveRequest);
+      // Auto-add to timesheet (skip if source is timesheet — entry already exists)
+      if (leaveRequest.source === "timesheet") {
+        await clearLeavePendingFlag(leaveRequest._id);
+      } else {
+        await addLeaveToTimesheet(leaveRequest);
+      }
 
       // Send email notification
       try {
@@ -269,6 +280,11 @@ export async function POST(
       leaveRequest.rejectionReason = rejectionReason;
       await leaveRequest.save();
 
+      // Revert timesheet entry if source is timesheet
+      if (leaveRequest.source === "timesheet") {
+        await revertTimesheetLeaveEntry(leaveRequest._id);
+      }
+
       // Send email notification
       try {
         const requestUser = await User.findById(leaveRequest.userId).lean();
@@ -317,6 +333,7 @@ export async function POST(
 
 // Helper function to add leave entries to timesheet
 async function addLeaveToTimesheet(leaveRequest: {
+  _id: Types.ObjectId;
   userId: { toString: () => string };
   startDate: Date;
   endDate: Date;
@@ -383,6 +400,8 @@ async function addLeaveToTimesheet(leaveRequest: {
       baseHours: 8, // Standard work day
       additionalHours: 0,
       remark: leaveRequest.reason || "",
+      leaveRequestId: leaveRequest._id,
+      leavePending: false,
     };
 
     if (existingEntryIndex >= 0) {

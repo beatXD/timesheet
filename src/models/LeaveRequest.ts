@@ -1,5 +1,5 @@
 import mongoose, { Schema, Model } from "mongoose";
-import type { ILeaveRequest, LeaveType, LeaveRequestStatus } from "@/types";
+import type { ILeaveRequest, LeaveType, LeaveRequestStatus, LeaveRequestSource } from "@/types";
 import { softDeletePlugin } from "@/lib/mongoose-plugins";
 
 const LeaveRequestSchema = new Schema<ILeaveRequest>(
@@ -21,6 +21,11 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
     reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
     reviewedAt: { type: Date },
     rejectionReason: { type: String },
+    source: {
+      type: String,
+      enum: ["leave_form", "timesheet"] as LeaveRequestSource[],
+      default: "leave_form",
+    },
     // Balance tracking fields
     daysRequested: { type: Number },
     daysApproved: { type: Number },

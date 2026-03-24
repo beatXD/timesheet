@@ -20,6 +20,8 @@ const TimesheetEntrySchema = new Schema<ITimesheetEntry>(
     baseHours: { type: Number, default: 0 },
     additionalHours: { type: Number, default: 0 },
     remark: { type: String },
+    leaveRequestId: { type: Schema.Types.ObjectId, ref: "LeaveRequest" },
+    leavePending: { type: Boolean, default: false },
   },
   { _id: false }
 );

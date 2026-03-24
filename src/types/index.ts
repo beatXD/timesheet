@@ -116,6 +116,8 @@ export interface ITimesheetEntry {
   baseHours: number;
   additionalHours: number;
   remark?: string;
+  leaveRequestId?: Types.ObjectId | string;
+  leavePending?: boolean;
 }
 
 // Timesheet
@@ -160,6 +162,9 @@ export interface IHoliday {
   updatedAt: Date;
 }
 
+// Leave Request Source
+export type LeaveRequestSource = "leave_form" | "timesheet";
+
 // Leave Request
 export interface ILeaveRequest {
   _id: Types.ObjectId;
@@ -172,6 +177,7 @@ export interface ILeaveRequest {
   reviewedBy?: Types.ObjectId;
   reviewedAt?: Date;
   rejectionReason?: string;
+  source?: LeaveRequestSource;
   // Balance tracking fields
   daysRequested?: number;
   daysApproved?: number;

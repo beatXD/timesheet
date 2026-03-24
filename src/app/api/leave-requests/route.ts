@@ -241,6 +241,7 @@ export async function POST(request: NextRequest) {
       leaveType,
       reason,
       status: isLeader ? "approved" : "pending",
+      source: "leave_form",
       daysRequested: requestedDays,
       ...(isLeader && {
         reviewedBy: session.user.id,
@@ -258,6 +259,7 @@ export async function POST(request: NextRequest) {
 
       // Add leave entries to timesheet
       await addLeaveToTimesheet({
+        leaveRequestId: leaveRequest._id.toString(),
         userId: session.user.id,
         startDate: start,
         endDate: end,
@@ -326,13 +328,14 @@ export async function POST(request: NextRequest) {
 
 // Helper function to add leave entries to timesheet
 async function addLeaveToTimesheet(params: {
+  leaveRequestId: string;
   userId: string;
   startDate: Date;
   endDate: Date;
   leaveType: string;
   reason?: string;
 }) {
-  const { userId, startDate, endDate, leaveType, reason } = params;
+  const { leaveRequestId, userId, startDate, endDate, leaveType, reason } = params;
 
   const currentDate = new Date(startDate);
   while (currentDate <= endDate) {
@@ -382,6 +385,8 @@ async function addLeaveToTimesheet(params: {
       baseHours: 8,
       additionalHours: 0,
       remark: reason || "",
+      leaveRequestId,
+      leavePending: false,
     };
 
     if (existingEntryIndex >= 0) {

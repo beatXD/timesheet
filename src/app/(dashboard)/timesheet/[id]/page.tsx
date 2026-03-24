@@ -593,16 +593,26 @@ export default function TimesheetDetailPage() {
                   );
                   const dayName = format(date, "EEE", { locale: dateLocale });
 
+                  const isPendingLeave = entry.type === "leave" && entry.leavePending;
+                  const rowColor = isPendingLeave
+                    ? "bg-amber-50 dark:bg-amber-500/10"
+                    : typeColors[entry.type];
+
                   return (
                     <TableRow
                       key={entry.date}
-                      className={typeColors[entry.type]}
+                      className={rowColor}
                     >
                       <TableCell className="font-medium">
                         {entry.date}
                         <span className="text-muted-foreground ml-1 text-xs">
                           {dayName}
                         </span>
+                        {isPendingLeave && (
+                          <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 border-amber-400 text-amber-600 dark:text-amber-400">
+                            {t("timesheet.leavePending")}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Select
@@ -627,7 +637,7 @@ export default function TimesheetDetailPage() {
                           <Select
                             value={entry.leaveType || ""}
                             onValueChange={(v) => updateEntry(index, "leaveType", v)}
-                            disabled={!isEditable}
+                            disabled={!isEditable || isPendingLeave}
                           >
                             <SelectTrigger className="h-8">
                               <SelectValue placeholder={t("leave.selectType")} />
