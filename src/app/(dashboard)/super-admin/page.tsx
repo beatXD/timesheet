@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   Card,
   CardContent,
@@ -50,6 +50,7 @@ interface Stats {
 
 export default function SuperAdminDashboard() {
   const t = useTranslations();
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Stats | null>(null);
 
@@ -252,7 +253,7 @@ export default function SuperAdminDashboard() {
                     style={{ height: `${Math.max(height, 4)}%` }}
                   />
                   <span className="text-xs text-muted-foreground">
-                    {new Date(day.date).toLocaleDateString("th-TH", { weekday: "short" })}
+                    {new Date(day.date).toLocaleDateString(locale === "th" ? "th-TH" : "en-US", { weekday: "short" })}
                   </span>
                   <span className="text-xs font-medium">{day.count}</span>
                 </div>

@@ -31,7 +31,12 @@ function CalendarMockup({ t }: { t: ReturnType<typeof useTranslations> }) {
     holiday: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
     leave: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300",
   };
-  const cellLabels: Record<string, string> = { work: "8h", weekend: "OFF", holiday: "Holiday", leave: "Leave" };
+  const cellLabels: Record<string, string> = {
+    work: t("screenshots.mockup.calendar.work") as string,
+    weekend: t("screenshots.mockup.calendar.weekend") as string,
+    holiday: t("screenshots.mockup.calendar.holiday") as string,
+    leave: t("screenshots.mockup.calendar.leave") as string,
+  };
 
   return (
     <div>

@@ -105,7 +105,26 @@
     "passwordsDoNotMatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 6 characters",
     "registrationFailed": "Registration failed",
-    "backToLogin": "Back to Login"
+    "backToLogin": "Back to Login",
+    "backToHome": "Back to home",
+    "choosePlan": "Choose your plan to get started",
+    "popular": "Popular",
+    "perMonth": "/month",
+    "getPlan": "Get {planName}",
+    "paymentDetails": "Payment Details",
+    "planPriceMonthly": "{planName} Plan - {price}/month",
+    "demoPaymentForm": "This is a demo payment form",
+    "demoPaymentHint": "Use any card number (e.g., 4242 4242 4242 4242)",
+    "cardNumber": "Card Number",
+    "cardExpiry": "Expiry",
+    "cardCvc": "CVC",
+    "payAndCreate": "Pay {price} & Create Account",
+    "plan": "Plan",
+    "teamName": "Team Name",
+    "teamNamePlaceholder": "My Team",
+    "teamNameRequired": "Team name is required for paid plans",
+    "fillPaymentDetails": "Please fill in all payment details",
+    "continueToPayment": "Continue to Payment"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -758,7 +777,17 @@
     "failedToSubmit": "Failed to submit",
     "failedToCreate": "Failed to create",
     "insufficientBalance": "Insufficient {leaveType} leave balance. You have {remaining} day(s) remaining but requested {requested} day(s).",
-    "oauthAccountAlreadyLinked": "This {provider} account is already connected to another user. Please use a different account or disconnect it from the other user first."
+    "oauthAccountAlreadyLinked": "This {provider} account is already connected to another user. Please use a different account or disconnect it from the other user first.",
+    "notFound": {
+      "title": "Page Not Found",
+      "description": "The page you are looking for may have been moved, deleted, or does not exist.",
+      "backToDashboard": "Back to Dashboard",
+      "goToTimesheet": "Go to Timesheet"
+    },
+    "errorOccurred": "An Error Occurred",
+    "errorDescription": "Sorry, a system error occurred. Please try again.",
+    "errorId": "Error ID:",
+    "tryAgain": "Try Again"
   },
   "success": {
     "saved": "Saved successfully",
@@ -1012,6 +1041,31 @@
     "aiSummarizeFailed": "Failed to summarize commits with AI",
     "aiRateLimitExceeded": "AI rate limit exceeded. Please wait {seconds} seconds and try again."
   },
+  "pdf": {
+    "title": "TIMESHEET",
+    "name": "Name",
+    "projectTeam": "Project / Team",
+    "date": "Date",
+    "type": "Type",
+    "task": "Task",
+    "timeIn": "In",
+    "timeOut": "Out",
+    "base": "Base",
+    "additional": "Add",
+    "remark": "Remark",
+    "baseHours": "Base Hours",
+    "additionalHours": "Additional Hours",
+    "totalManDays": "Total Man-Days",
+    "resourceSignature": "Resource Signature",
+    "clientSignature": "Client Signature",
+    "signatureName": "Name: ____________________",
+    "signatureDate": "Date: ____________________",
+    "generated": "Generated",
+    "typeWorking": "Work",
+    "typeWeekend": "Weekend",
+    "typeHoliday": "Holiday",
+    "typeLeave": "Leave"
+  },
   "landing": {
     "nav": {
       "features": "Features",
@@ -1144,7 +1198,11 @@
       "mockup": {
         "calendar": {
           "month": "March 2026",
-          "days": "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
+          "days": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+          "work": "8h",
+          "weekend": "OFF",
+          "holiday": "Holiday",
+          "leave": "Leave"
         },
         "approval": {
           "title": "Pending Approvals",

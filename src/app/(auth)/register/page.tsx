@@ -134,7 +134,7 @@ export default function RegisterPage() {
     }
 
     if (selectedPlan !== "free" && !teamName.trim()) {
-      toast.error("Team name is required for paid plans");
+      toast.error(t("teamNameRequired"));
       return;
     }
 
@@ -153,7 +153,7 @@ export default function RegisterPage() {
 
     // Validate mock payment
     if (!cardNumber || !cardExpiry || !cardCvc) {
-      toast.error("Please fill in all payment details");
+      toast.error(t("fillPaymentDetails"));
       return;
     }
 
@@ -245,11 +245,11 @@ export default function RegisterPage() {
             <Link href="/" className="inline-block mb-4">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to home
+                {t("backToHome")}
               </Button>
             </Link>
             <h1 className="text-3xl font-bold">{t("createAccount")}</h1>
-            <p className="text-muted-foreground mt-2">Choose your plan to get started</p>
+            <p className="text-muted-foreground mt-2">{t("choosePlan")}</p>
           </div>
 
           {plansLoading ? (
@@ -273,7 +273,7 @@ export default function RegisterPage() {
                       </div>
                       {plan.slug === "team" && (
                         <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
-                          Popular
+                          {t("popular")}
                         </span>
                       )}
                     </div>
@@ -283,7 +283,7 @@ export default function RegisterPage() {
                   <CardContent>
                     <div className="mb-4">
                       <span className="text-3xl font-bold">{formatPrice(plan.monthlyPrice)}</span>
-                      <span className="text-muted-foreground">/month</span>
+                      <span className="text-muted-foreground">{t("perMonth")}</span>
                     </div>
                     <ul className="space-y-2">
                       {plan.features.map((feature, i) => (
@@ -296,7 +296,7 @@ export default function RegisterPage() {
                   </CardContent>
                   <CardFooter>
                     <Button className="w-full" variant={plan.slug === "team" ? "default" : "outline"}>
-                      Get {plan.name}
+                      {t("getPlan", { planName: plan.name })}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -333,20 +333,20 @@ export default function RegisterPage() {
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <CardTitle className="text-2xl font-bold">Payment Details</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t("paymentDetails")}</CardTitle>
             <CardDescription>
-              {selectedDbPlan?.name || "Team"} Plan - {formatPrice(selectedDbPlan?.monthlyPrice || 0)}/month
+              {t("planPriceMonthly", { planName: selectedDbPlan?.name || "Team", price: formatPrice(selectedDbPlan?.monthlyPrice || 0) })}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handlePaymentSubmit} className="space-y-4">
               <div className="p-4 bg-muted rounded-lg mb-4">
-                <p className="text-sm text-muted-foreground mb-2">This is a demo payment form</p>
-                <p className="text-xs text-muted-foreground">Use any card number (e.g., 4242 4242 4242 4242)</p>
+                <p className="text-sm text-muted-foreground mb-2">{t("demoPaymentForm")}</p>
+                <p className="text-xs text-muted-foreground">{t("demoPaymentHint")}</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="cardNumber">Card Number</Label>
+                <Label htmlFor="cardNumber">{t("cardNumber")}</Label>
                 <Input
                   id="cardNumber"
                   placeholder="4242 4242 4242 4242"
@@ -358,7 +358,7 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="cardExpiry">Expiry</Label>
+                  <Label htmlFor="cardExpiry">{t("cardExpiry")}</Label>
                   <Input
                     id="cardExpiry"
                     placeholder="MM/YY"
@@ -368,7 +368,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="cardCvc">CVC</Label>
+                  <Label htmlFor="cardCvc">{t("cardCvc")}</Label>
                   <Input
                     id="cardCvc"
                     placeholder="123"
@@ -381,7 +381,7 @@ export default function RegisterPage() {
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Pay {formatPrice(selectedDbPlan?.monthlyPrice || 0)} & Create Account
+                {t("payAndCreate", { price: formatPrice(selectedDbPlan?.monthlyPrice || 0) })}
               </Button>
             </form>
           </CardContent>
@@ -409,7 +409,7 @@ export default function RegisterPage() {
           </Button>
           <CardTitle className="text-2xl font-bold">{t("createAccount")}</CardTitle>
           <CardDescription>
-            {selectedDbPlan?.name || selectedPlan} Plan
+            {selectedDbPlan?.name || selectedPlan} {t("plan")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -443,11 +443,11 @@ export default function RegisterPage() {
             {/* Team name for paid plans */}
             {selectedPlan !== "free" && (
               <div className="space-y-2">
-                <Label htmlFor="teamName">Team Name</Label>
+                <Label htmlFor="teamName">{t("teamName")}</Label>
                 <Input
                   id="teamName"
                   type="text"
-                  placeholder="My Team"
+                  placeholder={t("teamNamePlaceholder")}
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
                   required
@@ -512,7 +512,7 @@ export default function RegisterPage() {
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {selectedDbPlan && selectedDbPlan.monthlyPrice > 0 ? "Continue to Payment" : t("createAccount")}
+              {selectedDbPlan && selectedDbPlan.monthlyPrice > 0 ? t("continueToPayment") : t("createAccount")}
             </Button>
           </form>
 

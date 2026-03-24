@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 
@@ -11,6 +12,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations("errors");
+
   useEffect(() => {
     // Log error to console (winston can't be used in client components)
     console.error("Unhandled client error:", {
@@ -32,27 +35,27 @@ export default function Error({
 
         <div className="space-y-2">
           <h1 className="text-2xl font-bold tracking-tight">
-            เกิดข้อผิดพลาด
+            {t("errorOccurred")}
           </h1>
           <p className="text-muted-foreground">
-            ขออภัย เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้ง
+            {t("errorDescription")}
           </p>
           {error.digest && (
             <p className="text-xs text-muted-foreground font-mono">
-              Error ID: {error.digest}
+              {t("errorId")} {error.digest}
             </p>
           )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button onClick={reset} variant="default">
-            ลองอีกครั้ง
+            {t("tryAgain")}
           </Button>
           <Button
             variant="outline"
             onClick={() => (window.location.href = "/dashboard")}
           >
-            กลับหน้าหลัก
+            {t("backToDashboard")}
           </Button>
         </div>
       </div>

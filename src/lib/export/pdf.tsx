@@ -10,11 +10,64 @@ import {
 import { format } from "date-fns";
 import type { ITimesheet, ITimesheetEntry, IUser, ITeam } from "@/types";
 
+export interface PdfLabels {
+  title: string;
+  name: string;
+  projectTeam: string;
+  date: string;
+  type: string;
+  task: string;
+  timeIn: string;
+  timeOut: string;
+  base: string;
+  additional: string;
+  remark: string;
+  baseHours: string;
+  additionalHours: string;
+  totalManDays: string;
+  resourceSignature: string;
+  clientSignature: string;
+  signatureName: string;
+  signatureDate: string;
+  generated: string;
+  typeWorking: string;
+  typeWeekend: string;
+  typeHoliday: string;
+  typeLeave: string;
+}
+
+const defaultLabels: PdfLabels = {
+  title: "TIMESHEET",
+  name: "Name",
+  projectTeam: "Project / Team",
+  date: "Date",
+  type: "Type",
+  task: "Task",
+  timeIn: "In",
+  timeOut: "Out",
+  base: "Base",
+  additional: "Add",
+  remark: "Remark",
+  baseHours: "Base Hours",
+  additionalHours: "Additional Hours",
+  totalManDays: "Total Man-Days",
+  resourceSignature: "Resource Signature",
+  clientSignature: "Client Signature",
+  signatureName: "Name: ____________________",
+  signatureDate: "Date: ____________________",
+  generated: "Generated",
+  typeWorking: "Work",
+  typeWeekend: "Weekend",
+  typeHoliday: "Holiday",
+  typeLeave: "Leave",
+};
+
 interface TimesheetExportData {
   timesheet: ITimesheet;
   user: IUser;
   project?: { name?: string } | null;
   team?: ITeam;
+  labels?: PdfLabels;
 }
 
 // Minimal color palette
@@ -207,15 +260,16 @@ const styles = StyleSheet.create({
   },
 });
 
-const entryTypeLabels: Record<string, string> = {
-  working: "Work",
-  weekend: "Weekend",
-  holiday: "Holiday",
-  leave: "Leave",
-};
-
 const TimesheetPDF = ({ data }: { data: TimesheetExportData }) => {
   const { timesheet, user, project, team } = data;
+  const l = data.labels || defaultLabels;
+  const entryTypeLabels: Record<string, string> = {
+    working: l.typeWorking,
+    weekend: l.typeWeekend,
+    holiday: l.typeHoliday,
+    leave: l.typeLeave,
+  };
+
   const monthYear = format(
     new Date(timesheet.year, timesheet.month - 1),
     "MMMM yyyy"
@@ -231,7 +285,7 @@ const TimesheetPDF = ({ data }: { data: TimesheetExportData }) => {
       <Page size="A4" orientation="landscape" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>TIMESHEET</Text>
+          <Text style={styles.title}>{l.title}</Text>
           <Text style={styles.subtitle}>{monthYear}</Text>
         </View>
 
@@ -239,13 +293,13 @@ const TimesheetPDF = ({ data }: { data: TimesheetExportData }) => {
         <View style={styles.infoSection}>
           <View style={styles.infoBlock}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Name</Text>
+              <Text style={styles.infoLabel}>{l.name}</Text>
               <Text style={styles.infoValue}>{user.name}</Text>
             </View>
           </View>
           <View style={styles.infoBlock}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Project / Team</Text>
+              <Text style={styles.infoLabel}>{l.projectTeam}</Text>
               <Text style={styles.infoValue}>{projectTeamDisplay}</Text>
             </View>
           </View>
@@ -254,14 +308,14 @@ const TimesheetPDF = ({ data }: { data: TimesheetExportData }) => {
         {/* Table */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.colDate, styles.headerCell]}>Date</Text>
-            <Text style={[styles.colType, styles.headerCell]}>Type</Text>
-            <Text style={[styles.colTask, styles.headerCell]}>Task</Text>
-            <Text style={[styles.colTime, styles.headerCell]}>In</Text>
-            <Text style={[styles.colTime, styles.headerCell]}>Out</Text>
-            <Text style={[styles.colHours, styles.headerCell]}>Base</Text>
-            <Text style={[styles.colHours, styles.headerCell]}>Add</Text>
-            <Text style={[styles.colRemark, styles.headerCell]}>Remark</Text>
+            <Text style={[styles.colDate, styles.headerCell]}>{l.date}</Text>
+            <Text style={[styles.colType, styles.headerCell]}>{l.type}</Text>
+            <Text style={[styles.colTask, styles.headerCell]}>{l.task}</Text>
+            <Text style={[styles.colTime, styles.headerCell]}>{l.timeIn}</Text>
+            <Text style={[styles.colTime, styles.headerCell]}>{l.timeOut}</Text>
+            <Text style={[styles.colHours, styles.headerCell]}>{l.base}</Text>
+            <Text style={[styles.colHours, styles.headerCell]}>{l.additional}</Text>
+            <Text style={[styles.colRemark, styles.headerCell]}>{l.remark}</Text>
           </View>
 
           {timesheet.entries.map((entry: ITimesheetEntry, index: number) => {
@@ -311,15 +365,15 @@ const TimesheetPDF = ({ data }: { data: TimesheetExportData }) => {
         <View style={styles.summarySection}>
           <View style={styles.summaryTable}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Base Hours</Text>
+              <Text style={styles.summaryLabel}>{l.baseHours}</Text>
               <Text style={styles.summaryValue}>{timesheet.totalBaseHours}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Additional Hours</Text>
+              <Text style={styles.summaryLabel}>{l.additionalHours}</Text>
               <Text style={styles.summaryValue}>{timesheet.totalAdditionalHours}</Text>
             </View>
             <View style={[styles.summaryRow, styles.summaryRowTotal]}>
-              <Text style={styles.summaryLabelTotal}>Total Man-Days</Text>
+              <Text style={styles.summaryLabelTotal}>{l.totalManDays}</Text>
               <Text style={styles.summaryValueTotal}>{manDays.toFixed(2)}</Text>
             </View>
           </View>
@@ -329,22 +383,22 @@ const TimesheetPDF = ({ data }: { data: TimesheetExportData }) => {
         <View style={styles.signatureSection}>
           <View style={styles.signatureBlock}>
             <View style={styles.signatureLine} />
-            <Text style={styles.signatureLabel}>Resource Signature</Text>
+            <Text style={styles.signatureLabel}>{l.resourceSignature}</Text>
             <Text style={styles.signatureText}>{user.name}</Text>
             <Text style={styles.signatureText}>{format(new Date(), "d MMMM yyyy")}</Text>
           </View>
           <View style={styles.signatureBlock}>
             <View style={styles.signatureLine} />
-            <Text style={styles.signatureLabel}>Client Signature</Text>
-            <Text style={styles.signatureText}>Name: ____________________</Text>
-            <Text style={styles.signatureText}>Date: ____________________</Text>
+            <Text style={styles.signatureLabel}>{l.clientSignature}</Text>
+            <Text style={styles.signatureText}>{l.signatureName}</Text>
+            <Text style={styles.signatureText}>{l.signatureDate}</Text>
           </View>
         </View>
 
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>
-            Generated {format(new Date(), "d MMM yyyy, HH:mm")}
+            {l.generated} {format(new Date(), "d MMM yyyy, HH:mm")}
           </Text>
           <Text style={styles.footerText}>
             {user.name} - {monthYear}

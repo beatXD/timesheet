@@ -99,7 +99,26 @@
     "passwordsDoNotMatch": "รหัสผ่านไม่ตรงกัน",
     "passwordTooShort": "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร",
     "registrationFailed": "ลงทะเบียนไม่สำเร็จ",
-    "backToLogin": "กลับไปหน้าเข้าสู่ระบบ"
+    "backToLogin": "กลับไปหน้าเข้าสู่ระบบ",
+    "backToHome": "กลับหน้าแรก",
+    "choosePlan": "เลือกแพลนเพื่อเริ่มต้นใช้งาน",
+    "popular": "ยอดนิยม",
+    "perMonth": "/เดือน",
+    "getPlan": "เลือก {planName}",
+    "paymentDetails": "รายละเอียดการชำระเงิน",
+    "planPriceMonthly": "แพลน {planName} - {price}/เดือน",
+    "demoPaymentForm": "นี่คือแบบฟอร์มการชำระเงินตัวอย่าง",
+    "demoPaymentHint": "ใช้หมายเลขบัตรใดก็ได้ (เช่น 4242 4242 4242 4242)",
+    "cardNumber": "หมายเลขบัตร",
+    "cardExpiry": "วันหมดอายุ",
+    "cardCvc": "CVC",
+    "payAndCreate": "ชำระ {price} และสร้างบัญชี",
+    "plan": "แพลน",
+    "teamName": "ชื่อทีม",
+    "teamNamePlaceholder": "ทีมของฉัน",
+    "teamNameRequired": "กรุณากรอกชื่อทีมสำหรับแพลนที่ต้องชำระเงิน",
+    "fillPaymentDetails": "กรุณากรอกข้อมูลการชำระเงินให้ครบถ้วน",
+    "continueToPayment": "ดำเนินการชำระเงิน"
   },
   "nav": {
     "dashboard": "แดชบอร์ด",
@@ -268,6 +287,7 @@
     "title": "อนุมัติไทม์ชีท",
     "description": "ตรวจสอบและอนุมัติไทม์ชีทของสมาชิกในทีม",
     "reviewApprove": "ตรวจสอบและอนุมัติไทม์ชีทก่อนส่งให้ Admin",
+    "viewRecords": "ดูบันทึกไทม์ชีทจากทุกทีม",
     "timesheets": "ไทม์ชีท",
     "pending": "รอดำเนินการ",
     "pendingApproval": "รอการอนุมัติ",
@@ -751,7 +771,17 @@
     "failedToSubmit": "ไม่สามารถส่งได้",
     "failedToCreate": "ไม่สามารถสร้างได้",
     "insufficientBalance": "วันลา{leaveType}ไม่เพียงพอ คุณเหลือ {remaining} วัน แต่ขอลา {requested} วัน",
-    "oauthAccountAlreadyLinked": "บัญชี {provider} นี้เชื่อมต่อกับผู้ใช้อื่นอยู่แล้ว กรุณาใช้บัญชีอื่นหรือยกเลิกการเชื่อมต่อจากผู้ใช้นั้นก่อน"
+    "oauthAccountAlreadyLinked": "บัญชี {provider} นี้เชื่อมต่อกับผู้ใช้อื่นอยู่แล้ว กรุณาใช้บัญชีอื่นหรือยกเลิกการเชื่อมต่อจากผู้ใช้นั้นก่อน",
+    "notFound": {
+      "title": "ไม่พบหน้าที่ต้องการ",
+      "description": "หน้าที่คุณกำลังมองหาอาจถูกย้าย ลบ หรือไม่มีอยู่",
+      "backToDashboard": "กลับหน้าหลัก",
+      "goToTimesheet": "ไปหน้า Timesheet"
+    },
+    "errorOccurred": "เกิดข้อผิดพลาด",
+    "errorDescription": "ขออภัย เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้ง",
+    "errorId": "Error ID:",
+    "tryAgain": "ลองอีกครั้ง"
   },
   "success": {
     "saved": "บันทึกสำเร็จ",
@@ -1011,6 +1041,31 @@
     "aiSummarizeFailed": "ไม่สามารถสรุป commits ด้วย AI",
     "aiRateLimitExceeded": "เกินโควต้า AI กรุณารอ {seconds} วินาทีแล้วลองใหม่"
   },
+  "pdf": {
+    "title": "ไทม์ชีท",
+    "name": "ชื่อ",
+    "projectTeam": "โปรเจกต์ / ทีม",
+    "date": "วันที่",
+    "type": "ประเภท",
+    "task": "งาน",
+    "timeIn": "เข้า",
+    "timeOut": "ออก",
+    "base": "ปกติ",
+    "additional": "เพิ่ม",
+    "remark": "หมายเหตุ",
+    "baseHours": "ชั่วโมงปกติ",
+    "additionalHours": "ชั่วโมงเพิ่มเติม",
+    "totalManDays": "รวม Man-Days",
+    "resourceSignature": "ลายเซ็นผู้ปฏิบัติงาน",
+    "clientSignature": "ลายเซ็นลูกค้า",
+    "signatureName": "ชื่อ: ____________________",
+    "signatureDate": "วันที่: ____________________",
+    "generated": "สร้างเมื่อ",
+    "typeWorking": "ทำงาน",
+    "typeWeekend": "วันหยุดสัปดาห์",
+    "typeHoliday": "วันหยุดนักขัตฤกษ์",
+    "typeLeave": "ลางาน"
+  },
   "landing": {
     "nav": {
       "features": "ฟีเจอร์",
@@ -1143,7 +1198,11 @@
       "mockup": {
         "calendar": {
           "month": "มีนาคม 2569",
-          "days": "จ,อ,พ,พฤ,ศ,ส,อา"
+          "days": "จ,อ,พ,พฤ,ศ,ส,อา",
+          "work": "8ชม.",
+          "weekend": "หยุด",
+          "holiday": "วันหยุด",
+          "leave": "ลา"
         },
         "approval": {
           "title": "รออนุมัติ",

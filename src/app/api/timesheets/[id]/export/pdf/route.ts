@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Timesheet, User, Team } from "@/models";
-import { generateTimesheetPDF } from "@/lib/export/pdf";
+import { generateTimesheetPDF, type PdfLabels } from "@/lib/export/pdf";
 import { format } from "date-fns";
 
 export async function GET(
@@ -58,11 +59,18 @@ export async function GET(
       team = await Team.findById(user.teamIds[0]).lean();
     }
 
+    // Load locale-specific PDF labels
+    const cookieStore = await cookies();
+    const locale = cookieStore.get("NEXT_LOCALE")?.value || "th";
+    const messages = (await import(`../../../../../../../messages/${locale}.json`)).default;
+    const pdfLabels: PdfLabels = messages.pdf;
+
     const buffer = await generateTimesheetPDF({
       timesheet: timesheet as any,
       user: user as any,
       project: null,
       team: team as any,
+      labels: pdfLabels,
     });
 
     const monthYear = format(

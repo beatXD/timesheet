@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -72,6 +72,7 @@ interface PlanLimits {
 
 export default function BillingPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -159,7 +160,7 @@ export default function BillingPage() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("th-TH", {
+    return new Date(dateStr).toLocaleDateString(locale === "th" ? "th-TH" : "en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
