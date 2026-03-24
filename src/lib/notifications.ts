@@ -203,3 +203,22 @@ export async function notifySystemAnnouncement(
     link,
   });
 }
+
+export async function notifyDeadlineReminder(
+  userId: string | Types.ObjectId,
+  month: number,
+  year: number,
+  daysLeft: number
+) {
+  return createNotification({
+    userId,
+    type: "deadline_reminder",
+    title: "Timesheet Deadline Reminder",
+    message:
+      daysLeft === 0
+        ? `วันนี้เป็นวันสุดท้ายของการส่ง Timesheet เดือน ${month}/${year}`
+        : `เหลืออีก ${daysLeft} วันก่อนสิ้นเดือน กรุณาส่ง Timesheet เดือน ${month}/${year}`,
+    link: "/timesheet",
+    metadata: { month, year, reminderDaysLeft: daysLeft },
+  });
+}
